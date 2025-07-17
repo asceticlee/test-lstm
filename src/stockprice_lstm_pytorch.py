@@ -41,6 +41,8 @@ project_root = os.path.dirname(script_dir)  # Gets test-lstm/ root
 data_dir = os.path.join(project_root, 'data/')  # Full path to data/
 train_file = os.path.join(data_dir, 'training_data_spy_20250101_20250624.csv')
 test_file = os.path.join(data_dir, 'testing_data_spy_20250625_20250710.csv')
+export_dir = os.path.join(project_root, 'models')
+os.makedirs(export_dir, exist_ok=True)
 seq_length = 20
 learning_rate = 0.0005
 epochs = 1000
@@ -117,7 +119,7 @@ scaler_params = {
     "Min": scaler.data_min_.tolist(),
     "Max": scaler.data_max_.tolist()
 }
-with open('scaler_params.json', 'w') as f:
+with open(os.path.join(export_dir, 'scaler_params.json'), 'w') as f:
     json.dump(scaler_params, f)
 
 # Scale targets
@@ -132,7 +134,7 @@ target_scaler_params = {
     "Min": target_scaler.data_min_.tolist(),
     "Max": target_scaler.data_max_.tolist()
 }
-with open('target_scaler_params.json', 'w') as f:
+with open(os.path.join(export_dir, 'target_scaler_params.json'), 'w') as f:
     json.dump(target_scaler_params, f)
 
 # Custom Dataset class
@@ -158,16 +160,16 @@ class StockLSTM(nn.Module):
     def __init__(self, input_size, hidden_size=50):
         super(StockLSTM, self).__init__()
         self.lstm1 = nn.LSTM(input_size, hidden_size, batch_first=True)
-        self.dropout1 = nn.Dropout(0.2)
+        # self.dropout1 = nn.Dropout(0.2)
         self.lstm2 = nn.LSTM(hidden_size, hidden_size, batch_first=True)
-        self.dropout2 = nn.Dropout(0.2)
+        # self.dropout2 = nn.Dropout(0.2)
         self.fc = nn.Linear(hidden_size, 1)
 
     def forward(self, x):
         out, _ = self.lstm1(x)
-        out = self.dropout1(out)
+        # out = self.dropout1(out)
         out, _ = self.lstm2(out)
-        out = self.dropout2(out)
+        # out = self.dropout2(out)
         out = self.fc(out[:, -1, :])  # Take the last time step
         return out
 
@@ -246,7 +248,7 @@ print(f'Test Loss (MSE): {test_loss}')
 print(f'Test MAE: {test_mae}')
 
 # Save the final model
-torch.save(model.state_dict(), 'lstm_stock_model.pth')
+torch.save(model.state_dict(), os.path.join(export_dir, 'lstm_stock_model.pth'))
 print("Model saved as PyTorch state dict: lstm_stock_model.pth")
 
 # To make predictions on train data

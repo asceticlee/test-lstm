@@ -4,6 +4,9 @@ __pycache__/
 *.pyo
 *.pyd
 
+# model performance output
+*.csv
+
 # C extensions
 *.so
 
@@ -124,6 +127,7 @@ celerybeat-schedule
 .env
 .venv
 venv-test-lstm/
+models/
 env/
 venv/
 ENV/
