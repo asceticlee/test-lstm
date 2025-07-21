@@ -23,7 +23,7 @@ os.makedirs(export_dir, exist_ok=True)
 # Parameters
 seq_length = 20
 learning_rate = 0.001
-epochs = 300
+epochs = 1000
 batch_size = 32
 
 # Load data
@@ -77,17 +77,38 @@ X_train, y_train = create_sequences(train_df, seq_length)
 X_test, y_test = create_sequences(test_df, seq_length)
 
 # Balance positive and negative samples in training set
-# pos_idx = np.where(y_train > 0)[0]
-# neg_idx = np.where(y_train <= 0)[0]
-# min_count = min(len(pos_idx), len(neg_idx))
-# np.random.seed(42)
-# pos_sample = np.random.choice(pos_idx, min_count, replace=False)
-# neg_sample = np.random.choice(neg_idx, min_count, replace=False)
-# balanced_idx = np.concatenate([pos_sample, neg_sample])
+pos_idx = np.where(y_train > 0)[0]
+neg_idx = np.where(y_train <= 0)[0]
+min_count = min(len(pos_idx), len(neg_idx))
+np.random.seed(42)
+pos_sample = np.random.choice(pos_idx, min_count, replace=False)
+neg_sample = np.random.choice(neg_idx, min_count, replace=False)
+balanced_idx = np.concatenate([pos_sample, neg_sample])
+np.random.shuffle(balanced_idx)
+X_train = X_train[balanced_idx]
+y_train = y_train[balanced_idx]
+print(f"Balanced train class counts: positive={np.sum(y_train > 0)}, negative={np.sum(y_train <= 0)}")
+
+# # Balancing the samples up down size
+# up_idx = np.where(y_train > 0)[0]
+# down_idx = np.where(y_train <= 0)[0]
+
+# # Find the smaller class size
+# min_count = min(len(up_idx), len(down_idx))
+
+# # Randomly sample from each class
+# np.random.seed(42)  # for reproducibility
+# up_sample = np.random.choice(up_idx, min_count, replace=False)
+# down_sample = np.random.choice(down_idx, min_count, replace=False)
+
+# # Combine and shuffle
+# balanced_idx = np.concatenate([up_sample, down_sample])
 # np.random.shuffle(balanced_idx)
-# X_train = X_train[balanced_idx]
-# y_train = y_train[balanced_idx]
-# print(f"Balanced train class counts: positive={np.sum(y_train > 0)}, negative={np.sum(y_train <= 0)}")
+
+# # Subset the data
+# X_train_bal = X_train[balanced_idx]
+# y_train_bal = y_train[balanced_idx]
+
 
 
 # Print the size of x_train and y_train
@@ -178,7 +199,7 @@ model = keras.Sequential([
 model.compile(optimizer=Adam(learning_rate=learning_rate), loss=asymmetric_mse, metrics=['mae'])
 
 # Train
-early_stop = EarlyStopping(monitor='val_mae', patience=150, restore_best_weights=True)
+early_stop = EarlyStopping(monitor='val_mae', patience=300, restore_best_weights=True)
 history = model.fit(X_train_scaled, y_train, epochs=epochs, batch_size=batch_size,
                     validation_data=(X_test_scaled, y_test), 
                     callbacks=[early_stop],
