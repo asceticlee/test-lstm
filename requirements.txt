@@ -81,9 +81,6 @@ tensorflow==2.19.0
 termcolor==3.1.0
 tf2onnx==1.16.1
 threadpoolctl==3.6.0
-torch==2.7.1+cu128
-torchaudio==2.7.1+cu128
-torchvision==0.22.1+cu128
 tqdm==4.67.1
 triton==3.3.1
 typing_extensions==4.14.1
