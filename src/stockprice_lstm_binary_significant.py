@@ -27,8 +27,8 @@ train_df = pd.read_csv(train_file)
 test_df = pd.read_csv(test_file)
 
 # Define feature and target columns
-# Features: columns 6 to 65 (0-based index 5 to 65)
-feature_cols = train_df.columns[5:66]
+# Features: columns 6 to 65 (0-based index 5 to 64)
+feature_cols = train_df.columns[5:65]
 target_col = 'Label_8'
 num_features = len(feature_cols)
 

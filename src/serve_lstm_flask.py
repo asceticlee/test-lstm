@@ -8,9 +8,9 @@ from sklearn.preprocessing import MinMaxScaler
 # Paths
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))  # Gets src/ dir
 PROJECT_ROOT = os.path.dirname(SCRIPT_DIR)  # Gets test-lstm/ root
-MODEL_PATH = os.path.join(os.path.join(PROJECT_ROOT, 'models'), 'lstm_stock_model.keras')
-SCALER_PATH = os.path.join(os.path.join(PROJECT_ROOT, 'models'), 'scaler_params.json')
-SEQ_LENGTH = 20  # adjust if needed
+MODEL_PATH = os.path.join(os.path.join(PROJECT_ROOT, 'models_prod'), 'lstm_stock_model_20250529_20250630_5797_5028.keras')
+SCALER_PATH = os.path.join(os.path.join(PROJECT_ROOT, 'models_prod'), 'scaler_params_30_20250529_20250630_5797_5028.json')
+SEQ_LENGTH = 30  # adjust if needed
 NUM_FEATURES = 44  # adjust if needed
 
 # Load model

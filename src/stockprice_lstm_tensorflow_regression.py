@@ -11,19 +11,21 @@ from keras.layers import GRU
 import tf2onnx
 import onnx
 
+from keras.callbacks import ReduceLROnPlateau
+
 print(tf.__version__)  # Must show ≥2.5.0
 # Define paths and parameters
 script_dir = os.path.dirname(os.path.abspath(__file__))  # Gets src/ dir
 project_root = os.path.dirname(script_dir)  # Gets test-lstm/ root
 data_dir = os.path.join(project_root, 'data/')  # Full path to data/
-train_file = os.path.join(data_dir, 'training_data_spy_with_iv_20240101_20250430.csv')
-test_file = os.path.join(data_dir, 'testing_data_spy_with_iv_20250501_20250715.csv')
+train_file = os.path.join(data_dir, 'training_data_spy_20250529_20250630.csv')
+test_file = os.path.join(data_dir, 'testing_data_spy_20250701_20250715.csv')
 export_dir = os.path.join(project_root, 'models')
 os.makedirs(export_dir, exist_ok=True)
 # Parameters
-seq_length = 20
-learning_rate = 0.001
-epochs = 300
+seq_length = 30
+learning_rate = 0.0009
+epochs = 200
 batch_size = 32
 
 # Load data
@@ -31,9 +33,9 @@ train_df = pd.read_csv(train_file)
 test_df = pd.read_csv(test_file)
 
 # Define feature and target columns
-# Features: columns 6 to 65 (0-based index 5 to 65)
-feature_cols = train_df.columns[5:66]
-target_col = 'Label_8'
+# Features: columns 6 to 49 (0-based index 5 to 48)
+feature_cols = train_df.columns[5:49]
+target_col = 'Label_10'
 num_features = len(feature_cols)
 
 # Function to create sequences, respecting continuity
@@ -75,6 +77,19 @@ def create_sequences(df, seq_length):
 
 X_train, y_train = create_sequences(train_df, seq_length)
 X_test, y_test = create_sequences(test_df, seq_length)
+
+
+# Filter training set to only include samples where abs(y_train) < 1.0
+# train_mask = np.abs(y_train) < 1.0
+# X_train = X_train[train_mask]
+# y_train = y_train[train_mask]
+# print(f"Filtered train set: {X_train.shape[0]} samples with abs(y_train) < 1.0")
+
+# Filter test set to only include samples where abs(y_test) < 1.0
+# test_mask = np.abs(y_test) < 1.0
+# X_test = X_test[test_mask]
+# y_test = y_test[test_mask]
+# print(f"Filtered test set: {X_test.shape[0]} samples with abs(y_test) < 1.0")
 
 # Balance positive and negative samples in training set
 # pos_idx = np.where(y_train > 0)[0]
@@ -174,15 +189,23 @@ model = keras.Sequential([
 # ])
 
 # Compile
-# model.compile(optimizer=Adam(learning_rate=learning_rate), loss='mse', metrics=['mae'])
-model.compile(optimizer=Adam(learning_rate=learning_rate), loss=asymmetric_mse, metrics=['mae'])
+model.compile(optimizer=Adam(learning_rate=learning_rate), loss='mse', metrics=['mae'])
+# model.compile(optimizer=Adam(learning_rate=learning_rate), loss=asymmetric_mse, metrics=['mae', asymmetric_mse])
 
 # Train
-early_stop = EarlyStopping(monitor='val_mae', patience=150, restore_best_weights=True)
-history = model.fit(X_train_scaled, y_train, epochs=epochs, batch_size=batch_size,
-                    validation_data=(X_test_scaled, y_test), 
-                    callbacks=[early_stop],
-                    verbose=1)
+early_stop = EarlyStopping(monitor='val_mae', patience=100, restore_best_weights=True)
+reduce_lr = ReduceLROnPlateau(monitor='val_mae', factor=0.5, patience=150, min_lr=1e-6, verbose=1)
+history = model.fit(
+    X_train_scaled, y_train,
+    epochs=epochs,
+    batch_size=batch_size,
+    validation_data=(X_test_scaled, y_test),
+    callbacks=[
+        # early_stop, 
+        reduce_lr
+    ],
+    verbose=1
+)
 
 # Evaluate
 test_loss, test_mae = model.evaluate(X_test_scaled, y_test, verbose=1)
@@ -219,30 +242,71 @@ tf2onnx.convert.from_keras(model, input_signature=input_signature, output_path=o
 print(f"Model saved in ONNX format: {onnx_model_path}")
 
 # To make predictions on train data
-train_predictions = model.predict(X_train_scaled)
+
+# Recover TradingDay and TradingMsOfDay for each sequence in train set
+train_days = train_df['TradingDay'].values
+train_ms = train_df['TradingMsOfDay'].values
+train_seq_idx = []
+for i in range(len(train_df) - seq_length + 1):
+    is_consecutive = True
+    current_day = train_days[i]
+    current_ms = train_ms[i]
+    for j in range(1, seq_length):
+        if train_days[i + j] != current_day or train_ms[i + j] != current_ms + j * 60000:
+            is_consecutive = False
+            break
+    if is_consecutive:
+        train_seq_idx.append(i + seq_length - 1)
+
+# If you filtered or balanced, apply the same mask to the indices
+
+# Always align to the current y_train length (after filtering/balancing)
+train_seq_idx = np.array(train_seq_idx)
+if len(train_seq_idx) > len(y_train):
+    train_seq_idx = train_seq_idx[:len(y_train)]
 
 train_results_df = pd.DataFrame({
+    'TradingDay': train_days[train_seq_idx],
+    'TradingMsOfDay': train_ms[train_seq_idx],
     'Actual': y_train,
-    'Predicted': train_predictions.flatten()  # Flatten to match y_train's shape
+    'Predicted': model.predict(X_train_scaled).flatten()
 })
 
-# Save to CSV (in the project root; adjust path if needed)
 train_output_file = os.path.join(project_root, 'train_predictions_regression.csv')
 train_results_df.to_csv(train_output_file, index=False)
-
 print(f"Saved all {len(y_train)} train predictions and actuals to '{train_output_file}'")
 
 # To make predictions on test data
-predictions = model.predict(X_test_scaled)
 
-# Create DataFrame with all actuals and predictions
+# Recover TradingDay and TradingMsOfDay for each sequence in test set
+test_days = test_df['TradingDay'].values
+test_ms = test_df['TradingMsOfDay'].values
+test_seq_idx = []
+for i in range(len(test_df) - seq_length + 1):
+    is_consecutive = True
+    current_day = test_days[i]
+    current_ms = test_ms[i]
+    for j in range(1, seq_length):
+        if test_days[i + j] != current_day or test_ms[i + j] != current_ms + j * 60000:
+            is_consecutive = False
+            break
+    if is_consecutive:
+        test_seq_idx.append(i + seq_length - 1)
+
+# If you filtered, apply the same mask to the indices
+
+# Always align to the current y_test length (after filtering)
+test_seq_idx = np.array(test_seq_idx)
+if len(test_seq_idx) > len(y_test):
+    test_seq_idx = test_seq_idx[:len(y_test)]
+
 results_df = pd.DataFrame({
+    'TradingDay': test_days[test_seq_idx],
+    'TradingMsOfDay': test_ms[test_seq_idx],
     'Actual': y_test,
-    'Predicted': predictions.flatten()  # Flatten to match y_test's shape
+    'Predicted': model.predict(X_test_scaled).flatten()
 })
 
-# Save to CSV (in the project root; adjust path if needed)
 output_file = os.path.join(project_root, 'test_predictions_regression.csv')
 results_df.to_csv(output_file, index=False)
-
 print(f"Saved all {len(y_test)} test predictions and actuals to '{output_file}'")
