@@ -11,26 +11,40 @@ from keras.layers import GRU
 import tf2onnx
 import onnx
 
+import sys
+
 from keras.callbacks import ReduceLROnPlateau
 
 print(tf.__version__)  # Must show ≥2.5.0
-# Define paths and parameters
+
 script_dir = os.path.dirname(os.path.abspath(__file__))  # Gets src/ dir
 project_root = os.path.dirname(script_dir)  # Gets test-lstm/ root
 data_dir = os.path.join(project_root, 'data/')  # Full path to data/
-train_file = os.path.join(data_dir, 'training_data_spy_20250608_20250705.csv')
-test_file = os.path.join(data_dir, 'testing_data_spy_20250706_20250721.csv')
+data_file = os.path.join(data_dir, 'training_data_spy_20240101_20250722.csv')
 export_dir = os.path.join(project_root, 'models')
 os.makedirs(export_dir, exist_ok=True)
+
+# Read date parameters from command line
+if len(sys.argv) != 5:
+    print("Usage: python stockprice_lstm_tensorflow_regression.py trainFrom trainTo testFrom testTo")
+    print("Example: python stockprice_lstm_tensorflow_regression.py 20250501 20250531 20250601 20250607")
+    sys.exit(1)
+trainFrom, trainTo, testFrom, testTo = sys.argv[1:5]
+
 # Parameters
 seq_length = 30
 learning_rate = 0.0009
-epochs = 200
+epochs = 150
 batch_size = 32
 
 # Load data
-train_df = pd.read_csv(train_file)
-test_df = pd.read_csv(test_file)
+
+# Load full data
+full_df = pd.read_csv(data_file)
+
+# Filter for train and test sets by TradingDay (assume column 0 is TradingDay)
+train_df = full_df[(full_df.iloc[:,0] >= int(trainFrom)) & (full_df.iloc[:,0] <= int(trainTo))].reset_index(drop=True)
+test_df = full_df[(full_df.iloc[:,0] >= int(testFrom)) & (full_df.iloc[:,0] <= int(testTo))].reset_index(drop=True)
 
 # Define feature and target columns
 # Features: columns 6 to 49 (0-based index 5 to 48)
@@ -92,17 +106,17 @@ X_test, y_test = create_sequences(test_df, seq_length)
 # print(f"Filtered test set: {X_test.shape[0]} samples with abs(y_test) < 1.0")
 
 # Balance positive and negative samples in training set
-# pos_idx = np.where(y_train > 0)[0]
-# neg_idx = np.where(y_train <= 0)[0]
-# min_count = min(len(pos_idx), len(neg_idx))
-# np.random.seed(42)
-# pos_sample = np.random.choice(pos_idx, min_count, replace=False)
-# neg_sample = np.random.choice(neg_idx, min_count, replace=False)
-# balanced_idx = np.concatenate([pos_sample, neg_sample])
-# np.random.shuffle(balanced_idx)
-# X_train = X_train[balanced_idx]
-# y_train = y_train[balanced_idx]
-# print(f"Balanced train class counts: positive={np.sum(y_train > 0)}, negative={np.sum(y_train <= 0)}")
+pos_idx = np.where(y_train > 0)[0]
+neg_idx = np.where(y_train <= 0)[0]
+min_count = min(len(pos_idx), len(neg_idx))
+np.random.seed(42)
+pos_sample = np.random.choice(pos_idx, min_count, replace=False)
+neg_sample = np.random.choice(neg_idx, min_count, replace=False)
+balanced_idx = np.concatenate([pos_sample, neg_sample])
+np.random.shuffle(balanced_idx)
+X_train = X_train[balanced_idx]
+y_train = y_train[balanced_idx]
+print(f"Balanced train class counts: positive={np.sum(y_train > 0)}, negative={np.sum(y_train <= 0)}")
 
 
 # Print the size of x_train and y_train
@@ -194,7 +208,7 @@ model.compile(optimizer=Adam(learning_rate=learning_rate), loss='mse', metrics=[
 
 # Train
 early_stop = EarlyStopping(monitor='val_mae', patience=100, restore_best_weights=True)
-reduce_lr = ReduceLROnPlateau(monitor='val_mae', factor=0.5, patience=150, min_lr=1e-6, verbose=1)
+reduce_lr = ReduceLROnPlateau(monitor='val_mae', factor=0.5, patience=120, min_lr=1e-6, verbose=1)
 history = model.fit(
     X_train_scaled, y_train,
     epochs=epochs,
@@ -272,7 +286,9 @@ train_results_df = pd.DataFrame({
     'Predicted': model.predict(X_train_scaled).flatten()
 })
 
-train_output_file = os.path.join(project_root, 'train_predictions_regression.csv')
+
+# Save train predictions with date range in filename
+train_output_file = os.path.join(project_root, f'train_predictions_regression_{trainFrom}_{trainTo}.csv')
 train_results_df.to_csv(train_output_file, index=False)
 print(f"Saved all {len(y_train)} train predictions and actuals to '{train_output_file}'")
 
@@ -307,6 +323,8 @@ results_df = pd.DataFrame({
     'Predicted': model.predict(X_test_scaled).flatten()
 })
 
-output_file = os.path.join(project_root, 'test_predictions_regression.csv')
-results_df.to_csv(output_file, index=False)
-print(f"Saved all {len(y_test)} test predictions and actuals to '{output_file}'")
+
+# Save test predictions with date range in filename
+test_output_file = os.path.join(project_root, f'test_predictions_regression_{testFrom}_{testTo}.csv')
+results_df.to_csv(test_output_file, index=False)
+print(f"Saved all {len(y_test)} test predictions and actuals to '{test_output_file}'")
