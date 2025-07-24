@@ -8,10 +8,10 @@ from sklearn.preprocessing import MinMaxScaler
 # Paths
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))  # Gets src/ dir
 PROJECT_ROOT = os.path.dirname(SCRIPT_DIR)  # Gets test-lstm/ root
-# MODEL_PATH = os.path.join(os.path.join(PROJECT_ROOT, 'models_prod'), 'lstm_stock_model_30_050_20250608_20250705_6136_4676.keras')
-# SCALER_PATH = os.path.join(os.path.join(PROJECT_ROOT, 'models_prod'), 'scaler_params_30_050_20250608_20250705_6136_4676.json')
-MODEL_PATH = os.path.join(os.path.join(PROJECT_ROOT, 'models_prod'), 'lstm_stock_model_30_050_060_8w_20250716_20250722_7600_7391.keras')
-SCALER_PATH = os.path.join(os.path.join(PROJECT_ROOT, 'models_prod'), 'scaler_params_30_050_060_8w_20250716_20250722_7600_7391.json')
+MODEL_PATH = os.path.join(os.path.join(PROJECT_ROOT, 'models_prod'), 'lstm_stock_model_00033.keras')
+SCALER_PATH = os.path.join(os.path.join(PROJECT_ROOT, 'models_prod'), 'scaler_params_00033.json')
+# MODEL_PATH = os.path.join(os.path.join(PROJECT_ROOT, 'models_prod'), 'lstm_stock_model_30_050_060_8w_20250716_20250722_7600_7391.keras')
+# SCALER_PATH = os.path.join(os.path.join(PROJECT_ROOT, 'models_prod'), 'scaler_params_30_050_060_8w_20250716_20250722_7600_7391.json')
 SEQ_LENGTH = 30  # adjust if needed
 NUM_FEATURES = 44  # adjust if needed
 

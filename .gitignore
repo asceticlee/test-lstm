@@ -127,7 +127,6 @@ celerybeat-schedule
 .env
 .venv
 venv-test-lstm/
-models/
 env/
 venv/
 ENV/
