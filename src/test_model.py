@@ -40,7 +40,7 @@ def test_model(model_id, test_from, test_to, accuracy_only=False):
         # Paths
         script_dir = os.path.dirname(os.path.abspath(__file__))
         project_root = os.path.dirname(script_dir)
-        data_file = os.path.join(project_root, 'data', 'training_data_spy_20240101_20250722.csv')
+        data_file = os.path.join(project_root, 'data', 'trainingData.csv')
         model_dir = os.path.join(project_root, 'models')
         model_path = os.path.join(model_dir, f'lstm_stock_model_{model_id}.keras')
         scaler_path = os.path.join(model_dir, f'scaler_params_{model_id}.json')
@@ -140,7 +140,7 @@ if __name__ == '__main__':
         # Paths
         script_dir = os.path.dirname(os.path.abspath(__file__))
         project_root = os.path.dirname(script_dir)
-        data_file = os.path.join(project_root, 'data', 'training_data_spy_20240101_20250722.csv')
+        data_file = os.path.join(project_root, 'data', 'trainingData.csv')
         model_dir = os.path.join(project_root, 'models')
         model_path = os.path.join(model_dir, f'lstm_stock_model_{model_id}.keras')
         scaler_path = os.path.join(model_dir, f'scaler_params_{model_id}.json')

@@ -9,13 +9,13 @@ def date_to_str(d):
 
 # Initial dates
 dates = [
-    "20240929", "20241123",  # trainFrom, trainTo
-    "20241124", "20241130",  # validationFrom, validationTo
-    "20241201", "20241207"   # testFrom, testTo
+    "20200105", "20200229",  # trainFrom, trainTo
+    "20200301", "20200307",  # validationFrom, validationTo
+    "20200308", "20200314"   # testFrom, testTo
 ]
 
 # End condition
-end_date = datetime(2025, 7, 22)
+end_date = datetime(2025, 7, 26)
 
 while True:
     # Run the script

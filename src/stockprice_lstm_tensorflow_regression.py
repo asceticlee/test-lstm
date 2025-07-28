@@ -20,7 +20,7 @@ print(tf.__version__)  # Must show ≥2.5.0
 script_dir = os.path.dirname(os.path.abspath(__file__))  # Gets src/ dir
 project_root = os.path.dirname(script_dir)  # Gets test-lstm/ root
 data_dir = os.path.join(project_root, 'data/')  # Full path to data/
-data_file = os.path.join(data_dir, 'training_data_spy_20240101_20250722.csv')
+data_file = os.path.join(data_dir, 'trainingData.csv')
 export_dir = os.path.join(project_root, 'models')
 os.makedirs(export_dir, exist_ok=True)
 
