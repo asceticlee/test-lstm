@@ -7,12 +7,19 @@ def str_to_date(s):
 def date_to_str(d):
     return d.strftime("%Y%m%d")
 
-# Initial dates
+def str_to_date(s):
+    return datetime.strptime(s, "%Y%m%d")
+
+def date_to_str(d):
+    return d.strftime("%Y%m%d")
+
+# Initial dates and label number
 dates = [
-    "20240107", "20240217",  # trainFrom, trainTo
-    "20240218", "20240224",  # validationFrom, validationTo
-    "20240225", "20240302"   # testFrom, testTo
+    "20241006", "20241130",  # trainFrom, trainTo
+    "20241201", "20241207",  # validationFrom, validationTo
+    "20241208", "20241214"   # testFrom, testTo
 ]
+label_number = "10"  # Default label number (can be changed)
 
 # End condition
 end_date = datetime(2025, 8, 2)
@@ -20,8 +27,8 @@ end_date = datetime(2025, 8, 2)
 while True:
     # Run the script
     cmd = [
-        "python", "stockprice_lstm_tensorflow_regression.py",
-        *dates
+        "python", "stockprice_lstm_tensorflow_regression_downside.py",
+        *dates, label_number
     ]
     print("Running:", " ".join(cmd))
     subprocess.run(cmd, check=True)

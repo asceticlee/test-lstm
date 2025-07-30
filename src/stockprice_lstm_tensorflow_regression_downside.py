@@ -26,8 +26,8 @@ os.makedirs(export_dir, exist_ok=True)
 
 # Read date parameters and label number from command line
 if len(sys.argv) != 8:
-    print("Usage: python stockprice_lstm_tensorflow_regression.py trainFrom trainTo validationFrom validationTo testFrom testTo labelNumber")
-    print("Example: python stockprice_lstm_tensorflow_regression.py 20250501 20250531 20250601 20250607 20250701 20250707 10")
+    print("Usage: python stockprice_lstm_tensorflow_regression_downside.py trainFrom trainTo validationFrom validationTo testFrom testTo labelNumber")
+    print("Example: python stockprice_lstm_tensorflow_regression_downside.py 20250501 20250531 20250601 20250607 20250701 20250707 12")
     sys.exit(1)
 trainFrom, trainTo, validationFrom, validationTo, testFrom, testTo, labelNumber = sys.argv[1:8]
 labelNumber = int(labelNumber)

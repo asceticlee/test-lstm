@@ -50,13 +50,26 @@ def test_model(model_id, test_from, test_to, accuracy_only=False):
         with open(scaler_path, 'r') as f:
             scaler_params = json.load(f)
 
+        # Get label number from model log
+        import csv
+        model_log_path = os.path.join(project_root, 'models', 'model_log.csv')
+        label_number = 10  # Default fallback
+        
+        if os.path.exists(model_log_path):
+            with open(model_log_path, 'r') as f:
+                reader = csv.DictReader(f)
+                for row in reader:
+                    if row.get('model_id') == model_id:
+                        label_number = int(row.get('label_number', 10))
+                        break
+
         # Load data
         df = pd.read_csv(data_file)
         test_df = df[(df['TradingDay'] >= int(test_from)) & (df['TradingDay'] <= int(test_to))].reset_index(drop=True)
 
         # Feature columns (same as training)
         feature_cols = test_df.columns[5:49]
-        target_col = 'Label_10'
+        target_col = f'Label_{label_number}'
         num_features = len(feature_cols)
         seq_length = 30  # Must match training
 
@@ -150,13 +163,26 @@ if __name__ == '__main__':
         with open(scaler_path, 'r') as f:
             scaler_params = json.load(f)
 
+        # Get label number from model log
+        import csv
+        model_log_path = os.path.join(project_root, 'models', 'model_log.csv')
+        label_number = 10  # Default fallback
+        
+        if os.path.exists(model_log_path):
+            with open(model_log_path, 'r') as f:
+                reader = csv.DictReader(f)
+                for row in reader:
+                    if row.get('model_id') == model_id:
+                        label_number = int(row.get('label_number', 10))
+                        break
+
         # Load data
         df = pd.read_csv(data_file)
         test_df = df[(df['TradingDay'] >= int(testFrom)) & (df['TradingDay'] <= int(testTo))].reset_index(drop=True)
 
         # Feature columns (same as training)
         feature_cols = test_df.columns[5:49]
-        target_col = 'Label_10'
+        target_col = f'Label_{label_number}'
         num_features = len(feature_cols)
         seq_length = 30  # Must match training
 
