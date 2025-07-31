@@ -27,7 +27,7 @@ end_date = datetime(2025, 8, 2)
 while True:
     # Run the script
     cmd = [
-        "python", "stockprice_lstm_tensorflow_regression_downside.py",
+        "python", "stockprice_lstm_tensorflow_regression.py",
         *dates, label_number
     ]
     print("Running:", " ".join(cmd))

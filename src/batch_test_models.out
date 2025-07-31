@@ -1,0 +1,1038 @@
+nohup: ignoring input
+2025-07-30 19:20:21.635154: I tensorflow/core/util/port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+2025-07-30 19:20:21.641932: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:467] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+E0000 00:00:1753874421.649276 2239113 cuda_dnn.cc:8579] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+E0000 00:00:1753874421.651566 2239113 cuda_blas.cc:1407] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+W0000 00:00:1753874421.657949 2239113 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1753874421.657970 2239113 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1753874421.657972 2239113 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1753874421.657973 2239113 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+2025-07-30 19:20:21.659824: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 AVX512F AVX512_VNNI AVX512_BF16 AVX_VNNI FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+I0000 00:00:1753874424.066086 2239113 gpu_device.cc:2019] Created device /job:localhost/replica:0/task:0/device:GPU:0 with 9616 MB memory:  -> device: 0, name: NVIDIA GeForce RTX 2080 Ti, pci bus id: 0000:01:00.0, compute capability: 7.5
+I0000 00:00:1753874424.843616 2239331 cuda_dnn.cc:529] Loaded cuDNN version 91100
+WARNING:tensorflow:5 out of the last 18 calls to <function TensorFlowTrainer.make_predict_function.<locals>.one_step_on_data_distributed at 0x7f0d83f55760> triggered tf.function retracing. Tracing is expensive and the excessive number of tracings could be due to (1) creating @tf.function repeatedly in a loop, (2) passing tensors with different shapes, (3) passing Python objects instead of tensors. For (1), please define your @tf.function outside of the loop. For (2), @tf.function has reduce_retracing=True option that can avoid unnecessary retracing. For (3), please refer to https://www.tensorflow.org/guide/function#controlling_retracing and https://www.tensorflow.org/api_docs/python/tf/function for  more details.
+WARNING:tensorflow:5 out of the last 18 calls to <function TensorFlowTrainer.make_predict_function.<locals>.one_step_on_data_distributed at 0x7f0cb817e020> triggered tf.function retracing. Tracing is expensive and the excessive number of tracings could be due to (1) creating @tf.function repeatedly in a loop, (2) passing tensors with different shapes, (3) passing Python objects instead of tensors. For (1), please define your @tf.function outside of the loop. For (2), @tf.function has reduce_retracing=True option that can avoid unnecessary retracing. For (3), please refer to https://www.tensorflow.org/guide/function#controlling_retracing and https://www.tensorflow.org/api_docs/python/tf/function for  more details.
+Processing models from 00495 to 00528: ['00495', '00496', '00497', '00498', '00499', '00500', '00501', '00502', '00503', '00504', '00505', '00506', '00507', '00508', '00509', '00510', '00511', '00512', '00513', '00514', '00515', '00516', '00517', '00518', '00519', '00520', '00521', '00522', '00523', '00524', '00525', '00526', '00527', '00528']
+Custom weekly test ranges from 20250105 to 20250802: [('20250105', '20250111'), ('20250112', '20250118'), ('20250119', '20250125'), ('20250126', '20250201'), ('20250202', '20250208'), ('20250209', '20250215'), ('20250216', '20250222'), ('20250223', '20250301'), ('20250302', '20250308'), ('20250309', '20250315'), ('20250316', '20250322'), ('20250323', '20250329'), ('20250330', '20250405'), ('20250406', '20250412'), ('20250413', '20250419'), ('20250420', '20250426'), ('20250427', '20250503'), ('20250504', '20250510'), ('20250511', '20250517'), ('20250518', '20250524'), ('20250525', '20250531'), ('20250601', '20250607'), ('20250608', '20250614'), ('20250615', '20250621'), ('20250622', '20250628'), ('20250629', '20250705'), ('20250706', '20250712'), ('20250713', '20250719'), ('20250720', '20250726'), ('20250727', '20250802')]
+Processing: model_id=00495, test_from=20250105, test_to=20250111
+Processing: model_id=00495, test_from=20250112, test_to=20250118
+Processing: model_id=00495, test_from=20250119, test_to=20250125
+Processing: model_id=00495, test_from=20250126, test_to=20250201
+Processing: model_id=00495, test_from=20250202, test_to=20250208
+Processing: model_id=00495, test_from=20250209, test_to=20250215
+Processing: model_id=00495, test_from=20250216, test_to=20250222
+Processing: model_id=00495, test_from=20250223, test_to=20250301
+Processing: model_id=00495, test_from=20250302, test_to=20250308
+Processing: model_id=00495, test_from=20250309, test_to=20250315
+Processing: model_id=00495, test_from=20250316, test_to=20250322
+Processing: model_id=00495, test_from=20250323, test_to=20250329
+Processing: model_id=00495, test_from=20250330, test_to=20250405
+Processing: model_id=00495, test_from=20250406, test_to=20250412
+Processing: model_id=00495, test_from=20250413, test_to=20250419
+Processing: model_id=00495, test_from=20250420, test_to=20250426
+Processing: model_id=00495, test_from=20250427, test_to=20250503
+Processing: model_id=00495, test_from=20250504, test_to=20250510
+Processing: model_id=00495, test_from=20250511, test_to=20250517
+Processing: model_id=00495, test_from=20250518, test_to=20250524
+Processing: model_id=00495, test_from=20250525, test_to=20250531
+Processing: model_id=00495, test_from=20250601, test_to=20250607
+Processing: model_id=00495, test_from=20250608, test_to=20250614
+Processing: model_id=00495, test_from=20250615, test_to=20250621
+Processing: model_id=00495, test_from=20250622, test_to=20250628
+Processing: model_id=00495, test_from=20250629, test_to=20250705
+Processing: model_id=00495, test_from=20250706, test_to=20250712
+Processing: model_id=00495, test_from=20250713, test_to=20250719
+Processing: model_id=00495, test_from=20250720, test_to=20250726
+Processing: model_id=00495, test_from=20250727, test_to=20250802
+Processing: model_id=00496, test_from=20250105, test_to=20250111
+Processing: model_id=00496, test_from=20250112, test_to=20250118
+Processing: model_id=00496, test_from=20250119, test_to=20250125
+Processing: model_id=00496, test_from=20250126, test_to=20250201
+Processing: model_id=00496, test_from=20250202, test_to=20250208
+Processing: model_id=00496, test_from=20250209, test_to=20250215
+Processing: model_id=00496, test_from=20250216, test_to=20250222
+Processing: model_id=00496, test_from=20250223, test_to=20250301
+Processing: model_id=00496, test_from=20250302, test_to=20250308
+Processing: model_id=00496, test_from=20250309, test_to=20250315
+Processing: model_id=00496, test_from=20250316, test_to=20250322
+Processing: model_id=00496, test_from=20250323, test_to=20250329
+Processing: model_id=00496, test_from=20250330, test_to=20250405
+Processing: model_id=00496, test_from=20250406, test_to=20250412
+Processing: model_id=00496, test_from=20250413, test_to=20250419
+Processing: model_id=00496, test_from=20250420, test_to=20250426
+Processing: model_id=00496, test_from=20250427, test_to=20250503
+Processing: model_id=00496, test_from=20250504, test_to=20250510
+Processing: model_id=00496, test_from=20250511, test_to=20250517
+Processing: model_id=00496, test_from=20250518, test_to=20250524
+Processing: model_id=00496, test_from=20250525, test_to=20250531
+Processing: model_id=00496, test_from=20250601, test_to=20250607
+Processing: model_id=00496, test_from=20250608, test_to=20250614
+Processing: model_id=00496, test_from=20250615, test_to=20250621
+Processing: model_id=00496, test_from=20250622, test_to=20250628
+Processing: model_id=00496, test_from=20250629, test_to=20250705
+Processing: model_id=00496, test_from=20250706, test_to=20250712
+Processing: model_id=00496, test_from=20250713, test_to=20250719
+Processing: model_id=00496, test_from=20250720, test_to=20250726
+Processing: model_id=00496, test_from=20250727, test_to=20250802
+Processing: model_id=00497, test_from=20250105, test_to=20250111
+Processing: model_id=00497, test_from=20250112, test_to=20250118
+Processing: model_id=00497, test_from=20250119, test_to=20250125
+Processing: model_id=00497, test_from=20250126, test_to=20250201
+Processing: model_id=00497, test_from=20250202, test_to=20250208
+Processing: model_id=00497, test_from=20250209, test_to=20250215
+Processing: model_id=00497, test_from=20250216, test_to=20250222
+Processing: model_id=00497, test_from=20250223, test_to=20250301
+Processing: model_id=00497, test_from=20250302, test_to=20250308
+Processing: model_id=00497, test_from=20250309, test_to=20250315
+Processing: model_id=00497, test_from=20250316, test_to=20250322
+Processing: model_id=00497, test_from=20250323, test_to=20250329
+Processing: model_id=00497, test_from=20250330, test_to=20250405
+Processing: model_id=00497, test_from=20250406, test_to=20250412
+Processing: model_id=00497, test_from=20250413, test_to=20250419
+Processing: model_id=00497, test_from=20250420, test_to=20250426
+Processing: model_id=00497, test_from=20250427, test_to=20250503
+Processing: model_id=00497, test_from=20250504, test_to=20250510
+Processing: model_id=00497, test_from=20250511, test_to=20250517
+Processing: model_id=00497, test_from=20250518, test_to=20250524
+Processing: model_id=00497, test_from=20250525, test_to=20250531
+Processing: model_id=00497, test_from=20250601, test_to=20250607
+Processing: model_id=00497, test_from=20250608, test_to=20250614
+Processing: model_id=00497, test_from=20250615, test_to=20250621
+Processing: model_id=00497, test_from=20250622, test_to=20250628
+Processing: model_id=00497, test_from=20250629, test_to=20250705
+Processing: model_id=00497, test_from=20250706, test_to=20250712
+Processing: model_id=00497, test_from=20250713, test_to=20250719
+Processing: model_id=00497, test_from=20250720, test_to=20250726
+Processing: model_id=00497, test_from=20250727, test_to=20250802
+Processing: model_id=00498, test_from=20250105, test_to=20250111
+Processing: model_id=00498, test_from=20250112, test_to=20250118
+Processing: model_id=00498, test_from=20250119, test_to=20250125
+Processing: model_id=00498, test_from=20250126, test_to=20250201
+Processing: model_id=00498, test_from=20250202, test_to=20250208
+Processing: model_id=00498, test_from=20250209, test_to=20250215
+Processing: model_id=00498, test_from=20250216, test_to=20250222
+Processing: model_id=00498, test_from=20250223, test_to=20250301
+Processing: model_id=00498, test_from=20250302, test_to=20250308
+Processing: model_id=00498, test_from=20250309, test_to=20250315
+Processing: model_id=00498, test_from=20250316, test_to=20250322
+Processing: model_id=00498, test_from=20250323, test_to=20250329
+Processing: model_id=00498, test_from=20250330, test_to=20250405
+Processing: model_id=00498, test_from=20250406, test_to=20250412
+Processing: model_id=00498, test_from=20250413, test_to=20250419
+Processing: model_id=00498, test_from=20250420, test_to=20250426
+Processing: model_id=00498, test_from=20250427, test_to=20250503
+Processing: model_id=00498, test_from=20250504, test_to=20250510
+Processing: model_id=00498, test_from=20250511, test_to=20250517
+Processing: model_id=00498, test_from=20250518, test_to=20250524
+Processing: model_id=00498, test_from=20250525, test_to=20250531
+Processing: model_id=00498, test_from=20250601, test_to=20250607
+Processing: model_id=00498, test_from=20250608, test_to=20250614
+Processing: model_id=00498, test_from=20250615, test_to=20250621
+Processing: model_id=00498, test_from=20250622, test_to=20250628
+Processing: model_id=00498, test_from=20250629, test_to=20250705
+Processing: model_id=00498, test_from=20250706, test_to=20250712
+Processing: model_id=00498, test_from=20250713, test_to=20250719
+Processing: model_id=00498, test_from=20250720, test_to=20250726
+Processing: model_id=00498, test_from=20250727, test_to=20250802
+Processing: model_id=00499, test_from=20250105, test_to=20250111
+Processing: model_id=00499, test_from=20250112, test_to=20250118
+Processing: model_id=00499, test_from=20250119, test_to=20250125
+Processing: model_id=00499, test_from=20250126, test_to=20250201
+Processing: model_id=00499, test_from=20250202, test_to=20250208
+Processing: model_id=00499, test_from=20250209, test_to=20250215
+Processing: model_id=00499, test_from=20250216, test_to=20250222
+Processing: model_id=00499, test_from=20250223, test_to=20250301
+Processing: model_id=00499, test_from=20250302, test_to=20250308
+Processing: model_id=00499, test_from=20250309, test_to=20250315
+Processing: model_id=00499, test_from=20250316, test_to=20250322
+Processing: model_id=00499, test_from=20250323, test_to=20250329
+Processing: model_id=00499, test_from=20250330, test_to=20250405
+Processing: model_id=00499, test_from=20250406, test_to=20250412
+Processing: model_id=00499, test_from=20250413, test_to=20250419
+Processing: model_id=00499, test_from=20250420, test_to=20250426
+Processing: model_id=00499, test_from=20250427, test_to=20250503
+Processing: model_id=00499, test_from=20250504, test_to=20250510
+Processing: model_id=00499, test_from=20250511, test_to=20250517
+Processing: model_id=00499, test_from=20250518, test_to=20250524
+Processing: model_id=00499, test_from=20250525, test_to=20250531
+Processing: model_id=00499, test_from=20250601, test_to=20250607
+Processing: model_id=00499, test_from=20250608, test_to=20250614
+Processing: model_id=00499, test_from=20250615, test_to=20250621
+Processing: model_id=00499, test_from=20250622, test_to=20250628
+Processing: model_id=00499, test_from=20250629, test_to=20250705
+Processing: model_id=00499, test_from=20250706, test_to=20250712
+Processing: model_id=00499, test_from=20250713, test_to=20250719
+Processing: model_id=00499, test_from=20250720, test_to=20250726
+Processing: model_id=00499, test_from=20250727, test_to=20250802
+Processing: model_id=00500, test_from=20250105, test_to=20250111
+Processing: model_id=00500, test_from=20250112, test_to=20250118
+Processing: model_id=00500, test_from=20250119, test_to=20250125
+Processing: model_id=00500, test_from=20250126, test_to=20250201
+Processing: model_id=00500, test_from=20250202, test_to=20250208
+Processing: model_id=00500, test_from=20250209, test_to=20250215
+Processing: model_id=00500, test_from=20250216, test_to=20250222
+Processing: model_id=00500, test_from=20250223, test_to=20250301
+Processing: model_id=00500, test_from=20250302, test_to=20250308
+Processing: model_id=00500, test_from=20250309, test_to=20250315
+Processing: model_id=00500, test_from=20250316, test_to=20250322
+Processing: model_id=00500, test_from=20250323, test_to=20250329
+Processing: model_id=00500, test_from=20250330, test_to=20250405
+Processing: model_id=00500, test_from=20250406, test_to=20250412
+Processing: model_id=00500, test_from=20250413, test_to=20250419
+Processing: model_id=00500, test_from=20250420, test_to=20250426
+Processing: model_id=00500, test_from=20250427, test_to=20250503
+Processing: model_id=00500, test_from=20250504, test_to=20250510
+Processing: model_id=00500, test_from=20250511, test_to=20250517
+Processing: model_id=00500, test_from=20250518, test_to=20250524
+Processing: model_id=00500, test_from=20250525, test_to=20250531
+Processing: model_id=00500, test_from=20250601, test_to=20250607
+Processing: model_id=00500, test_from=20250608, test_to=20250614
+Processing: model_id=00500, test_from=20250615, test_to=20250621
+Processing: model_id=00500, test_from=20250622, test_to=20250628
+Processing: model_id=00500, test_from=20250629, test_to=20250705
+Processing: model_id=00500, test_from=20250706, test_to=20250712
+Processing: model_id=00500, test_from=20250713, test_to=20250719
+Processing: model_id=00500, test_from=20250720, test_to=20250726
+Processing: model_id=00500, test_from=20250727, test_to=20250802
+Skipping: model_id=00501, test_from=20250105, test_to=20250111 (overlaps with training period 20241117-20250111)
+Processing: model_id=00501, test_from=20250112, test_to=20250118
+Processing: model_id=00501, test_from=20250119, test_to=20250125
+Processing: model_id=00501, test_from=20250126, test_to=20250201
+Processing: model_id=00501, test_from=20250202, test_to=20250208
+Processing: model_id=00501, test_from=20250209, test_to=20250215
+Processing: model_id=00501, test_from=20250216, test_to=20250222
+Processing: model_id=00501, test_from=20250223, test_to=20250301
+Processing: model_id=00501, test_from=20250302, test_to=20250308
+Processing: model_id=00501, test_from=20250309, test_to=20250315
+Processing: model_id=00501, test_from=20250316, test_to=20250322
+Processing: model_id=00501, test_from=20250323, test_to=20250329
+Processing: model_id=00501, test_from=20250330, test_to=20250405
+Processing: model_id=00501, test_from=20250406, test_to=20250412
+Processing: model_id=00501, test_from=20250413, test_to=20250419
+Processing: model_id=00501, test_from=20250420, test_to=20250426
+Processing: model_id=00501, test_from=20250427, test_to=20250503
+Processing: model_id=00501, test_from=20250504, test_to=20250510
+Processing: model_id=00501, test_from=20250511, test_to=20250517
+Processing: model_id=00501, test_from=20250518, test_to=20250524
+Processing: model_id=00501, test_from=20250525, test_to=20250531
+Processing: model_id=00501, test_from=20250601, test_to=20250607
+Processing: model_id=00501, test_from=20250608, test_to=20250614
+Processing: model_id=00501, test_from=20250615, test_to=20250621
+Processing: model_id=00501, test_from=20250622, test_to=20250628
+Processing: model_id=00501, test_from=20250629, test_to=20250705
+Processing: model_id=00501, test_from=20250706, test_to=20250712
+Processing: model_id=00501, test_from=20250713, test_to=20250719
+Processing: model_id=00501, test_from=20250720, test_to=20250726
+Processing: model_id=00501, test_from=20250727, test_to=20250802
+Skipping: model_id=00502, test_from=20250105, test_to=20250111 (overlaps with training period 20241124-20250118)
+Skipping: model_id=00502, test_from=20250112, test_to=20250118 (overlaps with training period 20241124-20250118)
+Processing: model_id=00502, test_from=20250119, test_to=20250125
+Processing: model_id=00502, test_from=20250126, test_to=20250201
+Processing: model_id=00502, test_from=20250202, test_to=20250208
+Processing: model_id=00502, test_from=20250209, test_to=20250215
+Processing: model_id=00502, test_from=20250216, test_to=20250222
+Processing: model_id=00502, test_from=20250223, test_to=20250301
+Processing: model_id=00502, test_from=20250302, test_to=20250308
+Processing: model_id=00502, test_from=20250309, test_to=20250315
+Processing: model_id=00502, test_from=20250316, test_to=20250322
+Processing: model_id=00502, test_from=20250323, test_to=20250329
+Processing: model_id=00502, test_from=20250330, test_to=20250405
+Processing: model_id=00502, test_from=20250406, test_to=20250412
+Processing: model_id=00502, test_from=20250413, test_to=20250419
+Processing: model_id=00502, test_from=20250420, test_to=20250426
+Processing: model_id=00502, test_from=20250427, test_to=20250503
+Processing: model_id=00502, test_from=20250504, test_to=20250510
+Processing: model_id=00502, test_from=20250511, test_to=20250517
+Processing: model_id=00502, test_from=20250518, test_to=20250524
+Processing: model_id=00502, test_from=20250525, test_to=20250531
+Processing: model_id=00502, test_from=20250601, test_to=20250607
+Processing: model_id=00502, test_from=20250608, test_to=20250614
+Processing: model_id=00502, test_from=20250615, test_to=20250621
+Processing: model_id=00502, test_from=20250622, test_to=20250628
+Processing: model_id=00502, test_from=20250629, test_to=20250705
+Processing: model_id=00502, test_from=20250706, test_to=20250712
+Processing: model_id=00502, test_from=20250713, test_to=20250719
+Processing: model_id=00502, test_from=20250720, test_to=20250726
+Processing: model_id=00502, test_from=20250727, test_to=20250802
+Skipping: model_id=00503, test_from=20250105, test_to=20250111 (overlaps with training period 20241201-20250125)
+Skipping: model_id=00503, test_from=20250112, test_to=20250118 (overlaps with training period 20241201-20250125)
+Skipping: model_id=00503, test_from=20250119, test_to=20250125 (overlaps with training period 20241201-20250125)
+Processing: model_id=00503, test_from=20250126, test_to=20250201
+Processing: model_id=00503, test_from=20250202, test_to=20250208
+Processing: model_id=00503, test_from=20250209, test_to=20250215
+Processing: model_id=00503, test_from=20250216, test_to=20250222
+Processing: model_id=00503, test_from=20250223, test_to=20250301
+Processing: model_id=00503, test_from=20250302, test_to=20250308
+Processing: model_id=00503, test_from=20250309, test_to=20250315
+Processing: model_id=00503, test_from=20250316, test_to=20250322
+Processing: model_id=00503, test_from=20250323, test_to=20250329
+Processing: model_id=00503, test_from=20250330, test_to=20250405
+Processing: model_id=00503, test_from=20250406, test_to=20250412
+Processing: model_id=00503, test_from=20250413, test_to=20250419
+Processing: model_id=00503, test_from=20250420, test_to=20250426
+Processing: model_id=00503, test_from=20250427, test_to=20250503
+Processing: model_id=00503, test_from=20250504, test_to=20250510
+Processing: model_id=00503, test_from=20250511, test_to=20250517
+Processing: model_id=00503, test_from=20250518, test_to=20250524
+Processing: model_id=00503, test_from=20250525, test_to=20250531
+Processing: model_id=00503, test_from=20250601, test_to=20250607
+Processing: model_id=00503, test_from=20250608, test_to=20250614
+Processing: model_id=00503, test_from=20250615, test_to=20250621
+Processing: model_id=00503, test_from=20250622, test_to=20250628
+Processing: model_id=00503, test_from=20250629, test_to=20250705
+Processing: model_id=00503, test_from=20250706, test_to=20250712
+Processing: model_id=00503, test_from=20250713, test_to=20250719
+Processing: model_id=00503, test_from=20250720, test_to=20250726
+Processing: model_id=00503, test_from=20250727, test_to=20250802
+Skipping: model_id=00504, test_from=20250105, test_to=20250111 (overlaps with training period 20241208-20250201)
+Skipping: model_id=00504, test_from=20250112, test_to=20250118 (overlaps with training period 20241208-20250201)
+Skipping: model_id=00504, test_from=20250119, test_to=20250125 (overlaps with training period 20241208-20250201)
+Skipping: model_id=00504, test_from=20250126, test_to=20250201 (overlaps with training period 20241208-20250201)
+Processing: model_id=00504, test_from=20250202, test_to=20250208
+Processing: model_id=00504, test_from=20250209, test_to=20250215
+Processing: model_id=00504, test_from=20250216, test_to=20250222
+Processing: model_id=00504, test_from=20250223, test_to=20250301
+Processing: model_id=00504, test_from=20250302, test_to=20250308
+Processing: model_id=00504, test_from=20250309, test_to=20250315
+Processing: model_id=00504, test_from=20250316, test_to=20250322
+Processing: model_id=00504, test_from=20250323, test_to=20250329
+Processing: model_id=00504, test_from=20250330, test_to=20250405
+Processing: model_id=00504, test_from=20250406, test_to=20250412
+Processing: model_id=00504, test_from=20250413, test_to=20250419
+Processing: model_id=00504, test_from=20250420, test_to=20250426
+Processing: model_id=00504, test_from=20250427, test_to=20250503
+Processing: model_id=00504, test_from=20250504, test_to=20250510
+Processing: model_id=00504, test_from=20250511, test_to=20250517
+Processing: model_id=00504, test_from=20250518, test_to=20250524
+Processing: model_id=00504, test_from=20250525, test_to=20250531
+Processing: model_id=00504, test_from=20250601, test_to=20250607
+Processing: model_id=00504, test_from=20250608, test_to=20250614
+Processing: model_id=00504, test_from=20250615, test_to=20250621
+Processing: model_id=00504, test_from=20250622, test_to=20250628
+Processing: model_id=00504, test_from=20250629, test_to=20250705
+Processing: model_id=00504, test_from=20250706, test_to=20250712
+Processing: model_id=00504, test_from=20250713, test_to=20250719
+Processing: model_id=00504, test_from=20250720, test_to=20250726
+Processing: model_id=00504, test_from=20250727, test_to=20250802
+Skipping: model_id=00505, test_from=20250105, test_to=20250111 (overlaps with training period 20241215-20250208)
+Skipping: model_id=00505, test_from=20250112, test_to=20250118 (overlaps with training period 20241215-20250208)
+Skipping: model_id=00505, test_from=20250119, test_to=20250125 (overlaps with training period 20241215-20250208)
+Skipping: model_id=00505, test_from=20250126, test_to=20250201 (overlaps with training period 20241215-20250208)
+Skipping: model_id=00505, test_from=20250202, test_to=20250208 (overlaps with training period 20241215-20250208)
+Processing: model_id=00505, test_from=20250209, test_to=20250215
+Processing: model_id=00505, test_from=20250216, test_to=20250222
+Processing: model_id=00505, test_from=20250223, test_to=20250301
+Processing: model_id=00505, test_from=20250302, test_to=20250308
+Processing: model_id=00505, test_from=20250309, test_to=20250315
+Processing: model_id=00505, test_from=20250316, test_to=20250322
+Processing: model_id=00505, test_from=20250323, test_to=20250329
+Processing: model_id=00505, test_from=20250330, test_to=20250405
+Processing: model_id=00505, test_from=20250406, test_to=20250412
+Processing: model_id=00505, test_from=20250413, test_to=20250419
+Processing: model_id=00505, test_from=20250420, test_to=20250426
+Processing: model_id=00505, test_from=20250427, test_to=20250503
+Processing: model_id=00505, test_from=20250504, test_to=20250510
+Processing: model_id=00505, test_from=20250511, test_to=20250517
+Processing: model_id=00505, test_from=20250518, test_to=20250524
+Processing: model_id=00505, test_from=20250525, test_to=20250531
+Processing: model_id=00505, test_from=20250601, test_to=20250607
+Processing: model_id=00505, test_from=20250608, test_to=20250614
+Processing: model_id=00505, test_from=20250615, test_to=20250621
+Processing: model_id=00505, test_from=20250622, test_to=20250628
+Processing: model_id=00505, test_from=20250629, test_to=20250705
+Processing: model_id=00505, test_from=20250706, test_to=20250712
+Processing: model_id=00505, test_from=20250713, test_to=20250719
+Processing: model_id=00505, test_from=20250720, test_to=20250726
+Processing: model_id=00505, test_from=20250727, test_to=20250802
+Skipping: model_id=00506, test_from=20250105, test_to=20250111 (overlaps with training period 20241222-20250215)
+Skipping: model_id=00506, test_from=20250112, test_to=20250118 (overlaps with training period 20241222-20250215)
+Skipping: model_id=00506, test_from=20250119, test_to=20250125 (overlaps with training period 20241222-20250215)
+Skipping: model_id=00506, test_from=20250126, test_to=20250201 (overlaps with training period 20241222-20250215)
+Skipping: model_id=00506, test_from=20250202, test_to=20250208 (overlaps with training period 20241222-20250215)
+Skipping: model_id=00506, test_from=20250209, test_to=20250215 (overlaps with training period 20241222-20250215)
+Processing: model_id=00506, test_from=20250216, test_to=20250222
+Processing: model_id=00506, test_from=20250223, test_to=20250301
+Processing: model_id=00506, test_from=20250302, test_to=20250308
+Processing: model_id=00506, test_from=20250309, test_to=20250315
+Processing: model_id=00506, test_from=20250316, test_to=20250322
+Processing: model_id=00506, test_from=20250323, test_to=20250329
+Processing: model_id=00506, test_from=20250330, test_to=20250405
+Processing: model_id=00506, test_from=20250406, test_to=20250412
+Processing: model_id=00506, test_from=20250413, test_to=20250419
+Processing: model_id=00506, test_from=20250420, test_to=20250426
+Processing: model_id=00506, test_from=20250427, test_to=20250503
+Processing: model_id=00506, test_from=20250504, test_to=20250510
+Processing: model_id=00506, test_from=20250511, test_to=20250517
+Processing: model_id=00506, test_from=20250518, test_to=20250524
+Processing: model_id=00506, test_from=20250525, test_to=20250531
+Processing: model_id=00506, test_from=20250601, test_to=20250607
+Processing: model_id=00506, test_from=20250608, test_to=20250614
+Processing: model_id=00506, test_from=20250615, test_to=20250621
+Processing: model_id=00506, test_from=20250622, test_to=20250628
+Processing: model_id=00506, test_from=20250629, test_to=20250705
+Processing: model_id=00506, test_from=20250706, test_to=20250712
+Processing: model_id=00506, test_from=20250713, test_to=20250719
+Processing: model_id=00506, test_from=20250720, test_to=20250726
+Processing: model_id=00506, test_from=20250727, test_to=20250802
+Skipping: model_id=00507, test_from=20250105, test_to=20250111 (overlaps with training period 20241229-20250222)
+Skipping: model_id=00507, test_from=20250112, test_to=20250118 (overlaps with training period 20241229-20250222)
+Skipping: model_id=00507, test_from=20250119, test_to=20250125 (overlaps with training period 20241229-20250222)
+Skipping: model_id=00507, test_from=20250126, test_to=20250201 (overlaps with training period 20241229-20250222)
+Skipping: model_id=00507, test_from=20250202, test_to=20250208 (overlaps with training period 20241229-20250222)
+Skipping: model_id=00507, test_from=20250209, test_to=20250215 (overlaps with training period 20241229-20250222)
+Skipping: model_id=00507, test_from=20250216, test_to=20250222 (overlaps with training period 20241229-20250222)
+Processing: model_id=00507, test_from=20250223, test_to=20250301
+Processing: model_id=00507, test_from=20250302, test_to=20250308
+Processing: model_id=00507, test_from=20250309, test_to=20250315
+Processing: model_id=00507, test_from=20250316, test_to=20250322
+Processing: model_id=00507, test_from=20250323, test_to=20250329
+Processing: model_id=00507, test_from=20250330, test_to=20250405
+Processing: model_id=00507, test_from=20250406, test_to=20250412
+Processing: model_id=00507, test_from=20250413, test_to=20250419
+Processing: model_id=00507, test_from=20250420, test_to=20250426
+Processing: model_id=00507, test_from=20250427, test_to=20250503
+Processing: model_id=00507, test_from=20250504, test_to=20250510
+Processing: model_id=00507, test_from=20250511, test_to=20250517
+Processing: model_id=00507, test_from=20250518, test_to=20250524
+Processing: model_id=00507, test_from=20250525, test_to=20250531
+Processing: model_id=00507, test_from=20250601, test_to=20250607
+Processing: model_id=00507, test_from=20250608, test_to=20250614
+Processing: model_id=00507, test_from=20250615, test_to=20250621
+Processing: model_id=00507, test_from=20250622, test_to=20250628
+Processing: model_id=00507, test_from=20250629, test_to=20250705
+Processing: model_id=00507, test_from=20250706, test_to=20250712
+Processing: model_id=00507, test_from=20250713, test_to=20250719
+Processing: model_id=00507, test_from=20250720, test_to=20250726
+Processing: model_id=00507, test_from=20250727, test_to=20250802
+Skipping: model_id=00508, test_from=20250105, test_to=20250111 (overlaps with training period 20250105-20250301)
+Skipping: model_id=00508, test_from=20250112, test_to=20250118 (overlaps with training period 20250105-20250301)
+Skipping: model_id=00508, test_from=20250119, test_to=20250125 (overlaps with training period 20250105-20250301)
+Skipping: model_id=00508, test_from=20250126, test_to=20250201 (overlaps with training period 20250105-20250301)
+Skipping: model_id=00508, test_from=20250202, test_to=20250208 (overlaps with training period 20250105-20250301)
+Skipping: model_id=00508, test_from=20250209, test_to=20250215 (overlaps with training period 20250105-20250301)
+Skipping: model_id=00508, test_from=20250216, test_to=20250222 (overlaps with training period 20250105-20250301)
+Skipping: model_id=00508, test_from=20250223, test_to=20250301 (overlaps with training period 20250105-20250301)
+Processing: model_id=00508, test_from=20250302, test_to=20250308
+Processing: model_id=00508, test_from=20250309, test_to=20250315
+Processing: model_id=00508, test_from=20250316, test_to=20250322
+Processing: model_id=00508, test_from=20250323, test_to=20250329
+Processing: model_id=00508, test_from=20250330, test_to=20250405
+Processing: model_id=00508, test_from=20250406, test_to=20250412
+Processing: model_id=00508, test_from=20250413, test_to=20250419
+Processing: model_id=00508, test_from=20250420, test_to=20250426
+Processing: model_id=00508, test_from=20250427, test_to=20250503
+Processing: model_id=00508, test_from=20250504, test_to=20250510
+Processing: model_id=00508, test_from=20250511, test_to=20250517
+Processing: model_id=00508, test_from=20250518, test_to=20250524
+Processing: model_id=00508, test_from=20250525, test_to=20250531
+Processing: model_id=00508, test_from=20250601, test_to=20250607
+Processing: model_id=00508, test_from=20250608, test_to=20250614
+Processing: model_id=00508, test_from=20250615, test_to=20250621
+Processing: model_id=00508, test_from=20250622, test_to=20250628
+Processing: model_id=00508, test_from=20250629, test_to=20250705
+Processing: model_id=00508, test_from=20250706, test_to=20250712
+Processing: model_id=00508, test_from=20250713, test_to=20250719
+Processing: model_id=00508, test_from=20250720, test_to=20250726
+Processing: model_id=00508, test_from=20250727, test_to=20250802
+Processing: model_id=00509, test_from=20250105, test_to=20250111
+Skipping: model_id=00509, test_from=20250112, test_to=20250118 (overlaps with training period 20250112-20250308)
+Skipping: model_id=00509, test_from=20250119, test_to=20250125 (overlaps with training period 20250112-20250308)
+Skipping: model_id=00509, test_from=20250126, test_to=20250201 (overlaps with training period 20250112-20250308)
+Skipping: model_id=00509, test_from=20250202, test_to=20250208 (overlaps with training period 20250112-20250308)
+Skipping: model_id=00509, test_from=20250209, test_to=20250215 (overlaps with training period 20250112-20250308)
+Skipping: model_id=00509, test_from=20250216, test_to=20250222 (overlaps with training period 20250112-20250308)
+Skipping: model_id=00509, test_from=20250223, test_to=20250301 (overlaps with training period 20250112-20250308)
+Skipping: model_id=00509, test_from=20250302, test_to=20250308 (overlaps with training period 20250112-20250308)
+Processing: model_id=00509, test_from=20250309, test_to=20250315
+Processing: model_id=00509, test_from=20250316, test_to=20250322
+Processing: model_id=00509, test_from=20250323, test_to=20250329
+Processing: model_id=00509, test_from=20250330, test_to=20250405
+Processing: model_id=00509, test_from=20250406, test_to=20250412
+Processing: model_id=00509, test_from=20250413, test_to=20250419
+Processing: model_id=00509, test_from=20250420, test_to=20250426
+Processing: model_id=00509, test_from=20250427, test_to=20250503
+Processing: model_id=00509, test_from=20250504, test_to=20250510
+Processing: model_id=00509, test_from=20250511, test_to=20250517
+Processing: model_id=00509, test_from=20250518, test_to=20250524
+Processing: model_id=00509, test_from=20250525, test_to=20250531
+Processing: model_id=00509, test_from=20250601, test_to=20250607
+Processing: model_id=00509, test_from=20250608, test_to=20250614
+Processing: model_id=00509, test_from=20250615, test_to=20250621
+Processing: model_id=00509, test_from=20250622, test_to=20250628
+Processing: model_id=00509, test_from=20250629, test_to=20250705
+Processing: model_id=00509, test_from=20250706, test_to=20250712
+Processing: model_id=00509, test_from=20250713, test_to=20250719
+Processing: model_id=00509, test_from=20250720, test_to=20250726
+Processing: model_id=00509, test_from=20250727, test_to=20250802
+Processing: model_id=00510, test_from=20250105, test_to=20250111
+Processing: model_id=00510, test_from=20250112, test_to=20250118
+Skipping: model_id=00510, test_from=20250119, test_to=20250125 (overlaps with training period 20250119-20250315)
+Skipping: model_id=00510, test_from=20250126, test_to=20250201 (overlaps with training period 20250119-20250315)
+Skipping: model_id=00510, test_from=20250202, test_to=20250208 (overlaps with training period 20250119-20250315)
+Skipping: model_id=00510, test_from=20250209, test_to=20250215 (overlaps with training period 20250119-20250315)
+Skipping: model_id=00510, test_from=20250216, test_to=20250222 (overlaps with training period 20250119-20250315)
+Skipping: model_id=00510, test_from=20250223, test_to=20250301 (overlaps with training period 20250119-20250315)
+Skipping: model_id=00510, test_from=20250302, test_to=20250308 (overlaps with training period 20250119-20250315)
+Skipping: model_id=00510, test_from=20250309, test_to=20250315 (overlaps with training period 20250119-20250315)
+Processing: model_id=00510, test_from=20250316, test_to=20250322
+Processing: model_id=00510, test_from=20250323, test_to=20250329
+Processing: model_id=00510, test_from=20250330, test_to=20250405
+Processing: model_id=00510, test_from=20250406, test_to=20250412
+Processing: model_id=00510, test_from=20250413, test_to=20250419
+Processing: model_id=00510, test_from=20250420, test_to=20250426
+Processing: model_id=00510, test_from=20250427, test_to=20250503
+Processing: model_id=00510, test_from=20250504, test_to=20250510
+Processing: model_id=00510, test_from=20250511, test_to=20250517
+Processing: model_id=00510, test_from=20250518, test_to=20250524
+Processing: model_id=00510, test_from=20250525, test_to=20250531
+Processing: model_id=00510, test_from=20250601, test_to=20250607
+Processing: model_id=00510, test_from=20250608, test_to=20250614
+Processing: model_id=00510, test_from=20250615, test_to=20250621
+Processing: model_id=00510, test_from=20250622, test_to=20250628
+Processing: model_id=00510, test_from=20250629, test_to=20250705
+Processing: model_id=00510, test_from=20250706, test_to=20250712
+Processing: model_id=00510, test_from=20250713, test_to=20250719
+Processing: model_id=00510, test_from=20250720, test_to=20250726
+Processing: model_id=00510, test_from=20250727, test_to=20250802
+Processing: model_id=00511, test_from=20250105, test_to=20250111
+Processing: model_id=00511, test_from=20250112, test_to=20250118
+Processing: model_id=00511, test_from=20250119, test_to=20250125
+Skipping: model_id=00511, test_from=20250126, test_to=20250201 (overlaps with training period 20250126-20250322)
+Skipping: model_id=00511, test_from=20250202, test_to=20250208 (overlaps with training period 20250126-20250322)
+Skipping: model_id=00511, test_from=20250209, test_to=20250215 (overlaps with training period 20250126-20250322)
+Skipping: model_id=00511, test_from=20250216, test_to=20250222 (overlaps with training period 20250126-20250322)
+Skipping: model_id=00511, test_from=20250223, test_to=20250301 (overlaps with training period 20250126-20250322)
+Skipping: model_id=00511, test_from=20250302, test_to=20250308 (overlaps with training period 20250126-20250322)
+Skipping: model_id=00511, test_from=20250309, test_to=20250315 (overlaps with training period 20250126-20250322)
+Skipping: model_id=00511, test_from=20250316, test_to=20250322 (overlaps with training period 20250126-20250322)
+Processing: model_id=00511, test_from=20250323, test_to=20250329
+Processing: model_id=00511, test_from=20250330, test_to=20250405
+Processing: model_id=00511, test_from=20250406, test_to=20250412
+Processing: model_id=00511, test_from=20250413, test_to=20250419
+Processing: model_id=00511, test_from=20250420, test_to=20250426
+Processing: model_id=00511, test_from=20250427, test_to=20250503
+Processing: model_id=00511, test_from=20250504, test_to=20250510
+Processing: model_id=00511, test_from=20250511, test_to=20250517
+Processing: model_id=00511, test_from=20250518, test_to=20250524
+Processing: model_id=00511, test_from=20250525, test_to=20250531
+Processing: model_id=00511, test_from=20250601, test_to=20250607
+Processing: model_id=00511, test_from=20250608, test_to=20250614
+Processing: model_id=00511, test_from=20250615, test_to=20250621
+Processing: model_id=00511, test_from=20250622, test_to=20250628
+Processing: model_id=00511, test_from=20250629, test_to=20250705
+Processing: model_id=00511, test_from=20250706, test_to=20250712
+Processing: model_id=00511, test_from=20250713, test_to=20250719
+Processing: model_id=00511, test_from=20250720, test_to=20250726
+Processing: model_id=00511, test_from=20250727, test_to=20250802
+Processing: model_id=00512, test_from=20250105, test_to=20250111
+Processing: model_id=00512, test_from=20250112, test_to=20250118
+Processing: model_id=00512, test_from=20250119, test_to=20250125
+Processing: model_id=00512, test_from=20250126, test_to=20250201
+Skipping: model_id=00512, test_from=20250202, test_to=20250208 (overlaps with training period 20250202-20250329)
+Skipping: model_id=00512, test_from=20250209, test_to=20250215 (overlaps with training period 20250202-20250329)
+Skipping: model_id=00512, test_from=20250216, test_to=20250222 (overlaps with training period 20250202-20250329)
+Skipping: model_id=00512, test_from=20250223, test_to=20250301 (overlaps with training period 20250202-20250329)
+Skipping: model_id=00512, test_from=20250302, test_to=20250308 (overlaps with training period 20250202-20250329)
+Skipping: model_id=00512, test_from=20250309, test_to=20250315 (overlaps with training period 20250202-20250329)
+Skipping: model_id=00512, test_from=20250316, test_to=20250322 (overlaps with training period 20250202-20250329)
+Skipping: model_id=00512, test_from=20250323, test_to=20250329 (overlaps with training period 20250202-20250329)
+Processing: model_id=00512, test_from=20250330, test_to=20250405
+Processing: model_id=00512, test_from=20250406, test_to=20250412
+Processing: model_id=00512, test_from=20250413, test_to=20250419
+Processing: model_id=00512, test_from=20250420, test_to=20250426
+Processing: model_id=00512, test_from=20250427, test_to=20250503
+Processing: model_id=00512, test_from=20250504, test_to=20250510
+Processing: model_id=00512, test_from=20250511, test_to=20250517
+Processing: model_id=00512, test_from=20250518, test_to=20250524
+Processing: model_id=00512, test_from=20250525, test_to=20250531
+Processing: model_id=00512, test_from=20250601, test_to=20250607
+Processing: model_id=00512, test_from=20250608, test_to=20250614
+Processing: model_id=00512, test_from=20250615, test_to=20250621
+Processing: model_id=00512, test_from=20250622, test_to=20250628
+Processing: model_id=00512, test_from=20250629, test_to=20250705
+Processing: model_id=00512, test_from=20250706, test_to=20250712
+Processing: model_id=00512, test_from=20250713, test_to=20250719
+Processing: model_id=00512, test_from=20250720, test_to=20250726
+Processing: model_id=00512, test_from=20250727, test_to=20250802
+Processing: model_id=00513, test_from=20250105, test_to=20250111
+Processing: model_id=00513, test_from=20250112, test_to=20250118
+Processing: model_id=00513, test_from=20250119, test_to=20250125
+Processing: model_id=00513, test_from=20250126, test_to=20250201
+Processing: model_id=00513, test_from=20250202, test_to=20250208
+Skipping: model_id=00513, test_from=20250209, test_to=20250215 (overlaps with training period 20250209-20250405)
+Skipping: model_id=00513, test_from=20250216, test_to=20250222 (overlaps with training period 20250209-20250405)
+Skipping: model_id=00513, test_from=20250223, test_to=20250301 (overlaps with training period 20250209-20250405)
+Skipping: model_id=00513, test_from=20250302, test_to=20250308 (overlaps with training period 20250209-20250405)
+Skipping: model_id=00513, test_from=20250309, test_to=20250315 (overlaps with training period 20250209-20250405)
+Skipping: model_id=00513, test_from=20250316, test_to=20250322 (overlaps with training period 20250209-20250405)
+Skipping: model_id=00513, test_from=20250323, test_to=20250329 (overlaps with training period 20250209-20250405)
+Skipping: model_id=00513, test_from=20250330, test_to=20250405 (overlaps with training period 20250209-20250405)
+Processing: model_id=00513, test_from=20250406, test_to=20250412
+Processing: model_id=00513, test_from=20250413, test_to=20250419
+Processing: model_id=00513, test_from=20250420, test_to=20250426
+Processing: model_id=00513, test_from=20250427, test_to=20250503
+Processing: model_id=00513, test_from=20250504, test_to=20250510
+Processing: model_id=00513, test_from=20250511, test_to=20250517
+Processing: model_id=00513, test_from=20250518, test_to=20250524
+Processing: model_id=00513, test_from=20250525, test_to=20250531
+Processing: model_id=00513, test_from=20250601, test_to=20250607
+Processing: model_id=00513, test_from=20250608, test_to=20250614
+Processing: model_id=00513, test_from=20250615, test_to=20250621
+Processing: model_id=00513, test_from=20250622, test_to=20250628
+Processing: model_id=00513, test_from=20250629, test_to=20250705
+Processing: model_id=00513, test_from=20250706, test_to=20250712
+Processing: model_id=00513, test_from=20250713, test_to=20250719
+Processing: model_id=00513, test_from=20250720, test_to=20250726
+Processing: model_id=00513, test_from=20250727, test_to=20250802
+Processing: model_id=00514, test_from=20250105, test_to=20250111
+Processing: model_id=00514, test_from=20250112, test_to=20250118
+Processing: model_id=00514, test_from=20250119, test_to=20250125
+Processing: model_id=00514, test_from=20250126, test_to=20250201
+Processing: model_id=00514, test_from=20250202, test_to=20250208
+Processing: model_id=00514, test_from=20250209, test_to=20250215
+Skipping: model_id=00514, test_from=20250216, test_to=20250222 (overlaps with training period 20250216-20250412)
+Skipping: model_id=00514, test_from=20250223, test_to=20250301 (overlaps with training period 20250216-20250412)
+Skipping: model_id=00514, test_from=20250302, test_to=20250308 (overlaps with training period 20250216-20250412)
+Skipping: model_id=00514, test_from=20250309, test_to=20250315 (overlaps with training period 20250216-20250412)
+Skipping: model_id=00514, test_from=20250316, test_to=20250322 (overlaps with training period 20250216-20250412)
+Skipping: model_id=00514, test_from=20250323, test_to=20250329 (overlaps with training period 20250216-20250412)
+Skipping: model_id=00514, test_from=20250330, test_to=20250405 (overlaps with training period 20250216-20250412)
+Skipping: model_id=00514, test_from=20250406, test_to=20250412 (overlaps with training period 20250216-20250412)
+Processing: model_id=00514, test_from=20250413, test_to=20250419
+Processing: model_id=00514, test_from=20250420, test_to=20250426
+Processing: model_id=00514, test_from=20250427, test_to=20250503
+Processing: model_id=00514, test_from=20250504, test_to=20250510
+Processing: model_id=00514, test_from=20250511, test_to=20250517
+Processing: model_id=00514, test_from=20250518, test_to=20250524
+Processing: model_id=00514, test_from=20250525, test_to=20250531
+Processing: model_id=00514, test_from=20250601, test_to=20250607
+Processing: model_id=00514, test_from=20250608, test_to=20250614
+Processing: model_id=00514, test_from=20250615, test_to=20250621
+Processing: model_id=00514, test_from=20250622, test_to=20250628
+Processing: model_id=00514, test_from=20250629, test_to=20250705
+Processing: model_id=00514, test_from=20250706, test_to=20250712
+Processing: model_id=00514, test_from=20250713, test_to=20250719
+Processing: model_id=00514, test_from=20250720, test_to=20250726
+Processing: model_id=00514, test_from=20250727, test_to=20250802
+Processing: model_id=00515, test_from=20250105, test_to=20250111
+Processing: model_id=00515, test_from=20250112, test_to=20250118
+Processing: model_id=00515, test_from=20250119, test_to=20250125
+Processing: model_id=00515, test_from=20250126, test_to=20250201
+Processing: model_id=00515, test_from=20250202, test_to=20250208
+Processing: model_id=00515, test_from=20250209, test_to=20250215
+Processing: model_id=00515, test_from=20250216, test_to=20250222
+Skipping: model_id=00515, test_from=20250223, test_to=20250301 (overlaps with training period 20250223-20250419)
+Skipping: model_id=00515, test_from=20250302, test_to=20250308 (overlaps with training period 20250223-20250419)
+Skipping: model_id=00515, test_from=20250309, test_to=20250315 (overlaps with training period 20250223-20250419)
+Skipping: model_id=00515, test_from=20250316, test_to=20250322 (overlaps with training period 20250223-20250419)
+Skipping: model_id=00515, test_from=20250323, test_to=20250329 (overlaps with training period 20250223-20250419)
+Skipping: model_id=00515, test_from=20250330, test_to=20250405 (overlaps with training period 20250223-20250419)
+Skipping: model_id=00515, test_from=20250406, test_to=20250412 (overlaps with training period 20250223-20250419)
+Skipping: model_id=00515, test_from=20250413, test_to=20250419 (overlaps with training period 20250223-20250419)
+Processing: model_id=00515, test_from=20250420, test_to=20250426
+Processing: model_id=00515, test_from=20250427, test_to=20250503
+Processing: model_id=00515, test_from=20250504, test_to=20250510
+Processing: model_id=00515, test_from=20250511, test_to=20250517
+Processing: model_id=00515, test_from=20250518, test_to=20250524
+Processing: model_id=00515, test_from=20250525, test_to=20250531
+Processing: model_id=00515, test_from=20250601, test_to=20250607
+Processing: model_id=00515, test_from=20250608, test_to=20250614
+Processing: model_id=00515, test_from=20250615, test_to=20250621
+Processing: model_id=00515, test_from=20250622, test_to=20250628
+Processing: model_id=00515, test_from=20250629, test_to=20250705
+Processing: model_id=00515, test_from=20250706, test_to=20250712
+Processing: model_id=00515, test_from=20250713, test_to=20250719
+Processing: model_id=00515, test_from=20250720, test_to=20250726
+Processing: model_id=00515, test_from=20250727, test_to=20250802
+Processing: model_id=00516, test_from=20250105, test_to=20250111
+Processing: model_id=00516, test_from=20250112, test_to=20250118
+Processing: model_id=00516, test_from=20250119, test_to=20250125
+Processing: model_id=00516, test_from=20250126, test_to=20250201
+Processing: model_id=00516, test_from=20250202, test_to=20250208
+Processing: model_id=00516, test_from=20250209, test_to=20250215
+Processing: model_id=00516, test_from=20250216, test_to=20250222
+Processing: model_id=00516, test_from=20250223, test_to=20250301
+Skipping: model_id=00516, test_from=20250302, test_to=20250308 (overlaps with training period 20250302-20250426)
+Skipping: model_id=00516, test_from=20250309, test_to=20250315 (overlaps with training period 20250302-20250426)
+Skipping: model_id=00516, test_from=20250316, test_to=20250322 (overlaps with training period 20250302-20250426)
+Skipping: model_id=00516, test_from=20250323, test_to=20250329 (overlaps with training period 20250302-20250426)
+Skipping: model_id=00516, test_from=20250330, test_to=20250405 (overlaps with training period 20250302-20250426)
+Skipping: model_id=00516, test_from=20250406, test_to=20250412 (overlaps with training period 20250302-20250426)
+Skipping: model_id=00516, test_from=20250413, test_to=20250419 (overlaps with training period 20250302-20250426)
+Skipping: model_id=00516, test_from=20250420, test_to=20250426 (overlaps with training period 20250302-20250426)
+Processing: model_id=00516, test_from=20250427, test_to=20250503
+Processing: model_id=00516, test_from=20250504, test_to=20250510
+Processing: model_id=00516, test_from=20250511, test_to=20250517
+Processing: model_id=00516, test_from=20250518, test_to=20250524
+Processing: model_id=00516, test_from=20250525, test_to=20250531
+Processing: model_id=00516, test_from=20250601, test_to=20250607
+Processing: model_id=00516, test_from=20250608, test_to=20250614
+Processing: model_id=00516, test_from=20250615, test_to=20250621
+Processing: model_id=00516, test_from=20250622, test_to=20250628
+Processing: model_id=00516, test_from=20250629, test_to=20250705
+Processing: model_id=00516, test_from=20250706, test_to=20250712
+Processing: model_id=00516, test_from=20250713, test_to=20250719
+Processing: model_id=00516, test_from=20250720, test_to=20250726
+Processing: model_id=00516, test_from=20250727, test_to=20250802
+Processing: model_id=00517, test_from=20250105, test_to=20250111
+Processing: model_id=00517, test_from=20250112, test_to=20250118
+Processing: model_id=00517, test_from=20250119, test_to=20250125
+Processing: model_id=00517, test_from=20250126, test_to=20250201
+Processing: model_id=00517, test_from=20250202, test_to=20250208
+Processing: model_id=00517, test_from=20250209, test_to=20250215
+Processing: model_id=00517, test_from=20250216, test_to=20250222
+Processing: model_id=00517, test_from=20250223, test_to=20250301
+Processing: model_id=00517, test_from=20250302, test_to=20250308
+Skipping: model_id=00517, test_from=20250309, test_to=20250315 (overlaps with training period 20250309-20250503)
+Skipping: model_id=00517, test_from=20250316, test_to=20250322 (overlaps with training period 20250309-20250503)
+Skipping: model_id=00517, test_from=20250323, test_to=20250329 (overlaps with training period 20250309-20250503)
+Skipping: model_id=00517, test_from=20250330, test_to=20250405 (overlaps with training period 20250309-20250503)
+Skipping: model_id=00517, test_from=20250406, test_to=20250412 (overlaps with training period 20250309-20250503)
+Skipping: model_id=00517, test_from=20250413, test_to=20250419 (overlaps with training period 20250309-20250503)
+Skipping: model_id=00517, test_from=20250420, test_to=20250426 (overlaps with training period 20250309-20250503)
+Skipping: model_id=00517, test_from=20250427, test_to=20250503 (overlaps with training period 20250309-20250503)
+Processing: model_id=00517, test_from=20250504, test_to=20250510
+Processing: model_id=00517, test_from=20250511, test_to=20250517
+Processing: model_id=00517, test_from=20250518, test_to=20250524
+Processing: model_id=00517, test_from=20250525, test_to=20250531
+Processing: model_id=00517, test_from=20250601, test_to=20250607
+Processing: model_id=00517, test_from=20250608, test_to=20250614
+Processing: model_id=00517, test_from=20250615, test_to=20250621
+Processing: model_id=00517, test_from=20250622, test_to=20250628
+Processing: model_id=00517, test_from=20250629, test_to=20250705
+Processing: model_id=00517, test_from=20250706, test_to=20250712
+Processing: model_id=00517, test_from=20250713, test_to=20250719
+Processing: model_id=00517, test_from=20250720, test_to=20250726
+Processing: model_id=00517, test_from=20250727, test_to=20250802
+Processing: model_id=00518, test_from=20250105, test_to=20250111
+Processing: model_id=00518, test_from=20250112, test_to=20250118
+Processing: model_id=00518, test_from=20250119, test_to=20250125
+Processing: model_id=00518, test_from=20250126, test_to=20250201
+Processing: model_id=00518, test_from=20250202, test_to=20250208
+Processing: model_id=00518, test_from=20250209, test_to=20250215
+Processing: model_id=00518, test_from=20250216, test_to=20250222
+Processing: model_id=00518, test_from=20250223, test_to=20250301
+Processing: model_id=00518, test_from=20250302, test_to=20250308
+Processing: model_id=00518, test_from=20250309, test_to=20250315
+Skipping: model_id=00518, test_from=20250316, test_to=20250322 (overlaps with training period 20250316-20250510)
+Skipping: model_id=00518, test_from=20250323, test_to=20250329 (overlaps with training period 20250316-20250510)
+Skipping: model_id=00518, test_from=20250330, test_to=20250405 (overlaps with training period 20250316-20250510)
+Skipping: model_id=00518, test_from=20250406, test_to=20250412 (overlaps with training period 20250316-20250510)
+Skipping: model_id=00518, test_from=20250413, test_to=20250419 (overlaps with training period 20250316-20250510)
+Skipping: model_id=00518, test_from=20250420, test_to=20250426 (overlaps with training period 20250316-20250510)
+Skipping: model_id=00518, test_from=20250427, test_to=20250503 (overlaps with training period 20250316-20250510)
+Skipping: model_id=00518, test_from=20250504, test_to=20250510 (overlaps with training period 20250316-20250510)
+Processing: model_id=00518, test_from=20250511, test_to=20250517
+Processing: model_id=00518, test_from=20250518, test_to=20250524
+Processing: model_id=00518, test_from=20250525, test_to=20250531
+Processing: model_id=00518, test_from=20250601, test_to=20250607
+Processing: model_id=00518, test_from=20250608, test_to=20250614
+Processing: model_id=00518, test_from=20250615, test_to=20250621
+Processing: model_id=00518, test_from=20250622, test_to=20250628
+Processing: model_id=00518, test_from=20250629, test_to=20250705
+Processing: model_id=00518, test_from=20250706, test_to=20250712
+Processing: model_id=00518, test_from=20250713, test_to=20250719
+Processing: model_id=00518, test_from=20250720, test_to=20250726
+Processing: model_id=00518, test_from=20250727, test_to=20250802
+Processing: model_id=00519, test_from=20250105, test_to=20250111
+Processing: model_id=00519, test_from=20250112, test_to=20250118
+Processing: model_id=00519, test_from=20250119, test_to=20250125
+Processing: model_id=00519, test_from=20250126, test_to=20250201
+Processing: model_id=00519, test_from=20250202, test_to=20250208
+Processing: model_id=00519, test_from=20250209, test_to=20250215
+Processing: model_id=00519, test_from=20250216, test_to=20250222
+Processing: model_id=00519, test_from=20250223, test_to=20250301
+Processing: model_id=00519, test_from=20250302, test_to=20250308
+Processing: model_id=00519, test_from=20250309, test_to=20250315
+Processing: model_id=00519, test_from=20250316, test_to=20250322
+Skipping: model_id=00519, test_from=20250323, test_to=20250329 (overlaps with training period 20250323-20250517)
+Skipping: model_id=00519, test_from=20250330, test_to=20250405 (overlaps with training period 20250323-20250517)
+Skipping: model_id=00519, test_from=20250406, test_to=20250412 (overlaps with training period 20250323-20250517)
+Skipping: model_id=00519, test_from=20250413, test_to=20250419 (overlaps with training period 20250323-20250517)
+Skipping: model_id=00519, test_from=20250420, test_to=20250426 (overlaps with training period 20250323-20250517)
+Skipping: model_id=00519, test_from=20250427, test_to=20250503 (overlaps with training period 20250323-20250517)
+Skipping: model_id=00519, test_from=20250504, test_to=20250510 (overlaps with training period 20250323-20250517)
+Skipping: model_id=00519, test_from=20250511, test_to=20250517 (overlaps with training period 20250323-20250517)
+Processing: model_id=00519, test_from=20250518, test_to=20250524
+Processing: model_id=00519, test_from=20250525, test_to=20250531
+Processing: model_id=00519, test_from=20250601, test_to=20250607
+Processing: model_id=00519, test_from=20250608, test_to=20250614
+Processing: model_id=00519, test_from=20250615, test_to=20250621
+Processing: model_id=00519, test_from=20250622, test_to=20250628
+Processing: model_id=00519, test_from=20250629, test_to=20250705
+Processing: model_id=00519, test_from=20250706, test_to=20250712
+Processing: model_id=00519, test_from=20250713, test_to=20250719
+Processing: model_id=00519, test_from=20250720, test_to=20250726
+Processing: model_id=00519, test_from=20250727, test_to=20250802
+Processing: model_id=00520, test_from=20250105, test_to=20250111
+Processing: model_id=00520, test_from=20250112, test_to=20250118
+Processing: model_id=00520, test_from=20250119, test_to=20250125
+Processing: model_id=00520, test_from=20250126, test_to=20250201
+Processing: model_id=00520, test_from=20250202, test_to=20250208
+Processing: model_id=00520, test_from=20250209, test_to=20250215
+Processing: model_id=00520, test_from=20250216, test_to=20250222
+Processing: model_id=00520, test_from=20250223, test_to=20250301
+Processing: model_id=00520, test_from=20250302, test_to=20250308
+Processing: model_id=00520, test_from=20250309, test_to=20250315
+Processing: model_id=00520, test_from=20250316, test_to=20250322
+Processing: model_id=00520, test_from=20250323, test_to=20250329
+Skipping: model_id=00520, test_from=20250330, test_to=20250405 (overlaps with training period 20250330-20250524)
+Skipping: model_id=00520, test_from=20250406, test_to=20250412 (overlaps with training period 20250330-20250524)
+Skipping: model_id=00520, test_from=20250413, test_to=20250419 (overlaps with training period 20250330-20250524)
+Skipping: model_id=00520, test_from=20250420, test_to=20250426 (overlaps with training period 20250330-20250524)
+Skipping: model_id=00520, test_from=20250427, test_to=20250503 (overlaps with training period 20250330-20250524)
+Skipping: model_id=00520, test_from=20250504, test_to=20250510 (overlaps with training period 20250330-20250524)
+Skipping: model_id=00520, test_from=20250511, test_to=20250517 (overlaps with training period 20250330-20250524)
+Skipping: model_id=00520, test_from=20250518, test_to=20250524 (overlaps with training period 20250330-20250524)
+Processing: model_id=00520, test_from=20250525, test_to=20250531
+Processing: model_id=00520, test_from=20250601, test_to=20250607
+Processing: model_id=00520, test_from=20250608, test_to=20250614
+Processing: model_id=00520, test_from=20250615, test_to=20250621
+Processing: model_id=00520, test_from=20250622, test_to=20250628
+Processing: model_id=00520, test_from=20250629, test_to=20250705
+Processing: model_id=00520, test_from=20250706, test_to=20250712
+Processing: model_id=00520, test_from=20250713, test_to=20250719
+Processing: model_id=00520, test_from=20250720, test_to=20250726
+Processing: model_id=00520, test_from=20250727, test_to=20250802
+Processing: model_id=00521, test_from=20250105, test_to=20250111
+Processing: model_id=00521, test_from=20250112, test_to=20250118
+Processing: model_id=00521, test_from=20250119, test_to=20250125
+Processing: model_id=00521, test_from=20250126, test_to=20250201
+Processing: model_id=00521, test_from=20250202, test_to=20250208
+Processing: model_id=00521, test_from=20250209, test_to=20250215
+Processing: model_id=00521, test_from=20250216, test_to=20250222
+Processing: model_id=00521, test_from=20250223, test_to=20250301
+Processing: model_id=00521, test_from=20250302, test_to=20250308
+Processing: model_id=00521, test_from=20250309, test_to=20250315
+Processing: model_id=00521, test_from=20250316, test_to=20250322
+Processing: model_id=00521, test_from=20250323, test_to=20250329
+Processing: model_id=00521, test_from=20250330, test_to=20250405
+Skipping: model_id=00521, test_from=20250406, test_to=20250412 (overlaps with training period 20250406-20250531)
+Skipping: model_id=00521, test_from=20250413, test_to=20250419 (overlaps with training period 20250406-20250531)
+Skipping: model_id=00521, test_from=20250420, test_to=20250426 (overlaps with training period 20250406-20250531)
+Skipping: model_id=00521, test_from=20250427, test_to=20250503 (overlaps with training period 20250406-20250531)
+Skipping: model_id=00521, test_from=20250504, test_to=20250510 (overlaps with training period 20250406-20250531)
+Skipping: model_id=00521, test_from=20250511, test_to=20250517 (overlaps with training period 20250406-20250531)
+Skipping: model_id=00521, test_from=20250518, test_to=20250524 (overlaps with training period 20250406-20250531)
+Skipping: model_id=00521, test_from=20250525, test_to=20250531 (overlaps with training period 20250406-20250531)
+Processing: model_id=00521, test_from=20250601, test_to=20250607
+Processing: model_id=00521, test_from=20250608, test_to=20250614
+Processing: model_id=00521, test_from=20250615, test_to=20250621
+Processing: model_id=00521, test_from=20250622, test_to=20250628
+Processing: model_id=00521, test_from=20250629, test_to=20250705
+Processing: model_id=00521, test_from=20250706, test_to=20250712
+Processing: model_id=00521, test_from=20250713, test_to=20250719
+Processing: model_id=00521, test_from=20250720, test_to=20250726
+Processing: model_id=00521, test_from=20250727, test_to=20250802
+Processing: model_id=00522, test_from=20250105, test_to=20250111
+Processing: model_id=00522, test_from=20250112, test_to=20250118
+Processing: model_id=00522, test_from=20250119, test_to=20250125
+Processing: model_id=00522, test_from=20250126, test_to=20250201
+Processing: model_id=00522, test_from=20250202, test_to=20250208
+Processing: model_id=00522, test_from=20250209, test_to=20250215
+Processing: model_id=00522, test_from=20250216, test_to=20250222
+Processing: model_id=00522, test_from=20250223, test_to=20250301
+Processing: model_id=00522, test_from=20250302, test_to=20250308
+Processing: model_id=00522, test_from=20250309, test_to=20250315
+Processing: model_id=00522, test_from=20250316, test_to=20250322
+Processing: model_id=00522, test_from=20250323, test_to=20250329
+Processing: model_id=00522, test_from=20250330, test_to=20250405
+Processing: model_id=00522, test_from=20250406, test_to=20250412
+Skipping: model_id=00522, test_from=20250413, test_to=20250419 (overlaps with training period 20250413-20250607)
+Skipping: model_id=00522, test_from=20250420, test_to=20250426 (overlaps with training period 20250413-20250607)
+Skipping: model_id=00522, test_from=20250427, test_to=20250503 (overlaps with training period 20250413-20250607)
+Skipping: model_id=00522, test_from=20250504, test_to=20250510 (overlaps with training period 20250413-20250607)
+Skipping: model_id=00522, test_from=20250511, test_to=20250517 (overlaps with training period 20250413-20250607)
+Skipping: model_id=00522, test_from=20250518, test_to=20250524 (overlaps with training period 20250413-20250607)
+Skipping: model_id=00522, test_from=20250525, test_to=20250531 (overlaps with training period 20250413-20250607)
+Skipping: model_id=00522, test_from=20250601, test_to=20250607 (overlaps with training period 20250413-20250607)
+Processing: model_id=00522, test_from=20250608, test_to=20250614
+Processing: model_id=00522, test_from=20250615, test_to=20250621
+Processing: model_id=00522, test_from=20250622, test_to=20250628
+Processing: model_id=00522, test_from=20250629, test_to=20250705
+Processing: model_id=00522, test_from=20250706, test_to=20250712
+Processing: model_id=00522, test_from=20250713, test_to=20250719
+Processing: model_id=00522, test_from=20250720, test_to=20250726
+Processing: model_id=00522, test_from=20250727, test_to=20250802
+Processing: model_id=00523, test_from=20250105, test_to=20250111
+Processing: model_id=00523, test_from=20250112, test_to=20250118
+Processing: model_id=00523, test_from=20250119, test_to=20250125
+Processing: model_id=00523, test_from=20250126, test_to=20250201
+Processing: model_id=00523, test_from=20250202, test_to=20250208
+Processing: model_id=00523, test_from=20250209, test_to=20250215
+Processing: model_id=00523, test_from=20250216, test_to=20250222
+Processing: model_id=00523, test_from=20250223, test_to=20250301
+Processing: model_id=00523, test_from=20250302, test_to=20250308
+Processing: model_id=00523, test_from=20250309, test_to=20250315
+Processing: model_id=00523, test_from=20250316, test_to=20250322
+Processing: model_id=00523, test_from=20250323, test_to=20250329
+Processing: model_id=00523, test_from=20250330, test_to=20250405
+Processing: model_id=00523, test_from=20250406, test_to=20250412
+Processing: model_id=00523, test_from=20250413, test_to=20250419
+Skipping: model_id=00523, test_from=20250420, test_to=20250426 (overlaps with training period 20250420-20250614)
+Skipping: model_id=00523, test_from=20250427, test_to=20250503 (overlaps with training period 20250420-20250614)
+Skipping: model_id=00523, test_from=20250504, test_to=20250510 (overlaps with training period 20250420-20250614)
+Skipping: model_id=00523, test_from=20250511, test_to=20250517 (overlaps with training period 20250420-20250614)
+Skipping: model_id=00523, test_from=20250518, test_to=20250524 (overlaps with training period 20250420-20250614)
+Skipping: model_id=00523, test_from=20250525, test_to=20250531 (overlaps with training period 20250420-20250614)
+Skipping: model_id=00523, test_from=20250601, test_to=20250607 (overlaps with training period 20250420-20250614)
+Skipping: model_id=00523, test_from=20250608, test_to=20250614 (overlaps with training period 20250420-20250614)
+Processing: model_id=00523, test_from=20250615, test_to=20250621
+Processing: model_id=00523, test_from=20250622, test_to=20250628
+Processing: model_id=00523, test_from=20250629, test_to=20250705
+Processing: model_id=00523, test_from=20250706, test_to=20250712
+Processing: model_id=00523, test_from=20250713, test_to=20250719
+Processing: model_id=00523, test_from=20250720, test_to=20250726
+Processing: model_id=00523, test_from=20250727, test_to=20250802
+Processing: model_id=00524, test_from=20250105, test_to=20250111
+Processing: model_id=00524, test_from=20250112, test_to=20250118
+Processing: model_id=00524, test_from=20250119, test_to=20250125
+Processing: model_id=00524, test_from=20250126, test_to=20250201
+Processing: model_id=00524, test_from=20250202, test_to=20250208
+Processing: model_id=00524, test_from=20250209, test_to=20250215
+Processing: model_id=00524, test_from=20250216, test_to=20250222
+Processing: model_id=00524, test_from=20250223, test_to=20250301
+Processing: model_id=00524, test_from=20250302, test_to=20250308
+Processing: model_id=00524, test_from=20250309, test_to=20250315
+Processing: model_id=00524, test_from=20250316, test_to=20250322
+Processing: model_id=00524, test_from=20250323, test_to=20250329
+Processing: model_id=00524, test_from=20250330, test_to=20250405
+Processing: model_id=00524, test_from=20250406, test_to=20250412
+Processing: model_id=00524, test_from=20250413, test_to=20250419
+Processing: model_id=00524, test_from=20250420, test_to=20250426
+Skipping: model_id=00524, test_from=20250427, test_to=20250503 (overlaps with training period 20250427-20250621)
+Skipping: model_id=00524, test_from=20250504, test_to=20250510 (overlaps with training period 20250427-20250621)
+Skipping: model_id=00524, test_from=20250511, test_to=20250517 (overlaps with training period 20250427-20250621)
+Skipping: model_id=00524, test_from=20250518, test_to=20250524 (overlaps with training period 20250427-20250621)
+Skipping: model_id=00524, test_from=20250525, test_to=20250531 (overlaps with training period 20250427-20250621)
+Skipping: model_id=00524, test_from=20250601, test_to=20250607 (overlaps with training period 20250427-20250621)
+Skipping: model_id=00524, test_from=20250608, test_to=20250614 (overlaps with training period 20250427-20250621)
+Skipping: model_id=00524, test_from=20250615, test_to=20250621 (overlaps with training period 20250427-20250621)
+Processing: model_id=00524, test_from=20250622, test_to=20250628
+Processing: model_id=00524, test_from=20250629, test_to=20250705
+Processing: model_id=00524, test_from=20250706, test_to=20250712
+Processing: model_id=00524, test_from=20250713, test_to=20250719
+Processing: model_id=00524, test_from=20250720, test_to=20250726
+Processing: model_id=00524, test_from=20250727, test_to=20250802
+Processing: model_id=00525, test_from=20250105, test_to=20250111
+Processing: model_id=00525, test_from=20250112, test_to=20250118
+Processing: model_id=00525, test_from=20250119, test_to=20250125
+Processing: model_id=00525, test_from=20250126, test_to=20250201
+Processing: model_id=00525, test_from=20250202, test_to=20250208
+Processing: model_id=00525, test_from=20250209, test_to=20250215
+Processing: model_id=00525, test_from=20250216, test_to=20250222
+Processing: model_id=00525, test_from=20250223, test_to=20250301
+Processing: model_id=00525, test_from=20250302, test_to=20250308
+Processing: model_id=00525, test_from=20250309, test_to=20250315
+Processing: model_id=00525, test_from=20250316, test_to=20250322
+Processing: model_id=00525, test_from=20250323, test_to=20250329
+Processing: model_id=00525, test_from=20250330, test_to=20250405
+Processing: model_id=00525, test_from=20250406, test_to=20250412
+Processing: model_id=00525, test_from=20250413, test_to=20250419
+Processing: model_id=00525, test_from=20250420, test_to=20250426
+Processing: model_id=00525, test_from=20250427, test_to=20250503
+Skipping: model_id=00525, test_from=20250504, test_to=20250510 (overlaps with training period 20250504-20250628)
+Skipping: model_id=00525, test_from=20250511, test_to=20250517 (overlaps with training period 20250504-20250628)
+Skipping: model_id=00525, test_from=20250518, test_to=20250524 (overlaps with training period 20250504-20250628)
+Skipping: model_id=00525, test_from=20250525, test_to=20250531 (overlaps with training period 20250504-20250628)
+Skipping: model_id=00525, test_from=20250601, test_to=20250607 (overlaps with training period 20250504-20250628)
+Skipping: model_id=00525, test_from=20250608, test_to=20250614 (overlaps with training period 20250504-20250628)
+Skipping: model_id=00525, test_from=20250615, test_to=20250621 (overlaps with training period 20250504-20250628)
+Skipping: model_id=00525, test_from=20250622, test_to=20250628 (overlaps with training period 20250504-20250628)
+Processing: model_id=00525, test_from=20250629, test_to=20250705
+Processing: model_id=00525, test_from=20250706, test_to=20250712
+Processing: model_id=00525, test_from=20250713, test_to=20250719
+Processing: model_id=00525, test_from=20250720, test_to=20250726
+Processing: model_id=00525, test_from=20250727, test_to=20250802
+Processing: model_id=00526, test_from=20250105, test_to=20250111
+Processing: model_id=00526, test_from=20250112, test_to=20250118
+Processing: model_id=00526, test_from=20250119, test_to=20250125
+Processing: model_id=00526, test_from=20250126, test_to=20250201
+Processing: model_id=00526, test_from=20250202, test_to=20250208
+Processing: model_id=00526, test_from=20250209, test_to=20250215
+Processing: model_id=00526, test_from=20250216, test_to=20250222
+Processing: model_id=00526, test_from=20250223, test_to=20250301
+Processing: model_id=00526, test_from=20250302, test_to=20250308
+Processing: model_id=00526, test_from=20250309, test_to=20250315
+Processing: model_id=00526, test_from=20250316, test_to=20250322
+Processing: model_id=00526, test_from=20250323, test_to=20250329
+Processing: model_id=00526, test_from=20250330, test_to=20250405
+Processing: model_id=00526, test_from=20250406, test_to=20250412
+Processing: model_id=00526, test_from=20250413, test_to=20250419
+Processing: model_id=00526, test_from=20250420, test_to=20250426
+Processing: model_id=00526, test_from=20250427, test_to=20250503
+Processing: model_id=00526, test_from=20250504, test_to=20250510
+Skipping: model_id=00526, test_from=20250511, test_to=20250517 (overlaps with training period 20250511-20250705)
+Skipping: model_id=00526, test_from=20250518, test_to=20250524 (overlaps with training period 20250511-20250705)
+Skipping: model_id=00526, test_from=20250525, test_to=20250531 (overlaps with training period 20250511-20250705)
+Skipping: model_id=00526, test_from=20250601, test_to=20250607 (overlaps with training period 20250511-20250705)
+Skipping: model_id=00526, test_from=20250608, test_to=20250614 (overlaps with training period 20250511-20250705)
+Skipping: model_id=00526, test_from=20250615, test_to=20250621 (overlaps with training period 20250511-20250705)
+Skipping: model_id=00526, test_from=20250622, test_to=20250628 (overlaps with training period 20250511-20250705)
+Skipping: model_id=00526, test_from=20250629, test_to=20250705 (overlaps with training period 20250511-20250705)
+Processing: model_id=00526, test_from=20250706, test_to=20250712
+Processing: model_id=00526, test_from=20250713, test_to=20250719
+Processing: model_id=00526, test_from=20250720, test_to=20250726
+Processing: model_id=00526, test_from=20250727, test_to=20250802
+Processing: model_id=00527, test_from=20250105, test_to=20250111
+Processing: model_id=00527, test_from=20250112, test_to=20250118
+Processing: model_id=00527, test_from=20250119, test_to=20250125
+Processing: model_id=00527, test_from=20250126, test_to=20250201
+Processing: model_id=00527, test_from=20250202, test_to=20250208
+Processing: model_id=00527, test_from=20250209, test_to=20250215
+Processing: model_id=00527, test_from=20250216, test_to=20250222
+Processing: model_id=00527, test_from=20250223, test_to=20250301
+Processing: model_id=00527, test_from=20250302, test_to=20250308
+Processing: model_id=00527, test_from=20250309, test_to=20250315
+Processing: model_id=00527, test_from=20250316, test_to=20250322
+Processing: model_id=00527, test_from=20250323, test_to=20250329
+Processing: model_id=00527, test_from=20250330, test_to=20250405
+Processing: model_id=00527, test_from=20250406, test_to=20250412
+Processing: model_id=00527, test_from=20250413, test_to=20250419
+Processing: model_id=00527, test_from=20250420, test_to=20250426
+Processing: model_id=00527, test_from=20250427, test_to=20250503
+Processing: model_id=00527, test_from=20250504, test_to=20250510
+Processing: model_id=00527, test_from=20250511, test_to=20250517
+Skipping: model_id=00527, test_from=20250518, test_to=20250524 (overlaps with training period 20250518-20250712)
+Skipping: model_id=00527, test_from=20250525, test_to=20250531 (overlaps with training period 20250518-20250712)
+Skipping: model_id=00527, test_from=20250601, test_to=20250607 (overlaps with training period 20250518-20250712)
+Skipping: model_id=00527, test_from=20250608, test_to=20250614 (overlaps with training period 20250518-20250712)
+Skipping: model_id=00527, test_from=20250615, test_to=20250621 (overlaps with training period 20250518-20250712)
+Skipping: model_id=00527, test_from=20250622, test_to=20250628 (overlaps with training period 20250518-20250712)
+Skipping: model_id=00527, test_from=20250629, test_to=20250705 (overlaps with training period 20250518-20250712)
+Skipping: model_id=00527, test_from=20250706, test_to=20250712 (overlaps with training period 20250518-20250712)
+Processing: model_id=00527, test_from=20250713, test_to=20250719
+Processing: model_id=00527, test_from=20250720, test_to=20250726
+Processing: model_id=00527, test_from=20250727, test_to=20250802
+Processing: model_id=00528, test_from=20250105, test_to=20250111
+Processing: model_id=00528, test_from=20250112, test_to=20250118
+Processing: model_id=00528, test_from=20250119, test_to=20250125
+Processing: model_id=00528, test_from=20250126, test_to=20250201
+Processing: model_id=00528, test_from=20250202, test_to=20250208
+Processing: model_id=00528, test_from=20250209, test_to=20250215
+Processing: model_id=00528, test_from=20250216, test_to=20250222
+Processing: model_id=00528, test_from=20250223, test_to=20250301
+Processing: model_id=00528, test_from=20250302, test_to=20250308
+Processing: model_id=00528, test_from=20250309, test_to=20250315
+Processing: model_id=00528, test_from=20250316, test_to=20250322
+Processing: model_id=00528, test_from=20250323, test_to=20250329
+Processing: model_id=00528, test_from=20250330, test_to=20250405
+Processing: model_id=00528, test_from=20250406, test_to=20250412
+Processing: model_id=00528, test_from=20250413, test_to=20250419
+Processing: model_id=00528, test_from=20250420, test_to=20250426
+Processing: model_id=00528, test_from=20250427, test_to=20250503
+Processing: model_id=00528, test_from=20250504, test_to=20250510
+Processing: model_id=00528, test_from=20250511, test_to=20250517
+Processing: model_id=00528, test_from=20250518, test_to=20250524
+Skipping: model_id=00528, test_from=20250525, test_to=20250531 (overlaps with training period 20250525-20250719)
+Skipping: model_id=00528, test_from=20250601, test_to=20250607 (overlaps with training period 20250525-20250719)
+Skipping: model_id=00528, test_from=20250608, test_to=20250614 (overlaps with training period 20250525-20250719)
+Skipping: model_id=00528, test_from=20250615, test_to=20250621 (overlaps with training period 20250525-20250719)
+Skipping: model_id=00528, test_from=20250622, test_to=20250628 (overlaps with training period 20250525-20250719)
+Skipping: model_id=00528, test_from=20250629, test_to=20250705 (overlaps with training period 20250525-20250719)
+Skipping: model_id=00528, test_from=20250706, test_to=20250712 (overlaps with training period 20250525-20250719)
+Skipping: model_id=00528, test_from=20250713, test_to=20250719 (overlaps with training period 20250525-20250719)
+Processing: model_id=00528, test_from=20250720, test_to=20250726
+Processing: model_id=00528, test_from=20250727, test_to=20250802

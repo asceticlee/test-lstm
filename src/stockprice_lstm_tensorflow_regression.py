@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import os
+from sklearn.discriminant_analysis import StandardScaler
 from sklearn.preprocessing import MinMaxScaler
 import tensorflow as tf
 from tensorflow import keras  # This loads tf.keras as 'keras'
@@ -116,6 +117,7 @@ print(f'Test sequences shape: {X_test.shape}, Test labels shape: {y_test.shape}'
 
 # Scale features (fit on train, apply to all sets)
 scaler = MinMaxScaler()
+# scaler = StandardScaler()
 X_train_reshaped = X_train.reshape(-1, num_features)
 X_validation_reshaped = X_validation.reshape(-1, num_features)
 X_test_reshaped = X_test.reshape(-1, num_features)
@@ -148,6 +150,10 @@ else:
 model_id_str = f"{model_id:05d}"
 
 # Save scaler params with model_id
+# scaler_params = {
+#     "Mean": scaler.mean_.tolist(),
+#     "Variance": scaler.var_.tolist()
+# }
 scaler_params = {
     "Min": scaler.data_min_.tolist(),
     "Max": scaler.data_max_.tolist()

@@ -3,8 +3,15 @@ import os
 import json
 import numpy as np
 import pandas as pd
-from sklearn.preprocessing import MinMaxScaler
+from sklearn.preprocessing import MinMaxScaler, StandardScaler
 from tensorflow import keras
+import tensorflow as tf
+
+# Define asymmetric MSE loss function (needed for loading models that use it)
+def asymmetric_mse(y_true, y_pred):
+    error = y_true - y_pred
+    return tf.reduce_mean(tf.where(error > 0, error**2, 1.5 * error**2))
+
 def get_thresholded_direction_accuracies(actual, predicted):
     actual_up = (actual > 0)
     actual_down = (actual <= 0)
@@ -102,14 +109,24 @@ def test_model(model_id, test_from, test_to, accuracy_only=False):
 
         X_test, y_test = create_sequences(test_df, seq_length)
 
-        # Correctly reconstruct MinMaxScaler from saved params
-        scaler = MinMaxScaler()
-        scaler.data_min_ = np.array(scaler_params['Min'])
-        scaler.data_max_ = np.array(scaler_params['Max'])
-        scaler.data_range_ = scaler.data_max_ - scaler.data_min_
-        scaler.feature_range = (0, 1)
-        scaler.scale_ = (scaler.feature_range[1] - scaler.feature_range[0]) / scaler.data_range_
-        scaler.min_ = scaler.feature_range[0] - scaler.data_min_ * scaler.scale_
+        # Correctly reconstruct scaler from saved params
+        if 'Min' in scaler_params and 'Max' in scaler_params:
+            # MinMaxScaler
+            scaler = MinMaxScaler()
+            scaler.data_min_ = np.array(scaler_params['Min'])
+            scaler.data_max_ = np.array(scaler_params['Max'])
+            scaler.data_range_ = scaler.data_max_ - scaler.data_min_
+            scaler.feature_range = (0, 1)
+            scaler.scale_ = (scaler.feature_range[1] - scaler.feature_range[0]) / scaler.data_range_
+            scaler.min_ = scaler.feature_range[0] - scaler.data_min_ * scaler.scale_
+        elif 'Mean' in scaler_params and 'Variance' in scaler_params:
+            # StandardScaler
+            scaler = StandardScaler()
+            scaler.mean_ = np.array(scaler_params['Mean'])
+            scaler.var_ = np.array(scaler_params['Variance'])
+            scaler.scale_ = np.sqrt(scaler.var_)
+        else:
+            raise ValueError(f"Unknown scaler parameters: {list(scaler_params.keys())}")
 
         X_test_reshaped = X_test.reshape(-1, num_features)
         X_test_scaled = scaler.transform(X_test_reshaped).reshape(X_test.shape)
@@ -215,14 +232,24 @@ if __name__ == '__main__':
 
         X_test, y_test = create_sequences(test_df, seq_length)
 
-        # Correctly reconstruct MinMaxScaler from saved params
-        scaler = MinMaxScaler()
-        scaler.data_min_ = np.array(scaler_params['Min'])
-        scaler.data_max_ = np.array(scaler_params['Max'])
-        scaler.data_range_ = scaler.data_max_ - scaler.data_min_
-        scaler.feature_range = (0, 1)
-        scaler.scale_ = (scaler.feature_range[1] - scaler.feature_range[0]) / scaler.data_range_
-        scaler.min_ = scaler.feature_range[0] - scaler.data_min_ * scaler.scale_
+        # Correctly reconstruct scaler from saved params
+        if 'Min' in scaler_params and 'Max' in scaler_params:
+            # MinMaxScaler
+            scaler = MinMaxScaler()
+            scaler.data_min_ = np.array(scaler_params['Min'])
+            scaler.data_max_ = np.array(scaler_params['Max'])
+            scaler.data_range_ = scaler.data_max_ - scaler.data_min_
+            scaler.feature_range = (0, 1)
+            scaler.scale_ = (scaler.feature_range[1] - scaler.feature_range[0]) / scaler.data_range_
+            scaler.min_ = scaler.feature_range[0] - scaler.data_min_ * scaler.scale_
+        elif 'Mean' in scaler_params and 'Variance' in scaler_params:
+            # StandardScaler
+            scaler = StandardScaler()
+            scaler.mean_ = np.array(scaler_params['Mean'])
+            scaler.var_ = np.array(scaler_params['Variance'])
+            scaler.scale_ = np.sqrt(scaler.var_)
+        else:
+            raise ValueError(f"Unknown scaler parameters: {list(scaler_params.keys())}")
 
         X_test_reshaped = X_test.reshape(-1, num_features)
         X_test_scaled = scaler.transform(X_test_reshaped).reshape(X_test.shape)
