@@ -234,9 +234,9 @@ train_results_df = pd.DataFrame({
     'Predicted': model.predict(X_train_scaled).flatten()
 })
 
-train_output_file = os.path.join(project_root, f'train_predictions_regression_{model_id_str}_{trainFrom}_{trainTo}.csv')
-train_results_df.to_csv(train_output_file, index=False)
-print(f"Saved all {len(y_train)} train predictions and actuals to '{train_output_file}'")
+# train_output_file = os.path.join(project_root, f'train_predictions_regression_{model_id_str}_{trainFrom}_{trainTo}.csv')
+# train_results_df.to_csv(train_output_file, index=False)
+# print(f"Saved all {len(y_train)} train predictions and actuals to '{train_output_file}'")
 
 # Validation predictions
 validation_seq_idx = get_seq_indices(validation_df, seq_length)
@@ -249,9 +249,9 @@ validation_results_df = pd.DataFrame({
     'Predicted': model.predict(X_validation_scaled).flatten()
 })
 
-validation_output_file = os.path.join(project_root, f'validation_predictions_regression_{model_id_str}_{validationFrom}_{validationTo}.csv')
-validation_results_df.to_csv(validation_output_file, index=False)
-print(f"Saved all {len(y_validation)} validation predictions and actuals to '{validation_output_file}'")
+# validation_output_file = os.path.join(project_root, f'validation_predictions_regression_{model_id_str}_{validationFrom}_{validationTo}.csv')
+# validation_results_df.to_csv(validation_output_file, index=False)
+# print(f"Saved all {len(y_validation)} validation predictions and actuals to '{validation_output_file}'")
 
 
 # Test predictions
@@ -265,9 +265,9 @@ test_results_df = pd.DataFrame({
     'Predicted': model.predict(X_test_scaled).flatten()
 })
 
-test_output_file = os.path.join(project_root, f'test_predictions_regression_{model_id_str}_{testFrom}_{testTo}.csv')
-test_results_df.to_csv(test_output_file, index=False)
-print(f"Saved all {len(y_test)} test predictions and actuals to '{test_output_file}'")
+# test_output_file = os.path.join(project_root, f'test_predictions_regression_{model_id_str}_{testFrom}_{testTo}.csv')
+# test_results_df.to_csv(test_output_file, index=False)
+# print(f"Saved all {len(y_test)} test predictions and actuals to '{test_output_file}'")
 
 
 # Direction accuracy calculation and printout (using "up" and "down" instead of "positive" and "negative")
