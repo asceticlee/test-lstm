@@ -34,7 +34,7 @@ trainFrom, trainTo, validationFrom, validationTo, testFrom, testTo, labelNumber 
 labelNumber = int(labelNumber)
 
 # Parameters
-seq_length = 30
+seq_length = 15
 learning_rate = 0.0009
 epochs = 150
 batch_size = 32

@@ -15,9 +15,9 @@ def date_to_str(d):
 
 # Initial dates and label number
 dates = [
-    "20241006", "20241130",  # trainFrom, trainTo
-    "20241201", "20241207",  # validationFrom, validationTo
-    "20241208", "20241214"   # testFrom, testTo
+    "20240428", "20240622",  # trainFrom, trainTo
+    "20240623", "20240629",  # validationFrom, validationTo
+    "20240630", "20240706"   # testFrom, testTo
 ]
 label_number = "10"  # Default label number (can be changed)
 
