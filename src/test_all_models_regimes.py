@@ -351,9 +351,9 @@ class ModelTester:
                     result.update({
                         'training_from': model_info['train_from'],
                         'training_to': model_info['train_to'],
-                        'best_paradigm': best_paradigm,
+                        'best_regime': best_paradigm,
                         'best_side': best_side,
-                        'is_best_paradigm': (regime == best_paradigm)
+                        'is_best_regime': (regime == best_paradigm)
                     })
                     all_results.append(result)
             
@@ -373,9 +373,38 @@ class ModelTester:
         # Convert to DataFrame
         df = pd.DataFrame(results)
         
+        # Calculate ranking within each regime
+        print("Calculating regime-specific rankings...")
+        
+        # For each regime, calculate rankings based on combined upside and downside performance
+        for regime in sorted(df['regime'].unique()):
+            regime_indices = df[df['regime'] == regime].index
+            regime_data = df.loc[regime_indices].copy()
+            
+            # Calculate combined scores for ranking (average of upside and downside)
+            combined_scores = []
+            for idx in regime_indices:
+                row = df.loc[idx]
+                upside_accs = [row[f'upside_{t:.1f}'] for t in np.arange(0, 0.9, 0.1)]
+                downside_accs = [row[f'downside_{t:.1f}'] for t in np.arange(0, 0.9, 0.1)]
+                combined_score = (np.mean(upside_accs) + np.mean(downside_accs)) / 2
+                combined_scores.append(combined_score)
+            
+            # Rank models (1 = best, higher numbers = worse)
+            ranks = pd.Series(combined_scores).rank(method='dense', ascending=False).astype(int)
+            
+            # Update the dataframe with rankings
+            df.loc[regime_indices, 'model_regime_rank'] = ranks.values
+        
+        # Remove temporary column and rename best_regime
+        if 'is_best_regime' in df.columns:
+            df = df.drop('is_best_regime', axis=1)
+        if 'best_paradigm' in df.columns:
+            df = df.rename(columns={'best_paradigm': 'best_regime'})
+        
         # Reorder columns - all upside columns before all downside columns
-        base_cols = ['model_id', 'regime', 'training_from', 'training_to', 'best_paradigm', 
-                    'best_side', 'is_best_paradigm', 'test_samples', 'mae']
+        base_cols = ['model_id', 'regime', 'training_from', 'training_to', 'best_regime', 
+                    'best_side', 'model_regime_rank', 'test_samples', 'mae']
         
         # Add threshold columns - all upside first, then all downside
         upside_cols = [f'upside_{t:.1f}' for t in np.arange(0, 0.9, 0.1)]
@@ -390,58 +419,92 @@ class ModelTester:
         df.to_csv(output_file, index=False)
         print(f"Saved detailed results to {output_file}")
         
-        # Create summary of best paradigms - separate for upside and downside
-        best_summary_rows = []
+        # Create new ranking-based summary
+        print("Creating ranking-based summary...")
         
-        # For each regime, find best upside and downside models
-        for regime in sorted(df['regime'].unique()):
-            paradigm_data = df[df['regime'] == regime]
-            
-            # Find best upside model for this regime
-            upside_scores = []
-            for _, row in paradigm_data.iterrows():
-                upside_accs = [row[f'upside_{t:.1f}'] for t in np.arange(0, 0.9, 0.1)]
-                upside_scores.append(np.mean(upside_accs))
-            
-            best_upside_idx = np.argmax(upside_scores)
-            best_upside_row = paradigm_data.iloc[best_upside_idx].copy()
-            best_upside_row['up/down'] = 'up'
-            
-            # Find best downside model for this regime
-            downside_scores = []
-            for _, row in paradigm_data.iterrows():
-                downside_accs = [row[f'downside_{t:.1f}'] for t in np.arange(0, 0.9, 0.1)]
-                downside_scores.append(np.mean(downside_accs))
-            
-            best_downside_idx = np.argmax(downside_scores)
-            best_downside_row = paradigm_data.iloc[best_downside_idx].copy()
-            best_downside_row['up/down'] = 'down'
-            
-            best_summary_rows.append(best_upside_row)
-            best_summary_rows.append(best_downside_row)
+        # Get unique models and regimes
+        unique_models = sorted(df['model_id'].unique())
+        unique_regimes = sorted(df['regime'].unique())
         
-        # Create best regime summary DataFrame
-        best_regime_summary = pd.DataFrame(best_summary_rows)
+        # Initialize summary data with model info
+        summary_data = []
         
-        # Rename best_paradigm to regime and reorder columns for summary
-        summary_cols = ['model_id', 'training_from', 'training_to', 'regime', 'up/down'] + threshold_cols
+        for model_id in unique_models:
+            model_data = df[df['model_id'] == model_id]
+            if len(model_data) == 0:
+                continue
+                
+            # Get training period info (should be same for all regimes for this model)
+            training_from = model_data['training_from'].iloc[0]
+            training_to = model_data['training_to'].iloc[0]
+            
+            # Initialize row with basic info
+            row = {
+                'model_id': model_id,
+                'training_from': training_from,
+                'training_to': training_to
+            }
+            
+            # Add regime rankings - upside first, then downside
+            for regime in unique_regimes:
+                regime_model_data = model_data[model_data['regime'] == regime]
+                
+                if len(regime_model_data) > 0:
+                    # Calculate upside and downside scores for this model in this regime
+                    model_row = regime_model_data.iloc[0]
+                    
+                    upside_accs = [model_row[f'upside_{t:.1f}'] for t in np.arange(0, 0.9, 0.1)]
+                    downside_accs = [model_row[f'downside_{t:.1f}'] for t in np.arange(0, 0.9, 0.1)]
+                    
+                    upside_score = np.mean(upside_accs)
+                    downside_score = np.mean(downside_accs)
+                    
+                    # Get all models' scores for this regime to calculate ranks
+                    regime_all_data = df[df['regime'] == regime]
+                    
+                    # Calculate upside ranks
+                    all_upside_scores = []
+                    model_ids_list = list(regime_all_data['model_id'])
+                    
+                    for _, row_data in regime_all_data.iterrows():
+                        all_upside_accs = [row_data[f'upside_{t:.1f}'] for t in np.arange(0, 0.9, 0.1)]
+                        all_upside_scores.append(np.mean(all_upside_accs))
+                    
+                    upside_rank = pd.Series(all_upside_scores).rank(method='dense', ascending=False)
+                    model_upside_rank = upside_rank.iloc[model_ids_list.index(model_id)]
+                    
+                    # Calculate downside ranks
+                    all_downside_scores = []
+                    for _, row_data in regime_all_data.iterrows():
+                        all_downside_accs = [row_data[f'downside_{t:.1f}'] for t in np.arange(0, 0.9, 0.1)]
+                        all_downside_scores.append(np.mean(all_downside_accs))
+                    
+                    downside_rank = pd.Series(all_downside_scores).rank(method='dense', ascending=False)
+                    model_downside_rank = downside_rank.iloc[model_ids_list.index(model_id)]
+                    
+                    row[f'regime_{regime}_up'] = int(model_upside_rank)
+                    row[f'regime_{regime}_down'] = int(model_downside_rank)
+                else:
+                    # No data for this regime
+                    row[f'regime_{regime}_up'] = np.nan
+                    row[f'regime_{regime}_down'] = np.nan
+            
+            summary_data.append(row)
         
-        # Rename the column and ensure we use the 'regime' column from the original data
-        best_regime_summary['regime'] = best_regime_summary['regime']  # This should already be the regime number
-        best_regime_summary = best_regime_summary[['model_id', 'training_from', 'training_to', 'regime', 'up/down'] + threshold_cols]
+        # Create summary DataFrame
+        best_regime_summary = pd.DataFrame(summary_data)
         
+        # Save summary
         summary_file = results_dir / f'best_regime_summary_{start_model}_{end_model}.csv'
         best_regime_summary.to_csv(summary_file, index=False)
-        print(f"Saved best regime summary to {summary_file}")
+        print(f"Saved ranking-based summary to {summary_file}")
         
         # Print summary statistics
         print(f"\nSummary:")
         print(f"Total test combinations: {len(df)}")
         print(f"Unique models tested: {df['model_id'].nunique()}")
-        print(f"Best regime distribution (upside/downside):")
-        paradigm_counts = best_regime_summary.groupby(['regime', 'up/down']).size()
-        for (regime, side), count in paradigm_counts.items():
-            print(f"  Regime {regime} ({side}side): {count} model")
+        print(f"Summary includes rankings for {len(unique_regimes)} regimes: {unique_regimes}")
+        print(f"Ranking columns: upside and downside rankings for each regime")
 
 def main():
     parser = argparse.ArgumentParser(description='Test all models across paradigms')
