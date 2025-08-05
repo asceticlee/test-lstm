@@ -17,6 +17,7 @@ gast==0.6.0
 google-pasta==0.2.0
 grpcio==1.73.1
 h5py==3.14.0
+hmmlearn==0.3.3
 humanfriendly==10.0
 idna==3.10
 imbalanced-learn==0.13.0
@@ -69,6 +70,7 @@ requests==2.32.4
 rich==14.0.0
 scikit-learn==1.6.1
 scipy==1.16.0
+seaborn==0.13.2
 setuptools==80.9.0
 shap==0.48.0
 six==1.17.0

@@ -19,7 +19,7 @@ import sys
 from pathlib import Path
 import tensorflow as tf
 from tensorflow import keras
-from sklearn.preprocessing import MinMaxScaler
+from sklearn.preprocessing import MinMaxScaler, StandardScaler
 import json
 import argparse
 from datetime import datetime, timedelta
@@ -85,11 +85,11 @@ class RegimePredictionForecaster:
         self.model_results = pd.read_csv(model_results_file)
         print(f"Loaded model test results: {len(self.model_results):,} rows")
         
-        # Load best regime summary
+        # Load best regime summary (preserve model_id as string)
         best_summary_file = results_dir / 'best_regime_summary_1_425.csv'
         if not best_summary_file.exists():
             raise FileNotFoundError(f"Best regime summary file not found: {best_summary_file}")
-        self.best_regime_summary = pd.read_csv(best_summary_file)
+        self.best_regime_summary = pd.read_csv(best_summary_file, dtype={'model_id': str})
         print(f"Loaded best regime summary: {len(self.best_regime_summary):,} rows")
         
         # Load model log
@@ -115,41 +115,239 @@ class RegimePredictionForecaster:
         print(f"Regime distribution: {Counter(self.regime_history)}")
         
     def train_hmm_model(self, n_components=None):
-        """Train HMM model for regime prediction"""
+        """Train HMM model for regime prediction using market features as observations"""
         print("Training HMM model for regime prediction...")
         
-        if n_components is None:
-            n_components = len(np.unique(self.regime_history))
-        
-        # Use a simpler approach: Multinomial HMM for discrete regime sequences
         try:
             from hmmlearn import hmm
             
-            # Convert regime sequence to proper format
-            regime_sequence = self.regime_history.reshape(-1, 1).astype(float)
+            # Prepare training data with market features as observations
+            print("Preparing HMM training data with market features...")
             
-            # Train Multinomial HMM instead of Gaussian HMM for discrete regimes
-            self.hmm_model = hmm.MultinomialHMM(
+            # Get daily aggregated market features from trading data
+            daily_features = self.trading_data.groupby('TradingDay').agg({
+                'Mid': ['mean', 'std', 'min', 'max'],  # Price statistics
+                'Bid': ['mean', 'std'],  # Bid statistics
+                'Ask': ['mean', 'std'],  # Ask statistics
+                'ROC_05min:ROC': ['mean', 'std'],  # 5-min ROC statistics
+                'PriceChangesStat_05min:Mean': 'mean',  # Price change statistics
+                'PriceChangesStat_05min:+Std': 'mean',
+                'PriceChangesStat_05min:-Std': 'mean'
+            }).reset_index()
+            
+            # Flatten column names
+            daily_features.columns = ['TradingDay'] + [f'{col[0]}_{col[1]}' if col[1] else col[0] for col in daily_features.columns[1:]]
+            
+            # Calculate additional features
+            daily_features['price_range'] = daily_features['Mid_max'] - daily_features['Mid_min']
+            daily_features['price_volatility'] = daily_features['Mid_std']
+            daily_features['bid_ask_spread'] = daily_features['Ask_mean'] - daily_features['Bid_mean']
+            
+            # Merge with regime assignments
+            regime_data = pd.merge(
+                daily_features, 
+                self.regime_assignments.groupby('TradingDay')['Regime'].first().reset_index(),
+                on='TradingDay', 
+                how='inner'
+            ).sort_values('TradingDay').dropna()
+            
+            if len(regime_data) < 100:
+                print(f"Insufficient data for HMM training: {len(regime_data)} days")
+                self.hmm_model = None
+                return
+            
+            # Get unique regimes from the actual data
+            regimes = regime_data['Regime'].values
+            unique_regimes = sorted(np.unique(regimes))
+            
+            # Set number of components explicitly to number of unique regimes
+            if n_components is None:
+                n_components = len(unique_regimes)
+            
+            print(f"Training HMM with {n_components} components for regimes: {unique_regimes}")
+            
+            # Select meaningful features for HMM
+            feature_cols = [
+                'Mid_mean', 'Mid_std', 'price_range', 'price_volatility', 
+                'bid_ask_spread', 'ROC_05min:ROC_mean', 'PriceChangesStat_05min:Mean_'
+            ]
+            
+            # Filter available columns
+            available_cols = [col for col in feature_cols if col in regime_data.columns]
+            
+            if len(available_cols) == 0:
+                print("No valid features available for HMM training")
+                self.hmm_model = None
+                return
+            
+            observations = regime_data[available_cols].values
+            
+            # Normalize features
+            from sklearn.preprocessing import StandardScaler
+            self.hmm_scaler = StandardScaler()
+            observations_scaled = self.hmm_scaler.fit_transform(observations)
+            
+            # Train Gaussian HMM with market features as observations
+            self.hmm_model = hmm.GaussianHMM(
                 n_components=n_components,
-                n_iter=100,
-                random_state=42
+                covariance_type="full",
+                n_iter=200,
+                random_state=42,
+                verbose=False
             )
             
-            # For MultinomialHMM, we need to encode regimes as integers starting from 0
-            unique_regimes = sorted(np.unique(self.regime_history))
-            regime_mapping = {regime: i for i, regime in enumerate(unique_regimes)}
-            encoded_regimes = np.array([regime_mapping[regime] for regime in self.regime_history])
+            # Fit the model with observed market features
+            self.hmm_model.fit(observations_scaled)
             
-            # Fit the model
-            self.hmm_model.fit(encoded_regimes.reshape(-1, 1))
+            # Get predicted states for training data to create proper state-to-regime mapping
+            predicted_states = self.hmm_model.predict(observations_scaled)
             
-            # Store mapping for later use
-            self.regime_mapping = regime_mapping
-            self.reverse_mapping = {v: k for k, v in regime_mapping.items()}
+            # Create state-to-regime mapping using optimal assignment
+            state_to_regime_map = {}
             
-            # Evaluate model fit
-            log_likelihood = self.hmm_model.score(encoded_regimes.reshape(-1, 1))
+            # Calculate overall regime frequencies for comparison
+            regime_frequencies = {regime: np.sum(regimes == regime) / len(regimes) 
+                                for regime in unique_regimes}
+            
+            # Build enrichment matrix
+            enrichment_matrix = np.zeros((n_components, len(unique_regimes)))
+            
+            for state in range(n_components):
+                state_mask = predicted_states == state
+                if np.any(state_mask):
+                    regimes_in_state = regimes[state_mask]
+                    state_size = len(regimes_in_state)
+                    
+                    for regime_idx, regime in enumerate(unique_regimes):
+                        regime_count_in_state = np.sum(regimes_in_state == regime)
+                        state_frequency = regime_count_in_state / state_size
+                        overall_frequency = regime_frequencies[regime]
+                        
+                        # Score based on relative over-representation
+                        if overall_frequency > 0:
+                            enrichment_score = state_frequency / overall_frequency
+                        else:
+                            enrichment_score = 0
+                        enrichment_matrix[state, regime_idx] = enrichment_score
+            
+            # Use simple greedy assignment ensuring each regime gets a state
+            remaining_states = set(range(n_components))
+            remaining_regimes = set(range(len(unique_regimes)))
+            
+            # Create all possible assignments sorted by enrichment score
+            assignments = []
+            for state in range(n_components):
+                for regime_idx in range(len(unique_regimes)):
+                    enrichment = enrichment_matrix[state, regime_idx]
+                    assignments.append((enrichment, state, regime_idx))
+            
+            assignments.sort(reverse=True)  # Highest enrichment first
+            
+            # Assign each regime to best available state, ensuring coverage
+            for enrichment, state, regime_idx in assignments:
+                regime = unique_regimes[regime_idx]
+                if state in remaining_states and regime_idx in remaining_regimes:
+                    state_to_regime_map[state] = regime
+                    remaining_states.remove(state)
+                    remaining_regimes.remove(regime_idx)
+                    
+                    # Print assignment details
+                    state_mask = predicted_states == state
+                    if np.any(state_mask):
+                        regimes_in_state = regimes[state_mask]
+                        regime_count = np.sum(regimes_in_state == regime)
+                        state_size = len(regimes_in_state)
+                        state_freq = regime_count / state_size * 100
+                        overall_freq = regime_frequencies[regime] * 100
+                        print(f"  State {state} -> Regime {regime}: {regime_count}/{state_size} = {state_freq:.1f}% (vs {overall_freq:.1f}% overall, enrichment: {enrichment:.2f})")
+                        regimes_in_state = regimes[state_mask]
+                        regime_count = np.sum(regimes_in_state == regime)
+                        state_size = len(regimes_in_state)
+                        state_freq = regime_count / state_size * 100
+                        overall_freq = regime_frequencies[regime] * 100
+                        print(f"  State {state} -> Regime {regime}: {regime_count}/{state_size} = {state_freq:.1f}% (vs {overall_freq:.1f}% overall, enrichment: {enrichment:.2f})")
+                    
+                    if len(remaining_regimes) == 0:
+                        break
+            
+            # Handle any remaining unmapped states
+            for state in remaining_states:
+                # Find the best regime for this state from what's available  
+                best_regime = None
+                best_score = -1
+                for regime_idx, regime in enumerate(unique_regimes):
+                    if regime not in state_to_regime_map.values():
+                        score = enrichment_matrix[state, regime_idx] if state < len(enrichment_matrix) else 0
+                        if score > best_score:
+                            best_score = score
+                            best_regime = regime
+                            best_score = score
+                            best_regime = regime
+                
+                if best_regime is not None:
+                    state_to_regime_map[state] = best_regime
+                    print(f"  State {state} -> Regime {best_regime}: (secondary assignment, enrichment: {best_score:.2f})")
+                else:
+                    # Fallback to first available regime
+                    available_regimes = set(unique_regimes) - set(state_to_regime_map.values())
+                    if available_regimes:
+                        fallback_regime = sorted(available_regimes)[0]
+                        state_to_regime_map[state] = fallback_regime
+                        print(f"  State {state} -> Regime {fallback_regime}: (fallback assignment)")
+            
+            # Verify all regimes are covered
+            mapped_regimes = set(state_to_regime_map.values())
+            missing_regimes = set(unique_regimes) - mapped_regimes
+            if missing_regimes:
+                print(f"  WARNING: Missing regimes {missing_regimes} in state mapping!")
+                # Force assignment of missing regimes
+                for missing_regime in missing_regimes:
+                    # Find state with lowest current assignment score and reassign
+                    worst_state = None
+                    worst_score = float('inf')
+                    for state, assigned_regime in state_to_regime_map.items():
+                        regime_idx = list(unique_regimes).index(assigned_regime)
+                        score = enrichment_matrix[state, regime_idx]
+                        if score < worst_score:
+                            worst_score = score
+                            worst_state = state
+                            worst_score = score
+                            worst_state = state
+                    
+                    if worst_state is not None:
+                        old_regime = state_to_regime_map[worst_state]
+                        state_to_regime_map[worst_state] = missing_regime
+                        print(f"  FORCED: State {worst_state} -> Regime {missing_regime} (was Regime {old_regime})")
+                        
+            print(f"Final mapping covers regimes: {sorted(state_to_regime_map.values())}")
+            
+            # Update mapping to use proper state-to-regime correspondence
+            self.reverse_mapping = state_to_regime_map
+            self.regime_mapping = {v: k for k, v in state_to_regime_map.items()}
+            
+            # Store training data for reference
+            self.hmm_training_regimes = regimes
+            self.hmm_training_dates = regime_data['TradingDay'].values
+            self.hmm_feature_cols = available_cols
+            
+            # Evaluate model fit and state mapping
+            log_likelihood = self.hmm_model.score(observations_scaled)
             print(f"HMM model trained with log-likelihood: {log_likelihood:.3f}")
+            print(f"Using {len(available_cols)} market features: {available_cols}")
+            print(f"Training data: {len(regime_data)} days")
+            
+            # Print state-to-regime mapping for verification
+            print("State-to-regime mapping (enrichment-based):")
+            for state, regime in state_to_regime_map.items():
+                state_regime_count = np.sum((predicted_states == state) & (regimes == regime))
+                state_total = np.sum(predicted_states == state)
+                regime_idx = list(unique_regimes).index(regime)
+                enrichment = enrichment_matrix[state, regime_idx] if regime_idx < enrichment_matrix.shape[1] else 0
+                print(f"  State {state} -> Regime {regime} (enrichment: {enrichment:.2f}x, coverage: {state_regime_count}/{state_total})")
+            
+            print(f"Feature columns saved: {hasattr(self, 'hmm_feature_cols') and self.hmm_feature_cols is not None}")
+            print(f"Reverse mapping saved: {hasattr(self, 'reverse_mapping') and self.reverse_mapping is not None}")
+            print("HMM training completed successfully")
             
         except Exception as e:
             print(f"HMM training failed: {str(e)}")
@@ -157,38 +355,90 @@ class RegimePredictionForecaster:
             self.hmm_model = None
         
     def predict_regime_hmm(self, current_date, lookback_periods=10):
-        """Predict next regime using HMM"""
+        """Predict next regime using HMM with market features"""
         if self.hmm_model is None:
             return self.predict_regime_naive(current_date)
-            
-        # Find current position in regime history
-        current_idx = np.where(self.trading_days <= int(current_date))[0]
         
-        if len(current_idx) == 0:
-            # If before historical data, use naive approach
-            return self.predict_regime_naive(current_date)
-        
-        current_idx = current_idx[-1]
-        
-        # Get recent regime history
-        start_idx = max(0, current_idx - lookback_periods + 1)
-        recent_regimes = self.regime_history[start_idx:current_idx + 1]
-        
-        if len(recent_regimes) == 0:
-            return self.predict_regime_naive(current_date)
-        
-        # Encode regimes using the mapping
         try:
-            encoded_regimes = np.array([self.regime_mapping[regime] for regime in recent_regimes])
+            current_date_int = int(current_date)
             
-            # Predict next regime
-            predicted_encoded = self.hmm_model.predict(encoded_regimes.reshape(-1, 1))[-1]
-            predicted_regime = self.reverse_mapping[predicted_encoded]
+            # Get recent market data for the prediction date and lookback period
+            end_date = current_date_int
+            start_date = end_date - lookback_periods
             
-            return int(predicted_regime)
+            recent_data = self.trading_data[
+                (self.trading_data['TradingDay'] >= start_date) & 
+                (self.trading_data['TradingDay'] < end_date)
+            ]
+            
+            if len(recent_data) == 0:
+                print(f"No recent market data for HMM prediction, falling back to naive")
+                return self.predict_regime_naive(current_date)
+            
+            # Aggregate daily features (same as in training)
+            daily_features = recent_data.groupby('TradingDay').agg({
+                'Mid': ['mean', 'std', 'min', 'max'],
+                'Bid': ['mean', 'std'],
+                'Ask': ['mean', 'std'],
+                'ROC_05min:ROC': ['mean', 'std'],
+                'PriceChangesStat_05min:Mean': 'mean',
+                'PriceChangesStat_05min:+Std': 'mean',
+                'PriceChangesStat_05min:-Std': 'mean'
+            }).reset_index()
+            
+            # Flatten column names
+            daily_features.columns = ['TradingDay'] + [f'{col[0]}_{col[1]}' if col[1] else col[0] for col in daily_features.columns[1:]]
+            
+            # Calculate additional features
+            daily_features['price_range'] = daily_features['Mid_max'] - daily_features['Mid_min']
+            daily_features['price_volatility'] = daily_features['Mid_std']
+            daily_features['bid_ask_spread'] = daily_features['Ask_mean'] - daily_features['Bid_mean']
+            
+            # Use same feature columns as training
+            if not hasattr(self, 'hmm_feature_cols'):
+                print("HMM feature columns not available, falling back to naive")
+                return self.predict_regime_naive(current_date)
+            
+            available_cols = [col for col in self.hmm_feature_cols if col in daily_features.columns]
+            
+            if len(available_cols) == 0:
+                print("No valid features for HMM prediction, falling back to naive")
+                return self.predict_regime_naive(current_date)
+            
+            # Get recent observations and remove NaN
+            observations = daily_features[available_cols].dropna().values
+            
+            if len(observations) == 0:
+                print("No valid observations for HMM prediction, falling back to naive")
+                return self.predict_regime_naive(current_date)
+            
+            # Scale using the same scaler from training
+            if hasattr(self, 'hmm_scaler'):
+                observations_scaled = self.hmm_scaler.transform(observations)
+            else:
+                print("HMM scaler not available, falling back to naive")
+                return self.predict_regime_naive(current_date)
+            
+            # Predict hidden states for recent observations
+            hidden_states = self.hmm_model.predict(observations_scaled)
+            
+            # Use the most recent predicted state as current regime
+            current_state = hidden_states[-1]
+            
+            # Predict next state using transition probabilities
+            transition_probs = self.hmm_model.transmat_[current_state]
+            next_state = np.argmax(transition_probs)
+            
+            # Map back to regime
+            if next_state in self.reverse_mapping:
+                predicted_regime = self.reverse_mapping[next_state]
+                return int(predicted_regime)
+            else:
+                print(f"Invalid state {next_state}, falling back to naive")
+                return self.predict_regime_naive(current_date)
+                
         except Exception as e:
             print(f"HMM prediction failed: {str(e)}, falling back to naive method")
-            # Fallback to naive method
             return self.predict_regime_naive(current_date)
             
     def predict_regime_naive(self, current_date, lookback_periods=5):
@@ -213,7 +463,7 @@ class RegimePredictionForecaster:
         return int(Counter(recent_regimes).most_common(1)[0][0])
     
     def get_best_models_for_regime(self, regime, prediction_date):
-        """Get best upside and downside models for a given regime, excluding models trained on prediction date"""
+        """Get best upside and downside models for a given regime using pre-calculated rankings"""
         prediction_date_int = int(prediction_date)
         
         # Filter models that don't overlap with prediction date
@@ -224,46 +474,56 @@ class RegimePredictionForecaster:
             
             # Exclude models if prediction date falls within training period
             if not (train_from <= prediction_date_int <= train_to):
-                # Convert model_id to match format in model_results (integer)
+                # Model IDs in model_log are already 5-digit strings like "00001"
                 model_id_str = str(model_row['model_id']).strip()
-                if '.' in model_id_str:
-                    model_id_int = int(float(model_id_str))
-                else:
-                    model_id_int = int(model_id_str)
-                valid_models.append(model_id_int)
+                valid_models.append(model_id_str)
         
         if len(valid_models) == 0:
             print(f"Warning: No valid models found for regime {regime} on date {prediction_date}")
             return None, None
         
-        # Filter model results for this regime and valid models
-        regime_models = self.model_results[
-            (self.model_results['regime'] == regime) & 
-            (self.model_results['model_id'].isin(valid_models))
+        print(f"Found {len(valid_models)} valid models for regime {regime} on date {prediction_date}")
+        print(f"Valid models: {valid_models[:10]}...")  # Show first 10 for debugging
+        
+        # Filter best_regime_summary for valid models
+        valid_summary = self.best_regime_summary[
+            self.best_regime_summary['model_id'].isin(valid_models)
         ]
         
-        if len(regime_models) == 0:
-            print(f"Warning: No model results found for regime {regime}")
+        if len(valid_summary) == 0:
+            print(f"Warning: No models found in best_regime_summary for regime {regime}")
+            print(f"Available models in summary: {self.best_regime_summary['model_id'].head()}")
             return None, None
         
-        # Calculate upside and downside scores
-        upside_scores = []
-        downside_scores = []
+        # Get regime-specific upside and downside rankings
+        upside_col = f'regime_{regime}_up'
+        downside_col = f'regime_{regime}_down'
         
-        for _, row in regime_models.iterrows():
-            # Calculate average upside accuracy
-            upside_accs = [row[f'upside_{t:.1f}'] for t in np.arange(0, 0.9, 0.1)]
-            upside_score = np.mean(upside_accs)
-            upside_scores.append((upside_score, row))
-            
-            # Calculate average downside accuracy
-            downside_accs = [row[f'downside_{t:.1f}'] for t in np.arange(0, 0.9, 0.1)]
-            downside_score = np.mean(downside_accs)
-            downside_scores.append((downside_score, row))
+        if upside_col not in valid_summary.columns or downside_col not in valid_summary.columns:
+            print(f"Warning: Regime {regime} columns not found in best_regime_summary")
+            print(f"Available columns: {list(valid_summary.columns)}")
+            return None, None
         
-        # Get best models
-        best_upside = max(upside_scores, key=lambda x: x[0])[1] if upside_scores else None
-        best_downside = max(downside_scores, key=lambda x: x[0])[1] if downside_scores else None
+        # Find best upside model (lowest rank number = best)
+        best_upside_row = valid_summary.loc[valid_summary[upside_col].idxmin()]
+        best_upside_rank = int(best_upside_row[upside_col])
+        
+        # Find best downside model (lowest rank number = best)
+        best_downside_row = valid_summary.loc[valid_summary[downside_col].idxmin()]
+        best_downside_rank = int(best_downside_row[downside_col])
+        
+        # Create result objects with model info and rankings
+        best_upside = {
+            'model_id': int(best_upside_row['model_id']),
+            'model_regime_rank': best_upside_rank,
+            'regime': regime
+        }
+        
+        best_downside = {
+            'model_id': int(best_downside_row['model_id']),
+            'model_regime_rank': best_downside_rank,
+            'regime': regime
+        }
         
         return best_upside, best_downside
     
