@@ -10,12 +10,12 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))  # Gets src/ dir
 PROJECT_ROOT = os.path.dirname(SCRIPT_DIR)  # Gets test-lstm/ root
 
 # Model 1 paths
-MODEL1_PATH = os.path.join(os.path.join(PROJECT_ROOT, 'models'), 'lstm_stock_model_00201.keras')
-SCALER1_PATH = os.path.join(os.path.join(PROJECT_ROOT, 'models'), 'scaler_params_00201.json')
+MODEL1_PATH = os.path.join(os.path.join(PROJECT_ROOT, 'models'), 'lstm_stock_model_00043.keras')
+SCALER1_PATH = os.path.join(os.path.join(PROJECT_ROOT, 'models'), 'scaler_params_00043.json')
 
 # Model 2 paths (adjust these to your second model)
-MODEL2_PATH = os.path.join(os.path.join(PROJECT_ROOT, 'models'), 'lstm_stock_model_00205.keras')
-SCALER2_PATH = os.path.join(os.path.join(PROJECT_ROOT, 'models'), 'scaler_params_00205.json')
+MODEL2_PATH = os.path.join(os.path.join(PROJECT_ROOT, 'models'), 'lstm_stock_model_00421.keras')
+SCALER2_PATH = os.path.join(os.path.join(PROJECT_ROOT, 'models'), 'scaler_params_00421.json')
 
 SEQ_LENGTH = 30  # adjust if needed
 NUM_FEATURES = 44  # adjust if needed

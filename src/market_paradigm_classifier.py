@@ -81,12 +81,26 @@ class MarketParadigmClassifier:
         
         # Convert TradingDay to datetime
         self.raw_data['Date'] = pd.to_datetime(self.raw_data['TradingDay'], format='%Y%m%d')
-        self.raw_data['Week'] = self.raw_data['Date'].dt.to_period('W')
+        
+        # Create custom Sunday-to-Saturday weeks
+        # Find the Sunday for each date (day 0 = Monday, 6 = Sunday)
+        self.raw_data['DayOfWeek'] = self.raw_data['Date'].dt.dayofweek
+        # Calculate days since Sunday (Sunday = 0, Monday = 1, ..., Saturday = 6)
+        days_since_sunday = (self.raw_data['DayOfWeek'] + 1) % 7
+        # Find the Sunday for each date
+        week_start = self.raw_data['Date'] - pd.to_timedelta(days_since_sunday, unit='D')
+        week_end = week_start + pd.to_timedelta(6, unit='D')
+        
+        # Create week identifier as "YYYY-MM-DD/YYYY-MM-DD" format
+        self.raw_data['Week'] = week_start.dt.strftime('%Y-%m-%d') + '/' + week_end.dt.strftime('%Y-%m-%d')
+        self.raw_data['Week_Start_Date'] = week_start
+        self.raw_data['Week_End_Date'] = week_end
         
         # Get date range
         start_date = self.raw_data['Date'].min()
         end_date = self.raw_data['Date'].max()
         print(f"Data range: {start_date.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')}")
+        print(f"Using Sunday-to-Saturday weeks")
         
         unique_weeks = self.raw_data['Week'].nunique()
         print(f"Total weeks: {unique_weeks}")
@@ -101,11 +115,17 @@ class MarketParadigmClassifier:
             if len(week_data) < 10:  # Skip weeks with insufficient data
                 continue
                 
+            # Get the week start and end dates from the data
+            week_start = week_data['Week_Start_Date'].iloc[0]
+            week_end = week_data['Week_End_Date'].iloc[0]
+            
             features = {
-                'Week': str(week),
+                'Week': week,
                 'Date': week_data['Date'].iloc[0],
                 'Week_Start': week_data['Date'].min(),
                 'Week_End': week_data['Date'].max(),
+                'Week_Start_Sunday': week_start,
+                'Week_End_Saturday': week_end,
                 'Trading_Days': week_data['Date'].nunique(),
                 'Total_Minutes': len(week_data)
             }
@@ -188,9 +208,9 @@ class MarketParadigmClassifier:
         """Determine optimal number of paradigms using multiple metrics"""
         print("Determining optimal number of paradigms...")
         
-        # Get feature columns (exclude metadata)
+        # Get feature columns (exclude metadata and datetime columns)
         feature_cols = [col for col in self.weekly_features.columns 
-                       if col not in ['Week', 'Date', 'Week_Start', 'Week_End', 'Trading_Days', 'Total_Minutes']]
+                       if col not in ['Week', 'Date', 'Week_Start', 'Week_End', 'Week_Start_Sunday', 'Week_End_Saturday', 'Trading_Days', 'Total_Minutes']]
         
         X = self.weekly_features[feature_cols].fillna(0)
         X_scaled = self.scaler.fit_transform(X)
@@ -260,7 +280,7 @@ class MarketParadigmClassifier:
             n_paradigms, X_pca = self.determine_optimal_clusters()
         else:
             feature_cols = [col for col in self.weekly_features.columns 
-                           if col not in ['Week', 'Date', 'Week_Start', 'Week_End', 'Trading_Days', 'Total_Minutes']]
+                           if col not in ['Week', 'Date', 'Week_Start', 'Week_End', 'Week_Start_Sunday', 'Week_End_Saturday', 'Trading_Days', 'Total_Minutes']]
             X = self.weekly_features[feature_cols].fillna(0)
             X_scaled = self.scaler.fit_transform(X)
             self.pca = PCA(n_components=min(20, X_scaled.shape[1]))
@@ -388,14 +408,8 @@ class MarketParadigmClassifier:
         paradigm_mapping = []
         
         for _, week_row in self.weekly_features.iterrows():
-            # Get all days in this week from raw data
-            week_start = week_row['Week_Start']
-            week_end = week_row['Week_End']
-            
-            week_data = self.raw_data[
-                (self.raw_data['Date'] >= week_start) & 
-                (self.raw_data['Date'] <= week_end)
-            ]
+            # Get all days in this week from raw data using the Week identifier
+            week_data = self.raw_data[self.raw_data['Week'] == week_row['Week']]
             
             for _, day_row in week_data.iterrows():
                 paradigm_mapping.append({
@@ -412,9 +426,9 @@ class MarketParadigmClassifier:
         paradigm_df.to_csv(output_file, index=False)
         print(f"Saved paradigm assignments to {output_file}")
         
-        # Save weekly summary
+        # Save weekly summary with Sunday-Saturday information
         weekly_output = self.output_dir / 'weekly_paradigms.csv'
-        weekly_paradigm = self.weekly_features[['Week', 'Date', 'Week_Start', 'Week_End', 'Paradigm']].copy()
+        weekly_paradigm = self.weekly_features[['Week', 'Date', 'Week_Start', 'Week_End', 'Week_Start_Sunday', 'Week_End_Saturday', 'Paradigm']].copy()
         weekly_paradigm.to_csv(weekly_output, index=False)
         print(f"Saved weekly paradigms to {weekly_output}")
         
@@ -456,7 +470,7 @@ class MarketParadigmClassifier:
             
         # Prepare features
         feature_cols = [col for col in week_features.columns 
-                       if col not in ['Week', 'Date', 'Week_Start', 'Week_End', 'Trading_Days', 'Total_Minutes']]
+                       if col not in ['Week', 'Date', 'Week_Start', 'Week_End', 'Week_Start_Sunday', 'Week_End_Saturday', 'Trading_Days', 'Total_Minutes']]
         
         X = week_features[feature_cols].fillna(0)
         X_scaled = self.scaler.transform(X)
