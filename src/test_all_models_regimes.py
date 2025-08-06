@@ -341,23 +341,17 @@ class ModelTester:
                 result = self.test_model_on_paradigm(model_info, regime)
                 model_results[regime] = result
             
-            # Find best regime
-            best_paradigm, best_score, best_side = self.find_best_paradigm(model_results)
-            
             # Save results for each regime
             for regime, result in model_results.items():
                 if result is not None:
                     # Add model metadata
                     result.update({
                         'training_from': model_info['train_from'],
-                        'training_to': model_info['train_to'],
-                        'best_regime': best_paradigm,
-                        'best_side': best_side,
-                        'is_best_regime': (regime == best_paradigm)
+                        'training_to': model_info['train_to']
                     })
                     all_results.append(result)
             
-            print(f"  Best regime for model {model_num}: {best_paradigm} ({best_side}side, score: {best_score:.4f})")
+            print(f"  Completed testing model {model_num} on all regimes")
         
         # Save results
         self.save_results(all_results, start_model, end_model)
@@ -376,35 +370,42 @@ class ModelTester:
         # Calculate ranking within each regime
         print("Calculating regime-specific rankings...")
         
-        # For each regime, calculate rankings based on combined upside and downside performance
+        # For each regime, calculate separate upside and downside rankings
         for regime in sorted(df['regime'].unique()):
             regime_indices = df[df['regime'] == regime].index
             regime_data = df.loc[regime_indices].copy()
             
-            # Calculate combined scores for ranking (average of upside and downside)
-            combined_scores = []
+            # Calculate upside and downside scores separately
+            upside_scores = []
+            downside_scores = []
             for idx in regime_indices:
                 row = df.loc[idx]
                 upside_accs = [row[f'upside_{t:.1f}'] for t in np.arange(0, 0.9, 0.1)]
                 downside_accs = [row[f'downside_{t:.1f}'] for t in np.arange(0, 0.9, 0.1)]
-                combined_score = (np.mean(upside_accs) + np.mean(downside_accs)) / 2
-                combined_scores.append(combined_score)
+                upside_scores.append(np.mean(upside_accs))
+                downside_scores.append(np.mean(downside_accs))
             
-            # Rank models (1 = best, higher numbers = worse)
-            ranks = pd.Series(combined_scores).rank(method='dense', ascending=False).astype(int)
+            # Rank models separately for upside and downside (1 = best, higher numbers = worse)
+            upside_ranks = pd.Series(upside_scores).rank(method='dense', ascending=False).astype(int)
+            downside_ranks = pd.Series(downside_scores).rank(method='dense', ascending=False).astype(int)
             
-            # Update the dataframe with rankings
-            df.loc[regime_indices, 'model_regime_rank'] = ranks.values
+            # Update the dataframe with separate rankings
+            df.loc[regime_indices, 'model_regime_upside_rank'] = upside_ranks.values
+            df.loc[regime_indices, 'model_regime_downside_rank'] = downside_ranks.values
         
-        # Remove temporary column and rename best_regime
+        # Remove temporary columns
         if 'is_best_regime' in df.columns:
             df = df.drop('is_best_regime', axis=1)
         if 'best_paradigm' in df.columns:
-            df = df.rename(columns={'best_paradigm': 'best_regime'})
+            df = df.drop('best_paradigm', axis=1)
+        if 'best_regime' in df.columns:
+            df = df.drop('best_regime', axis=1)
+        if 'best_side' in df.columns:
+            df = df.drop('best_side', axis=1)
         
-        # Reorder columns - all upside columns before all downside columns
-        base_cols = ['model_id', 'regime', 'training_from', 'training_to', 'best_regime', 
-                    'best_side', 'model_regime_rank', 'test_samples', 'mae']
+        # Reorder columns - remove best_regime and best_side, split model_regime_rank
+        base_cols = ['model_id', 'regime', 'training_from', 'training_to', 
+                    'model_regime_upside_rank', 'model_regime_downside_rank', 'test_samples', 'mae']
         
         # Add threshold columns - all upside first, then all downside
         upside_cols = [f'upside_{t:.1f}' for t in np.arange(0, 0.9, 0.1)]
@@ -418,6 +419,12 @@ class ModelTester:
         output_file = results_dir / f'model_regime_test_results_{start_model}_{end_model}.csv'
         df.to_csv(output_file, index=False)
         print(f"Saved detailed results to {output_file}")
+        
+        # Generate daily best model tracking
+        self.generate_daily_best_models(df, start_model, end_model)
+        
+        # Generate weekly best model tracking
+        self.generate_weekly_best_models(df, start_model, end_model)
         
         # Create new ranking-based summary
         print("Creating ranking-based summary...")
@@ -505,6 +512,426 @@ class ModelTester:
         print(f"Unique models tested: {df['model_id'].nunique()}")
         print(f"Summary includes rankings for {len(unique_regimes)} regimes: {unique_regimes}")
         print(f"Ranking columns: upside and downside rankings for each regime")
+    
+    def generate_daily_best_models(self, df, start_model, end_model):
+        """Generate daily best model tracking using competitive regime-based selection"""
+        print("Generating daily best model tracking with competitive regime-based selection...")
+        
+        # Load the enhanced best regime summary with regime base columns
+        best_regime_file = results_dir / 'best_regime_summary_1_425.csv'
+        if not best_regime_file.exists():
+            print(f"ERROR: Best regime summary file not found: {best_regime_file}")
+            print("Please run the full model analysis first to generate this file.")
+            return None
+            
+        regime_base_df = pd.read_csv(best_regime_file)
+        print(f"Loaded regime base summary with {len(regime_base_df)} models")
+        
+        # Get all unique trading days from regime assignments
+        unique_trading_days = sorted(self.regime_assignments['TradingDay'].unique())
+        unique_regimes = sorted(df['regime'].unique())
+        
+        # Organize models by their regime bases
+        print("Organizing models by regime bases...")
+        upside_regime_models = {}  # regime -> list of model_ids
+        downside_regime_models = {}  # regime -> list of model_ids
+        
+        for _, row in regime_base_df.iterrows():
+            model_id = f"{int(row['model_id']):05d}"  # Convert back to 00001 format
+            
+            # Group by upside regime base
+            upside_regime = row['model_regime_upside']
+            if upside_regime not in upside_regime_models:
+                upside_regime_models[upside_regime] = []
+            upside_regime_models[upside_regime].append(model_id)
+            
+            # Group by downside regime base
+            downside_regime = row['model_regime_downside'] 
+            if downside_regime not in downside_regime_models:
+                downside_regime_models[downside_regime] = []
+            downside_regime_models[downside_regime].append(model_id)
+        
+        # Print regime base distributions
+        for regime in sorted(upside_regime_models.keys()):
+            count = len(upside_regime_models[regime])
+            print(f"  Upside regime {regime}: {count} models")
+            
+        for regime in sorted(downside_regime_models.keys()):
+            count = len(downside_regime_models[regime])
+            print(f"  Downside regime {regime}: {count} models")
+        
+        # Filter models to the requested range
+        valid_models = set(f"{i:05d}" for i in range(start_model, end_model + 1))
+        
+        # Filter regime model lists to only include valid models
+        for regime in upside_regime_models:
+            upside_regime_models[regime] = [m for m in upside_regime_models[regime] if m in valid_models]
+            
+        for regime in downside_regime_models:
+            downside_regime_models[regime] = [m for m in downside_regime_models[regime] if m in valid_models]
+        
+        print(f"Filtered to models in range {start_model}-{end_model}")
+        
+        daily_results = []
+        
+        for trading_day in unique_trading_days:
+            # Get the regime for this trading day
+            day_regime_data = self.regime_assignments[
+                self.regime_assignments['TradingDay'] == trading_day
+            ]
+            if len(day_regime_data) == 0:
+                continue
+                
+            actual_regime = day_regime_data['Regime'].iloc[0]
+            
+            # For each test regime, find the best models through competition
+            for test_regime in unique_regimes:
+                
+                # Get candidate models for upside in this regime
+                upside_candidates = upside_regime_models.get(test_regime, [])
+                # Filter out models trained on this day
+                upside_candidates = [
+                    model_id for model_id in upside_candidates
+                    if not self._model_trained_on_day(model_id, trading_day, regime_base_df)
+                ]
+                
+                # Get candidate models for downside in this regime  
+                downside_candidates = downside_regime_models.get(test_regime, [])
+                # Filter out models trained on this day
+                downside_candidates = [
+                    model_id for model_id in downside_candidates
+                    if not self._model_trained_on_day(model_id, trading_day, regime_base_df)
+                ]
+                
+                # Simulate competition: find best performing model for upside
+                best_upside_model = None
+                best_upside_score = None
+                if upside_candidates:
+                    # Use performance scores from the test regime for competition
+                    upside_results = []
+                    for model_id in upside_candidates:
+                        # Find this model's performance in the test regime
+                        model_data = df[
+                            (df['model_id'] == int(model_id)) & 
+                            (df['regime'] == test_regime)
+                        ]
+                        if len(model_data) > 0:
+                            row = model_data.iloc[0]
+                            upside_accs = [row[f'upside_{t:.1f}'] for t in np.arange(0, 0.9, 0.1)]
+                            avg_upside_score = np.mean(upside_accs)
+                            upside_results.append((model_id, avg_upside_score))
+                    
+                    # Select best upside model (highest score wins the competition)
+                    if upside_results:
+                        upside_results.sort(key=lambda x: x[1], reverse=True)
+                        best_upside_model, best_upside_score = upside_results[0]
+                
+                # Simulate competition: find best performing model for downside
+                best_downside_model = None  
+                best_downside_score = None
+                if downside_candidates:
+                    # Use performance scores from the test regime for competition
+                    downside_results = []
+                    for model_id in downside_candidates:
+                        # Find this model's performance in the test regime
+                        model_data = df[
+                            (df['model_id'] == int(model_id)) & 
+                            (df['regime'] == test_regime)
+                        ]
+                        if len(model_data) > 0:
+                            row = model_data.iloc[0]
+                            downside_accs = [row[f'downside_{t:.1f}'] for t in np.arange(0, 0.9, 0.1)]
+                            avg_downside_score = np.mean(downside_accs)
+                            downside_results.append((model_id, avg_downside_score))
+                    
+                    # Select best downside model (highest score wins the competition)
+                    if downside_results:
+                        downside_results.sort(key=lambda x: x[1], reverse=True)
+                        best_downside_model, best_downside_score = downside_results[0]
+                
+                # Record the results
+                daily_results.append({
+                    'trading_day': trading_day,
+                    'actual_regime': actual_regime,
+                    'test_regime': test_regime,
+                    'best_upside_model_id': best_upside_model,
+                    'best_upside_score': best_upside_score,
+                    'best_upside_rank': 1 if best_upside_model else None,
+                    'best_downside_model_id': best_downside_model,
+                    'best_downside_score': best_downside_score,
+                    'best_downside_rank': 1 if best_downside_model else None,
+                    'competing_upside_models': len(upside_candidates),
+                    'competing_downside_models': len(downside_candidates)
+                })
+        
+        # Convert to DataFrame and save
+        daily_df = pd.DataFrame(daily_results)
+        
+        # Sort by trading day and regime
+        daily_df = daily_df.sort_values(['trading_day', 'test_regime']).reset_index(drop=True)
+        
+        # Save the daily best models file
+        daily_output_file = results_dir / f'daily_best_models_{start_model}_{end_model}.csv'
+        daily_df.to_csv(daily_output_file, index=False)
+        print(f"Saved daily best models to {daily_output_file}")
+        
+        # Print some statistics
+        print(f"Daily best models summary:")
+        print(f"  Total trading days: {len(unique_trading_days):,}")
+        print(f"  Total day-regime combinations: {len(daily_df):,}")
+        print(f"  Average competing upside models per day-regime: {daily_df['competing_upside_models'].mean():.1f}")
+        print(f"  Average competing downside models per day-regime: {daily_df['competing_downside_models'].mean():.1f}")
+        
+        # Show distribution of competing models
+        upside_counts = daily_df['competing_upside_models'].value_counts().sort_index()
+        downside_counts = daily_df['competing_downside_models'].value_counts().sort_index()
+        print(f"  Competing upside models distribution:")
+        for count, freq in upside_counts.head(10).items():
+            print(f"    {count} models: {freq:,} combinations")
+        print(f"  Competing downside models distribution:")
+        for count, freq in downside_counts.head(10).items():
+            print(f"    {count} models: {freq:,} combinations")
+        
+        # Show some examples of selected models
+        sample_df = daily_df.sample(min(10, len(daily_df)))
+        print(f"\nSample daily competitive selections:")
+        for _, row in sample_df.iterrows():
+            print(f"  Day {row['trading_day']}, Regime {row['test_regime']}: "
+                  f"Upside={row['best_upside_model_id']} (vs {row['competing_upside_models']} competitors), "
+                  f"Downside={row['best_downside_model_id']} (vs {row['competing_downside_models']} competitors)")
+        
+        return daily_df
+    
+    def _model_trained_on_day(self, model_id, trading_day, regime_base_df):
+        """Check if a model was trained on the given trading day"""
+        model_row = regime_base_df[regime_base_df['model_id'] == int(model_id)]
+        if len(model_row) == 0:
+            return True  # Conservative: exclude if model not found
+            
+        training_from = int(model_row.iloc[0]['training_from'])
+        training_to = int(model_row.iloc[0]['training_to'])
+        
+        return training_from <= trading_day <= training_to
+    
+    def generate_weekly_best_models(self, df, start_model, end_model):
+        """Generate weekly best model tracking using competitive regime-based selection"""
+        print("Generating weekly best model tracking with competitive regime-based selection...")
+        
+        # Load the enhanced best regime summary with regime base columns
+        best_regime_file = results_dir / 'best_regime_summary_1_425.csv'
+        if not best_regime_file.exists():
+            print(f"ERROR: Best regime summary file not found: {best_regime_file}")
+            print("Please run the full model analysis first to generate this file.")
+            return None
+            
+        regime_base_df = pd.read_csv(best_regime_file)
+        print(f"Loaded regime base summary with {len(regime_base_df)} models")
+        
+        # Get all unique trading days from regime assignments
+        unique_trading_days = sorted(self.regime_assignments['TradingDay'].unique())
+        unique_regimes = sorted(df['regime'].unique())
+        
+        # Organize models by their regime bases (same as daily)
+        print("Organizing models by regime bases for weekly competition...")
+        upside_regime_models = {}  # regime -> list of model_ids
+        downside_regime_models = {}  # regime -> list of model_ids
+        
+        for _, row in regime_base_df.iterrows():
+            model_id = f"{int(row['model_id']):05d}"  # Convert back to 00001 format
+            
+            # Group by upside regime base
+            upside_regime = row['model_regime_upside']
+            if upside_regime not in upside_regime_models:
+                upside_regime_models[upside_regime] = []
+            upside_regime_models[upside_regime].append(model_id)
+            
+            # Group by downside regime base
+            downside_regime = row['model_regime_downside'] 
+            if downside_regime not in downside_regime_models:
+                downside_regime_models[downside_regime] = []
+            downside_regime_models[downside_regime].append(model_id)
+        
+        # Filter models to the requested range
+        valid_models = set(f"{i:05d}" for i in range(start_model, end_model + 1))
+        
+        # Filter regime model lists to only include valid models
+        for regime in upside_regime_models:
+            upside_regime_models[regime] = [m for m in upside_regime_models[regime] if m in valid_models]
+            
+        for regime in downside_regime_models:
+            downside_regime_models[regime] = [m for m in downside_regime_models[regime] if m in valid_models]
+        
+        # Group trading days into weeks
+        trading_days_df = pd.DataFrame({'trading_day': unique_trading_days})
+        trading_days_df['date'] = pd.to_datetime(trading_days_df['trading_day'], format='%Y%m%d')
+        trading_days_df['week_start'] = trading_days_df['date'].dt.to_period('W').dt.start_time
+        trading_days_df['week_end'] = trading_days_df['date'].dt.to_period('W').dt.end_time
+        
+        # Group by week
+        weekly_groups = trading_days_df.groupby(['week_start', 'week_end'])
+        
+        weekly_results = []
+        
+        for (week_start, week_end), week_data in weekly_groups:
+            week_trading_days = week_data['trading_day'].tolist()
+            
+            # Get regime distribution for this week
+            week_regime_data = self.regime_assignments[
+                self.regime_assignments['TradingDay'].isin(week_trading_days)
+            ]
+            
+            if len(week_regime_data) == 0:
+                continue
+            
+            # Get the most common regime for this week
+            regime_counts = week_regime_data['Regime'].value_counts()
+            most_common_regime = regime_counts.index[0]
+            
+            # Calculate regime distribution percentages
+            regime_distribution = {}
+            total_records = len(week_regime_data)
+            for regime in unique_regimes:
+                count = regime_counts.get(regime, 0)
+                regime_distribution[f'regime_{regime}_pct'] = count / total_records * 100
+            
+            # For each test regime, run competitive selection
+            for test_regime in unique_regimes:
+                
+                # Get candidate models for upside in this regime
+                upside_candidates = upside_regime_models.get(test_regime, [])
+                # Filter out models trained during this week
+                upside_candidates = [
+                    model_id for model_id in upside_candidates
+                    if not self._model_trained_during_week(model_id, week_trading_days, regime_base_df)
+                ]
+                
+                # Get candidate models for downside in this regime  
+                downside_candidates = downside_regime_models.get(test_regime, [])
+                # Filter out models trained during this week
+                downside_candidates = [
+                    model_id for model_id in downside_candidates
+                    if not self._model_trained_during_week(model_id, week_trading_days, regime_base_df)
+                ]
+                
+                # Simulate weekly competition: find best performing model for upside
+                best_upside_model = None
+                best_upside_score = None
+                if upside_candidates:
+                    # Use performance scores from the test regime for competition
+                    upside_results = []
+                    for model_id in upside_candidates:
+                        # Find this model's performance in the test regime
+                        model_data = df[
+                            (df['model_id'] == int(model_id)) & 
+                            (df['regime'] == test_regime)
+                        ]
+                        if len(model_data) > 0:
+                            row = model_data.iloc[0]
+                            upside_accs = [row[f'upside_{t:.1f}'] for t in np.arange(0, 0.9, 0.1)]
+                            avg_upside_score = np.mean(upside_accs)
+                            upside_results.append((model_id, avg_upside_score))
+                    
+                    # Select best upside model (highest score wins the weekly competition)
+                    if upside_results:
+                        upside_results.sort(key=lambda x: x[1], reverse=True)
+                        best_upside_model, best_upside_score = upside_results[0]
+                
+                # Simulate weekly competition: find best performing model for downside
+                best_downside_model = None  
+                best_downside_score = None
+                if downside_candidates:
+                    # Use performance scores from the test regime for competition
+                    downside_results = []
+                    for model_id in downside_candidates:
+                        # Find this model's performance in the test regime
+                        model_data = df[
+                            (df['model_id'] == int(model_id)) & 
+                            (df['regime'] == test_regime)
+                        ]
+                        if len(model_data) > 0:
+                            row = model_data.iloc[0]
+                            downside_accs = [row[f'downside_{t:.1f}'] for t in np.arange(0, 0.9, 0.1)]
+                            avg_downside_score = np.mean(downside_accs)
+                            downside_results.append((model_id, avg_downside_score))
+                    
+                    # Select best downside model (highest score wins the weekly competition)
+                    if downside_results:
+                        downside_results.sort(key=lambda x: x[1], reverse=True)
+                        best_downside_model, best_downside_score = downside_results[0]
+                
+                # Record the weekly results
+                result = {
+                    'week_start': week_start.strftime('%Y%m%d'),
+                    'week_end': week_end.strftime('%Y%m%d'),
+                    'week_trading_days': len(week_trading_days),
+                    'most_common_regime': most_common_regime,
+                    'test_regime': test_regime,
+                    'best_upside_model_id': best_upside_model,
+                    'best_upside_score': best_upside_score,
+                    'best_upside_rank': 1 if best_upside_model else None,
+                    'best_downside_model_id': best_downside_model,
+                    'best_downside_score': best_downside_score,
+                    'best_downside_rank': 1 if best_downside_model else None,
+                    'competing_upside_models': len(upside_candidates),
+                    'competing_downside_models': len(downside_candidates)
+                }
+                # Add regime distribution
+                result.update(regime_distribution)
+                weekly_results.append(result)
+        
+        # Convert to DataFrame and save
+        weekly_df = pd.DataFrame(weekly_results)
+        
+        # Sort by week start and regime
+        weekly_df = weekly_df.sort_values(['week_start', 'test_regime']).reset_index(drop=True)
+        
+        # Save the weekly best models file
+        weekly_output_file = results_dir / f'weekly_best_models_{start_model}_{end_model}.csv'
+        weekly_df.to_csv(weekly_output_file, index=False)
+        print(f"Saved weekly best models to {weekly_output_file}")
+        
+        # Print some statistics
+        print(f"Weekly best models summary:")
+        print(f"  Total weeks: {len(weekly_df['week_start'].unique()):,}")
+        print(f"  Total week-regime combinations: {len(weekly_df):,}")
+        print(f"  Average competing upside models per week-regime: {weekly_df['competing_upside_models'].mean():.1f}")
+        print(f"  Average competing downside models per week-regime: {weekly_df['competing_downside_models'].mean():.1f}")
+        print(f"  Average trading days per week: {weekly_df['week_trading_days'].mean():.1f}")
+        
+        # Show distribution of competing models
+        upside_counts = weekly_df['competing_upside_models'].value_counts().sort_index()
+        downside_counts = weekly_df['competing_downside_models'].value_counts().sort_index()
+        print(f"  Competing upside models distribution:")
+        for count, freq in upside_counts.head(10).items():
+            print(f"    {count} models: {freq:,} combinations")
+        print(f"  Competing downside models distribution:")
+        for count, freq in downside_counts.head(10).items():
+            print(f"    {count} models: {freq:,} combinations")
+        
+        # Show some examples of selected models
+        sample_df = weekly_df.sample(min(10, len(weekly_df)))
+        print(f"\nSample weekly competitive selections:")
+        for _, row in sample_df.iterrows():
+            print(f"  Week {row['week_start']}-{row['week_end']}, Regime {row['test_regime']}: "
+                  f"Upside={row['best_upside_model_id']} (vs {row['competing_upside_models']} competitors), "
+                  f"Downside={row['best_downside_model_id']} (vs {row['competing_downside_models']} competitors)")
+        
+        return weekly_df
+    
+    def _model_trained_during_week(self, model_id, week_trading_days, regime_base_df):
+        """Check if a model was trained during any day in the given week"""
+        model_row = regime_base_df[regime_base_df['model_id'] == int(model_id)]
+        if len(model_row) == 0:
+            return True  # Conservative: exclude if model not found
+            
+        training_from = int(model_row.iloc[0]['training_from'])
+        training_to = int(model_row.iloc[0]['training_to'])
+        
+        # Check if any day in the week falls within training period
+        return any(
+            training_from <= trading_day <= training_to 
+            for trading_day in week_trading_days
+        )
 
 def main():
     parser = argparse.ArgumentParser(description='Test all models across paradigms')

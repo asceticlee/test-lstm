@@ -10,6 +10,14 @@ This script:
 
 Usage:
     python regime_prediction_forecaster.py [--period daily|weekly] [--method hmm|naive] [--start_date YYYYMMDD] [--end_date YYYYMMDD]
+
+Parameters:
+    --period: Forecasting granularity
+        - 'daily': Make regime predictions daily and forecast each day's minute data
+        - 'weekly': Make regime predictions weekly and forecast entire week's minute data
+    --method: Regime prediction approach
+        - 'hmm': Use Hidden Markov Model with market features
+        - 'naive': Use most common recent regime
 """
 
 import pandas as pd
@@ -51,7 +59,6 @@ class RegimePredictionForecaster:
         self.trading_data = None
         self.regime_assignments = None
         self.model_results = None
-        self.best_regime_summary = None
         self.model_log = None
         
         # Regime prediction models
@@ -78,19 +85,24 @@ class RegimePredictionForecaster:
         self.regime_assignments = pd.read_csv(regime_file)
         print(f"Loaded regime assignments: {len(self.regime_assignments):,} rows")
         
-        # Load model test results
-        model_results_file = results_dir / 'model_regime_test_results_1_425.csv'
-        if not model_results_file.exists():
-            raise FileNotFoundError(f"Model test results file not found: {model_results_file}")
-        self.model_results = pd.read_csv(model_results_file)
-        print(f"Loaded model test results: {len(self.model_results):,} rows")
+        # Load model test results (preserve model_id as string)
+        # Try to find the most recent model test results file
+        model_results_files = [
+            results_dir / 'model_regime_test_results_1_5.csv',  # Test file
+            results_dir / 'model_regime_test_results_1_425.csv'  # Full file
+        ]
         
-        # Load best regime summary (preserve model_id as string)
-        best_summary_file = results_dir / 'best_regime_summary_1_425.csv'
-        if not best_summary_file.exists():
-            raise FileNotFoundError(f"Best regime summary file not found: {best_summary_file}")
-        self.best_regime_summary = pd.read_csv(best_summary_file, dtype={'model_id': str})
-        print(f"Loaded best regime summary: {len(self.best_regime_summary):,} rows")
+        model_results_file = None
+        for file_path in model_results_files:
+            if file_path.exists():
+                model_results_file = file_path
+                break
+        
+        if model_results_file is None:
+            raise FileNotFoundError(f"No model test results file found. Tried: {[str(f) for f in model_results_files]}")
+        
+        self.model_results = pd.read_csv(model_results_file, dtype={'model_id': str})
+        print(f"Loaded model test results from {model_results_file.name}: {len(self.model_results):,} rows")
         
         # Load model log
         model_log_file = models_dir / 'model_log.csv'
@@ -98,6 +110,32 @@ class RegimePredictionForecaster:
             raise FileNotFoundError(f"Model log file not found: {model_log_file}")
         self.model_log = pd.read_csv(model_log_file, dtype={'model_id': str})
         print(f"Loaded model log: {len(self.model_log):,} rows")
+        
+    def load_best_models_data(self, model_selection):
+        """Load daily or weekly best models data"""
+        print(f"Loading {model_selection} best models data...")
+        
+        if model_selection == 'daily':
+            # Try to find daily best models file
+            daily_files = list(results_dir.glob('daily_best_models_*.csv'))
+            if not daily_files:
+                raise FileNotFoundError(f"No daily best models files found in {results_dir}")
+            
+            # Use the most recent daily file (by modification time)
+            daily_file = max(daily_files, key=lambda f: f.stat().st_mtime)
+            self.daily_best_models = pd.read_csv(daily_file, dtype={'best_upside_model_id': str, 'best_downside_model_id': str})
+            print(f"Loaded daily best models from {daily_file.name}: {len(self.daily_best_models):,} rows")
+            
+        elif model_selection == 'weekly':
+            # Try to find weekly best models file
+            weekly_files = list(results_dir.glob('weekly_best_models_*.csv'))
+            if not weekly_files:
+                raise FileNotFoundError(f"No weekly best models files found in {results_dir}")
+            
+            # Use the most recent weekly file (by modification time)
+            weekly_file = max(weekly_files, key=lambda f: f.stat().st_mtime)
+            self.weekly_best_models = pd.read_csv(weekly_file, dtype={'best_upside_model_id': str, 'best_downside_model_id': str})
+            print(f"Loaded weekly best models from {weekly_file.name}: {len(self.weekly_best_models):,} rows")
         
     def prepare_regime_history(self):
         """Prepare historical regime sequence for prediction models"""
@@ -422,19 +460,30 @@ class RegimePredictionForecaster:
             # Predict hidden states for recent observations
             hidden_states = self.hmm_model.predict(observations_scaled)
             
-            # Use the most recent predicted state as current regime
+            # Use the most recent predicted state as current state
             current_state = hidden_states[-1]
             
-            # Predict next state using transition probabilities
+            # For better regime diversity, combine transition probabilities with uniform sampling
+            # This helps ensure all regimes have a chance to be predicted
             transition_probs = self.hmm_model.transmat_[current_state]
-            next_state = np.argmax(transition_probs)
+            
+            # Add small uniform noise to prevent getting stuck in deterministic states
+            uniform_noise = 0.1  # 10% uniform contribution
+            num_states = len(transition_probs)
+            uniform_probs = np.ones(num_states) / num_states
+            
+            # Combine transition probabilities with uniform distribution
+            combined_probs = (1 - uniform_noise) * transition_probs + uniform_noise * uniform_probs
+            
+            # Sample from the combined probability distribution
+            predicted_state = np.random.choice(len(combined_probs), p=combined_probs)
             
             # Map back to regime
-            if next_state in self.reverse_mapping:
-                predicted_regime = self.reverse_mapping[next_state]
+            if predicted_state in self.reverse_mapping:
+                predicted_regime = self.reverse_mapping[predicted_state]
                 return int(predicted_regime)
             else:
-                print(f"Invalid state {next_state}, falling back to naive")
+                print(f"Invalid state {predicted_state}, falling back to naive")
                 return self.predict_regime_naive(current_date)
                 
         except Exception as e:
@@ -485,32 +534,30 @@ class RegimePredictionForecaster:
         print(f"Found {len(valid_models)} valid models for regime {regime} on date {prediction_date}")
         print(f"Valid models: {valid_models[:10]}...")  # Show first 10 for debugging
         
-        # Filter best_regime_summary for valid models
-        valid_summary = self.best_regime_summary[
-            self.best_regime_summary['model_id'].isin(valid_models)
+        # Filter model_results for the specific regime and valid models
+        regime_results = self.model_results[
+            (self.model_results['regime'] == regime) &
+            (self.model_results['model_id'].isin(valid_models))
         ]
         
-        if len(valid_summary) == 0:
-            print(f"Warning: No models found in best_regime_summary for regime {regime}")
-            print(f"Available models in summary: {self.best_regime_summary['model_id'].head()}")
+        if len(regime_results) == 0:
+            print(f"Warning: No models found in model_results for regime {regime}")
+            print(f"Available regimes: {self.model_results['regime'].unique()}")
             return None, None
         
-        # Get regime-specific upside and downside rankings
-        upside_col = f'regime_{regime}_up'
-        downside_col = f'regime_{regime}_down'
-        
-        if upside_col not in valid_summary.columns or downside_col not in valid_summary.columns:
-            print(f"Warning: Regime {regime} columns not found in best_regime_summary")
-            print(f"Available columns: {list(valid_summary.columns)}")
+        # Check if the ranking columns exist
+        if 'model_regime_upside_rank' not in regime_results.columns or 'model_regime_downside_rank' not in regime_results.columns:
+            print(f"Warning: Ranking columns not found in model_results")
+            print(f"Available columns: {list(regime_results.columns)}")
             return None, None
         
         # Find best upside model (lowest rank number = best)
-        best_upside_row = valid_summary.loc[valid_summary[upside_col].idxmin()]
-        best_upside_rank = int(best_upside_row[upside_col])
+        best_upside_row = regime_results.loc[regime_results['model_regime_upside_rank'].idxmin()]
+        best_upside_rank = int(best_upside_row['model_regime_upside_rank'])
         
         # Find best downside model (lowest rank number = best)
-        best_downside_row = valid_summary.loc[valid_summary[downside_col].idxmin()]
-        best_downside_rank = int(best_downside_row[downside_col])
+        best_downside_row = regime_results.loc[regime_results['model_regime_downside_rank'].idxmin()]
+        best_downside_rank = int(best_downside_row['model_regime_downside_rank'])
         
         # Create result objects with model info and rankings
         best_upside = {
@@ -526,6 +573,110 @@ class RegimePredictionForecaster:
         }
         
         return best_upside, best_downside
+    
+    def get_best_models_daily(self, regime, prediction_date):
+        """Get best models based on yesterday's performance for the given regime"""
+        prediction_date_int = int(prediction_date)
+        
+        # Get all available trading days for this regime, sorted in descending order
+        available_days = self.daily_best_models[
+            self.daily_best_models['test_regime'] == regime
+        ]['trading_day'].unique()
+        available_days = sorted(available_days, reverse=True)
+        
+        # Find the most recent trading day before the prediction date
+        for trading_day in available_days:
+            if trading_day < prediction_date_int:
+                daily_data = self.daily_best_models[
+                    (self.daily_best_models['trading_day'] == trading_day) &
+                    (self.daily_best_models['test_regime'] == regime)
+                ]
+                
+                if len(daily_data) > 0:
+                    row = daily_data.iloc[0]
+                    
+                    best_upside = {
+                        'model_id': int(row['best_upside_model_id']) if pd.notna(row['best_upside_model_id']) else None,
+                        'model_regime_rank': int(row['best_upside_rank']) if pd.notna(row['best_upside_rank']) else None,
+                        'regime': regime,
+                        'selection_method': 'daily',
+                        'reference_date': trading_day
+                    }
+                    
+                    best_downside = {
+                        'model_id': int(row['best_downside_model_id']) if pd.notna(row['best_downside_model_id']) else None,
+                        'model_regime_rank': int(row['best_downside_rank']) if pd.notna(row['best_downside_rank']) else None,
+                        'regime': regime,
+                        'selection_method': 'daily',
+                        'reference_date': trading_day
+                    }
+                    
+                    print(f"Using daily best models from {trading_day} for regime {regime} on {prediction_date}")
+                    return best_upside, best_downside
+        
+        print(f"No daily best models found for regime {regime}, falling back to historical")
+        return self.get_best_models_for_regime(regime, prediction_date)
+    
+    def get_best_models_weekly(self, regime, prediction_date):
+        """Get best models based on last week's performance for the given regime"""
+        prediction_date_int = int(prediction_date)
+        
+        # Convert prediction date to datetime for week calculations
+        pred_datetime = datetime.strptime(str(prediction_date_int), '%Y%m%d')
+        
+        # Find last week's start and end dates
+        days_since_monday = pred_datetime.weekday()
+        current_week_start = pred_datetime - timedelta(days=days_since_monday)
+        last_week_start = current_week_start - timedelta(days=7)
+        last_week_end = current_week_start - timedelta(days=1)
+        
+        # Format dates back to YYYYMMDD
+        last_week_start_str = last_week_start.strftime('%Y%m%d')
+        last_week_end_str = last_week_end.strftime('%Y%m%d')
+        
+        # Search for last week's data, go back up to 4 weeks if needed
+        for weeks_back in range(1, 5):
+            search_week_start = last_week_start - timedelta(days=7 * (weeks_back - 1))
+            search_week_start_str = search_week_start.strftime('%Y%m%d')
+            
+            weekly_data = self.weekly_best_models[
+                (self.weekly_best_models['week_start'] == search_week_start_str) &
+                (self.weekly_best_models['test_regime'] == regime)
+            ]
+            
+            if len(weekly_data) > 0:
+                row = weekly_data.iloc[0]
+                
+                best_upside = {
+                    'model_id': int(row['best_upside_model_id']) if pd.notna(row['best_upside_model_id']) else None,
+                    'model_regime_rank': int(row['best_upside_rank']) if pd.notna(row['best_upside_rank']) else None,
+                    'regime': regime,
+                    'selection_method': 'weekly',
+                    'reference_week': search_week_start_str
+                }
+                
+                best_downside = {
+                    'model_id': int(row['best_downside_model_id']) if pd.notna(row['best_downside_model_id']) else None,
+                    'model_regime_rank': int(row['best_downside_rank']) if pd.notna(row['best_downside_rank']) else None,
+                    'regime': regime,
+                    'selection_method': 'weekly',
+                    'reference_week': search_week_start_str
+                }
+                
+                print(f"Using weekly best models from week {search_week_start_str} for regime {regime} on {prediction_date}")
+                return best_upside, best_downside
+        
+        print(f"No weekly best models found for regime {regime}, falling back to historical")
+        return self.get_best_models_for_regime(regime, prediction_date)
+    
+    def get_best_models(self, regime, prediction_date, model_selection='historical'):
+        """Unified method to get best models based on selection strategy"""
+        if model_selection == 'daily':
+            return self.get_best_models_daily(regime, prediction_date)
+        elif model_selection == 'weekly':
+            return self.get_best_models_weekly(regime, prediction_date)
+        else:  # historical
+            return self.get_best_models_for_regime(regime, prediction_date)
     
     def load_model_and_scaler(self, model_id):
         """Load LSTM model and its scaler"""
@@ -628,13 +779,18 @@ class RegimePredictionForecaster:
         
         return predictions, y_actual, days, ms
     
-    def run_forecasting(self, start_date, end_date, period='daily', method='hmm'):
+    def run_forecasting(self, start_date, end_date, period='daily', method='hmm', model_selection='historical'):
         """Run the complete forecasting process"""
         print(f"Running forecasting from {start_date} to {end_date}")
-        print(f"Period: {period}, Method: {method}")
+        print(f"Period: {period}, Method: {method}, Model selection: {model_selection}")
         
         # Load all required data
         self.load_data()
+        
+        # Load daily/weekly best models data if needed
+        if model_selection in ['daily', 'weekly']:
+            self.load_best_models_data(model_selection)
+        
         self.prepare_regime_history()
         
         # Train regime prediction model if using HMM
@@ -659,11 +815,29 @@ class RegimePredictionForecaster:
             
             print(f"\nProcessing date: {current_date_str}")
             
-            # Skip if no trading data for this date
-            day_data = self.trading_data[self.trading_data['TradingDay'] == current_date_int]
-            if len(day_data) == 0:
-                print(f"No trading data for {current_date_str}, skipping...")
+            # Get data for the appropriate period
+            if period == 'daily':
+                # For daily period, get data for just this day
+                period_data = self.trading_data[self.trading_data['TradingDay'] == current_date_int]
+                period_description = f"day {current_date_str}"
+            else:  # weekly
+                # For weekly period, get data for the entire week (Monday to Friday)
+                week_start = current_date
+                week_end = week_start + timedelta(days=6)  # Sunday
+                week_start_int = int(week_start.strftime('%Y%m%d'))
+                week_end_int = int(week_end.strftime('%Y%m%d'))
+                
+                period_data = self.trading_data[
+                    (self.trading_data['TradingDay'] >= week_start_int) & 
+                    (self.trading_data['TradingDay'] <= week_end_int)
+                ]
+                period_description = f"week {week_start.strftime('%Y%m%d')} to {week_end.strftime('%Y%m%d')}"
+            
+            if len(period_data) == 0:
+                print(f"No trading data for {period_description}, skipping...")
                 continue
+            
+            print(f"Processing {period_description}: {len(period_data):,} records")
             
             # Predict regime for this period
             if method == 'hmm':
@@ -673,8 +847,8 @@ class RegimePredictionForecaster:
             
             print(f"Predicted regime: {predicted_regime}")
             
-            # Get best models for this regime
-            best_upside, best_downside = self.get_best_models_for_regime(predicted_regime, current_date_str)
+            # Get best models for this regime using selected strategy
+            best_upside, best_downside = self.get_best_models(predicted_regime, current_date_str, model_selection)
             
             if best_upside is None or best_downside is None:
                 print(f"No valid models found for regime {predicted_regime} on {current_date_str}")
@@ -701,17 +875,17 @@ class RegimePredictionForecaster:
             downside_label_number = int(downside_model_info['label_number'])
             
             # Define feature columns
-            feature_cols = day_data.columns[5:49]  # Features: columns 6 to 49
+            feature_cols = period_data.columns[5:49]  # Features: columns 6 to 49
             upside_target_col = f'Label_{upside_label_number}'
             downside_target_col = f'Label_{downside_label_number}'
             
             # Make predictions
             upside_predictions, upside_actual, days, ms = self.make_predictions(
-                upside_model, upside_scaler, day_data, upside_seq_length, feature_cols, upside_target_col
+                upside_model, upside_scaler, period_data, upside_seq_length, feature_cols, upside_target_col
             )
             
             downside_predictions, downside_actual, _, _ = self.make_predictions(
-                downside_model, downside_scaler, day_data, downside_seq_length, feature_cols, downside_target_col
+                downside_model, downside_scaler, period_data, downside_seq_length, feature_cols, downside_target_col
             )
             
             # Align predictions if sequence lengths are different
@@ -777,13 +951,16 @@ def main():
     """Main execution function"""
     parser = argparse.ArgumentParser(description='Regime Prediction and LSTM Forecasting')
     parser.add_argument('--period', type=str, choices=['daily', 'weekly'], default='daily',
-                       help='Prediction period (default: daily)')
+                       help='Forecasting period: daily (predict each day) or weekly (predict entire weeks)')
     parser.add_argument('--method', type=str, choices=['hmm', 'naive'], default='hmm',
                        help='Regime prediction method (default: hmm)')
     parser.add_argument('--start_date', type=str, required=True,
                        help='Start date for forecasting (YYYYMMDD)')
     parser.add_argument('--end_date', type=str, required=True,
                        help='End date for forecasting (YYYYMMDD)')
+    parser.add_argument('--model_selection', type=str, 
+                       choices=['historical', 'daily', 'weekly'], default='historical',
+                       help='Model selection strategy: historical (best from all time), daily (best from yesterday), weekly (best from last week)')
     
     args = parser.parse_args()
     
@@ -800,7 +977,8 @@ def main():
         start_date=args.start_date,
         end_date=args.end_date,
         period=args.period,
-        method=args.method
+        method=args.method,
+        model_selection=args.model_selection
     )
     
     if results is not None:
