@@ -44,7 +44,10 @@ class ModelTester:
         self.regime_assignments = None
         self.trading_data = None
         self.paradigm_data_cache = {}
+        self.daily_performance = None
+        self.weekly_performance = None
         self.load_regime_assignments()
+        self._load_performance_files()
         
     def load_regime_assignments(self):
         """Load regime assignments"""
@@ -517,6 +520,10 @@ class ModelTester:
         """Generate daily best model tracking using competitive regime-based selection"""
         print("Generating daily best model tracking with competitive regime-based selection...")
         
+        # Ensure trading data is loaded for competitions
+        if self.trading_data is None:
+            self.load_trading_data()
+        
         # Load the enhanced best regime summary with regime base columns
         best_regime_file = results_dir / 'best_regime_summary_1_425.csv'
         if not best_regime_file.exists():
@@ -603,54 +610,30 @@ class ModelTester:
                     if not self._model_trained_on_day(model_id, trading_day, regime_base_df)
                 ]
                 
-                # Simulate competition: find best performing model for upside
+                # Enhanced competition: use pre-calculated performance data for efficiency
                 best_upside_model = None
                 best_upside_score = None
+                best_upside_performance = None
                 if upside_candidates:
-                    # Use performance scores from the test regime for competition
-                    upside_results = []
-                    for model_id in upside_candidates:
-                        # Find this model's performance in the test regime
-                        model_data = df[
-                            (df['model_id'] == int(model_id)) & 
-                            (df['regime'] == test_regime)
-                        ]
-                        if len(model_data) > 0:
-                            row = model_data.iloc[0]
-                            upside_accs = [row[f'upside_{t:.1f}'] for t in np.arange(0, 0.9, 0.1)]
-                            avg_upside_score = np.mean(upside_accs)
-                            upside_results.append((model_id, avg_upside_score))
-                    
-                    # Select best upside model (highest score wins the competition)
+                    upside_results = self._select_daily_winner(
+                        upside_candidates, trading_day, test_regime, 'upside', regime_base_df, df
+                    )
                     if upside_results:
-                        upside_results.sort(key=lambda x: x[1], reverse=True)
-                        best_upside_model, best_upside_score = upside_results[0]
+                        best_upside_model, best_upside_score, best_upside_performance = upside_results
                 
-                # Simulate competition: find best performing model for downside
+                # Enhanced competition: use pre-calculated performance data for efficiency
                 best_downside_model = None  
                 best_downside_score = None
+                best_downside_performance = None
                 if downside_candidates:
-                    # Use performance scores from the test regime for competition
-                    downside_results = []
-                    for model_id in downside_candidates:
-                        # Find this model's performance in the test regime
-                        model_data = df[
-                            (df['model_id'] == int(model_id)) & 
-                            (df['regime'] == test_regime)
-                        ]
-                        if len(model_data) > 0:
-                            row = model_data.iloc[0]
-                            downside_accs = [row[f'downside_{t:.1f}'] for t in np.arange(0, 0.9, 0.1)]
-                            avg_downside_score = np.mean(downside_accs)
-                            downside_results.append((model_id, avg_downside_score))
-                    
-                    # Select best downside model (highest score wins the competition)
+                    downside_results = self._select_daily_winner(
+                        downside_candidates, trading_day, test_regime, 'downside', regime_base_df, df
+                    )
                     if downside_results:
-                        downside_results.sort(key=lambda x: x[1], reverse=True)
-                        best_downside_model, best_downside_score = downside_results[0]
+                        best_downside_model, best_downside_score, best_downside_performance = downside_results
                 
-                # Record the results
-                daily_results.append({
+                # Record the results with detailed performance metrics
+                result_record = {
                     'trading_day': trading_day,
                     'actual_regime': actual_regime,
                     'test_regime': test_regime,
@@ -662,7 +645,29 @@ class ModelTester:
                     'best_downside_rank': 1 if best_downside_model else None,
                     'competing_upside_models': len(upside_candidates),
                     'competing_downside_models': len(downside_candidates)
-                })
+                }
+                
+                # Add detailed upside performance metrics for winning model
+                if best_upside_performance:
+                    for key, value in best_upside_performance.items():
+                        result_record[f'best_upside_{key}'] = value
+                else:
+                    # Add empty upside performance columns
+                    for t in np.arange(0, 0.9, 0.1):
+                        result_record[f'best_upside_upside_{t:.1f}'] = None
+                        result_record[f'best_upside_downside_{t:.1f}'] = None
+                
+                # Add detailed downside performance metrics for winning model
+                if best_downside_performance:
+                    for key, value in best_downside_performance.items():
+                        result_record[f'best_downside_{key}'] = value
+                else:
+                    # Add empty downside performance columns
+                    for t in np.arange(0, 0.9, 0.1):
+                        result_record[f'best_downside_upside_{t:.1f}'] = None
+                        result_record[f'best_downside_downside_{t:.1f}'] = None
+                
+                daily_results.append(result_record)
         
         # Convert to DataFrame and save
         daily_df = pd.DataFrame(daily_results)
@@ -702,6 +707,360 @@ class ModelTester:
         
         return daily_df
     
+    def _load_performance_files(self):
+        """Load pre-calculated daily and weekly performance data for efficient competition"""
+        try:
+            script_dir = os.path.dirname(__file__)
+            
+            # Load daily performance data (covers all models 1-425)
+            daily_perf_path = os.path.join(script_dir, 'model_daily_performance_1_425.csv')
+            if os.path.exists(daily_perf_path):
+                self.daily_performance = pd.read_csv(daily_perf_path)
+                self.daily_performance['date'] = pd.to_datetime(self.daily_performance['date'])
+                print(f"Loaded daily performance data: {len(self.daily_performance)} records")
+            else:
+                print(f"Daily performance file not found: {daily_perf_path}")
+                self.daily_performance = None
+            
+            # Load weekly performance data (covers all models 1-425)
+            weekly_perf_path = os.path.join(script_dir, 'model_weekly_performance_1_425.csv')
+            if os.path.exists(weekly_perf_path):
+                self.weekly_performance = pd.read_csv(weekly_perf_path)
+                self.weekly_performance['week_start'] = pd.to_datetime(self.weekly_performance['week_start'])
+                self.weekly_performance['week_end'] = pd.to_datetime(self.weekly_performance['week_end'])
+                print(f"Loaded weekly performance data: {len(self.weekly_performance)} records")
+            else:
+                print(f"Weekly performance file not found: {weekly_perf_path}")
+                self.weekly_performance = None
+                
+        except Exception as e:
+            print(f"Error loading performance files: {e}")
+            self.daily_performance = None
+            self.weekly_performance = None
+
+    def _select_daily_winner(self, candidates, current_date, regime_type, regime_direction, regime_base_df, df):
+        """Select best model for a specific day using pre-calculated performance data"""
+        if self.daily_performance is None:
+            # Fallback to static selection if no performance data
+            return self._select_static_winner(candidates, regime_type, regime_direction, regime_base_df)
+        
+        # Convert current_date to datetime if it's a trading day format
+        import numpy as np
+        
+        if isinstance(current_date, (int, float, np.integer)):
+            # Convert integer like 20200102 to datetime
+            date_str = str(int(current_date))
+            current_date_dt = pd.to_datetime(date_str, format='%Y%m%d')
+        elif isinstance(current_date, str) and current_date.isdigit():
+            # Convert string like "20200102" to datetime  
+            current_date_dt = pd.to_datetime(current_date, format='%Y%m%d')
+        elif not isinstance(current_date, pd.Timestamp):
+            current_date_dt = pd.to_datetime(current_date)
+        else:
+            current_date_dt = current_date
+        
+        # Filter performance data for this specific date
+        date_performance = self.daily_performance[self.daily_performance['date'] == current_date_dt]
+        
+        if date_performance.empty:
+            # If no performance data for this date, use most recent available data
+            available_dates = self.daily_performance[self.daily_performance['date'] <= current_date_dt]['date']
+            if available_dates.empty:
+                return self._select_static_winner(candidates, regime_type, regime_direction, regime_base_df)
+            
+            latest_date = available_dates.max()
+            date_performance = self.daily_performance[self.daily_performance['date'] == latest_date]
+            print(f"No performance data for {current_date_dt.date()}, using latest available: {latest_date.date()}")
+        
+        # Filter candidates based on available performance data
+        # Convert candidate strings to integers for comparison with performance data
+        candidate_ints = [int(candidate) for candidate in candidates]
+        candidate_performance = date_performance[date_performance['model_id'].isin(candidate_ints)]
+        
+        if candidate_performance.empty:
+            return self._select_static_winner(candidates, regime_type, regime_direction, regime_base_df)
+        
+        # Select best model based on primary performance metric
+        if regime_direction == 'upside':
+            # For upside regimes, prioritize upside capture
+            primary_metric = 'upside_0.0'  # Most aggressive upside threshold
+        else:
+            # For downside regimes, prioritize downside protection  
+            primary_metric = 'downside_0.0'  # Most conservative downside threshold
+        
+        if primary_metric not in candidate_performance.columns:
+            return self._select_static_winner(candidates, regime_type, regime_direction, regime_base_df)
+        
+        # Find best performing model for this date
+        best_idx = candidate_performance[primary_metric].idxmax()
+        best_model_int = candidate_performance.loc[best_idx, 'model_id']
+        best_model = f"{best_model_int:05d}"  # Convert back to string format
+        best_score = candidate_performance.loc[best_idx, primary_metric]
+        
+        # Compile detailed performance metrics
+        best_performance = {
+            'date': current_date_dt,
+            'model_id': best_model,
+            'primary_metric': primary_metric,
+            'primary_score': best_score,
+            'regime_type': regime_type,
+            'regime_direction': regime_direction,
+            'source': 'performance_lookup'
+        }
+        
+        # Add all threshold metrics to performance record
+        threshold_columns = [col for col in candidate_performance.columns 
+                           if col.startswith(('upside_', 'downside_')) and col != primary_metric]
+        for col in threshold_columns:
+            best_performance[col] = candidate_performance.loc[best_idx, col]
+        
+        print(f"Daily winner for {current_date_dt.date()} ({regime_type}-{regime_direction}): Model {best_model} "
+              f"with {primary_metric}={best_score:.4f}")
+        
+        return best_model, best_score, best_performance
+
+    def _select_weekly_winner(self, candidates, week_dates, regime_type, regime_direction, regime_base_df, df):
+        """Select best model for a specific week using pre-calculated performance data"""
+        if self.weekly_performance is None:
+            # Fallback to static selection if no performance data
+            return self._select_static_winner(candidates, regime_type, regime_direction, regime_base_df)
+        
+        # Convert dates if needed
+        if isinstance(week_dates[0], (int, float)):
+            week_start_dt = pd.to_datetime(str(int(week_dates[0])), format='%Y%m%d')
+            week_end_dt = pd.to_datetime(str(int(week_dates[-1])), format='%Y%m%d')
+        else:
+            week_start_dt = pd.to_datetime(week_dates[0])
+            week_end_dt = pd.to_datetime(week_dates[-1])
+        
+        # Filter performance data for this specific week
+        week_performance = self.weekly_performance[
+            (self.weekly_performance['week_start'] <= week_start_dt) & 
+            (self.weekly_performance['week_end'] >= week_end_dt)
+        ]
+        
+        if week_performance.empty:
+            # If no performance data for this week, use most recent available data
+            available_weeks = self.weekly_performance[self.weekly_performance['week_start'] <= week_start_dt]
+            if available_weeks.empty:
+                return self._select_static_winner(candidates, regime_type, regime_direction, regime_base_df)
+            
+            latest_week = available_weeks['week_start'].max()
+            week_performance = self.weekly_performance[self.weekly_performance['week_start'] == latest_week]
+            print(f"No performance data for week {week_start_dt.date()}-{week_end_dt.date()}, using latest available week")
+        
+        # Filter candidates based on available performance data
+        # Convert candidate strings to integers for comparison with performance data
+        candidate_ints = [int(candidate) for candidate in candidates]
+        candidate_performance = week_performance[week_performance['model_id'].isin(candidate_ints)]
+        
+        if candidate_performance.empty:
+            return self._select_static_winner(candidates, regime_type, regime_direction, regime_base_df)
+        
+        # Select best model based on primary performance metric
+        if regime_direction == 'upside':
+            # For upside regimes, prioritize upside capture
+            primary_metric = 'upside_0.0'  # Most aggressive upside threshold
+        else:
+            # For downside regimes, prioritize downside protection  
+            primary_metric = 'downside_0.0'  # Most conservative downside threshold
+        
+        if primary_metric not in candidate_performance.columns:
+            return self._select_static_winner(candidates, regime_type, regime_direction, regime_base_df)
+        
+        # Find best performing model for this week
+        best_idx = candidate_performance[primary_metric].idxmax()
+        best_model_int = candidate_performance.loc[best_idx, 'model_id']
+        best_model = f"{best_model_int:05d}"  # Convert back to string format
+        best_score = candidate_performance.loc[best_idx, primary_metric]
+        
+        # Compile detailed performance metrics
+        best_performance = {
+            'week_start': week_start_dt,
+            'week_end': week_end_dt,
+            'model_id': best_model,
+            'primary_metric': primary_metric,
+            'primary_score': best_score,
+            'regime_type': regime_type,
+            'regime_direction': regime_direction
+        }
+        
+        # Add all threshold metrics to performance record
+        threshold_columns = [col for col in candidate_performance.columns 
+                           if col.startswith(('upside_', 'downside_')) and col != primary_metric]
+        for col in threshold_columns:
+            best_performance[col] = candidate_performance.loc[best_idx, col]
+        
+        print(f"Weekly winner for {week_start_dt.date()}-{week_end_dt.date()} ({regime_type}-{regime_direction}): Model {best_model} "
+              f"with {primary_metric}={best_score:.4f}")
+        
+        return best_model, best_score, best_performance
+
+    def _select_static_winner(self, candidates, regime_type, regime_direction, regime_base_df):
+        """Fallback static selection when performance data is unavailable"""
+        if not candidates:
+            return None, None, None
+        
+        # Use the regime base average performance as fallback
+        regime_key = f"model_regime_{regime_direction}_score"
+        
+        # Convert candidates to integers for comparison
+        candidate_ints = [int(candidate) for candidate in candidates]
+        candidate_rows = regime_base_df[regime_base_df['model_id'].isin(candidate_ints)]
+        
+        if candidate_rows.empty:
+            return None, None, None
+        
+        if regime_key not in candidate_rows.columns:
+            print(f"Warning: Column {regime_key} not found in regime base data")
+            return None, None, None
+        
+        candidate_scores = candidate_rows[regime_key]
+        
+        if candidate_scores.empty:
+            return None, None, None
+        
+        best_idx = candidate_scores.idxmax()
+        best_model_int = candidate_rows.loc[best_idx, 'model_id']
+        best_model = f"{int(best_model_int):05d}"
+        best_score = candidate_scores.loc[best_idx]
+        
+        best_performance = {
+            'model_id': best_model,
+            'static_score': best_score,
+            'regime_type': regime_type,
+            'regime_direction': regime_direction,
+            'source': 'static_fallback'
+        }
+        
+        return best_model, best_score, best_performance
+    
+    def _run_daily_competition(self, candidate_models, trading_day, test_regime, prediction_type, regime_base_df):
+        """Run real competition by having models make actual predictions for the specific day"""
+        import tensorflow as tf
+        from tensorflow import keras
+        from sklearn.preprocessing import MinMaxScaler
+        import json
+        
+        print(f"    Running {prediction_type} competition for day {trading_day} in regime {test_regime}: {len(candidate_models)} models")
+        
+        # Ensure trading data is loaded
+        if self.trading_data is None:
+            self.load_trading_data()
+        
+        # Get the regime data for this day
+        day_regime_data = self.regime_assignments[
+            self.regime_assignments['TradingDay'] == trading_day
+        ]
+        if len(day_regime_data) == 0:
+            print(f"    No regime data found for day {trading_day}")
+            return []
+        
+        # Get the paradigm data for this test regime (filtered to this day only)
+        paradigm_data = self.get_paradigm_data(test_regime)
+        day_data = paradigm_data[paradigm_data['TradingDay'] == trading_day]
+        
+        if len(day_data) == 0:
+            print(f"    No trading data found for day {trading_day} in regime {test_regime}")
+            return []
+        
+        competition_results = []
+        
+        for model_id in candidate_models:
+            try:
+                # Get model info
+                model_row = regime_base_df[regime_base_df['model_id'] == int(model_id)]
+                if len(model_row) == 0:
+                    continue
+                    
+                model_info = model_row.iloc[0]
+                
+                # Load model
+                model_path = models_dir / f'lstm_stock_model_{model_id}.keras'
+                if not model_path.exists():
+                    continue
+                    
+                model = keras.models.load_model(model_path, compile=False)
+                
+                # Load scaler
+                scaler_path = models_dir / f'scaler_params_{model_id}.json'
+                if not scaler_path.exists():
+                    continue
+                    
+                with open(scaler_path, 'r') as f:
+                    scaler_params = json.load(f)
+                
+                scaler = MinMaxScaler()
+                scaler.data_min_ = np.array(scaler_params['Min'])
+                scaler.data_max_ = np.array(scaler_params['Max'])
+                scaler.scale_ = 1.0 / (scaler.data_max_ - scaler.data_min_)
+                scaler.min_ = -scaler.data_min_ * scaler.scale_
+                
+                # Make predictions for this specific day
+                seq_length = int(model_info['seq_length'])
+                label_number = int(model_info['label_number'])
+                
+                # Get historical data needed for sequences (exclude training period)
+                train_from = int(model_info['training_from'])
+                train_to = int(model_info['training_to'])
+                historical_data = self.exclude_training_period(paradigm_data, train_from, train_to)
+                
+                # Filter to data up to and including this day
+                historical_data = historical_data[historical_data['TradingDay'] <= trading_day]
+                
+                if len(historical_data) < seq_length:
+                    continue
+                
+                # Create sequences for this day's predictions
+                feature_cols = historical_data.columns[5:49]  # Features: columns 6 to 49
+                target_col = f'Label_{label_number}'
+                
+                X_test, y_test = self.create_sequences(historical_data, seq_length, feature_cols, target_col)
+                
+                if len(X_test) == 0:
+                    continue
+                
+                # Scale features
+                num_features = len(feature_cols)
+                X_test_reshaped = X_test.reshape(-1, num_features)
+                X_test_scaled = scaler.transform(X_test_reshaped).reshape(X_test.shape)
+                
+                # Make predictions
+                predictions = model.predict(X_test_scaled, verbose=0).flatten()
+                
+                if len(predictions) == 0 or len(y_test) == 0:
+                    continue
+                
+                # Calculate performance for this specific day's predictions
+                day_performance = self.get_thresholded_accuracies(y_test, predictions)
+                
+                # Calculate competition score based on prediction type
+                if prediction_type == 'upside':
+                    upside_accs = [day_performance[f'upside_{t:.1f}'] for t in np.arange(0, 0.9, 0.1)]
+                    competition_score = np.mean(upside_accs)
+                else:  # downside
+                    downside_accs = [day_performance[f'downside_{t:.1f}'] for t in np.arange(0, 0.9, 0.1)]
+                    competition_score = np.mean(downside_accs)
+                
+                competition_results.append((model_id, competition_score, day_performance))
+                
+                # Clean up to free memory
+                del model
+                tf.keras.backend.clear_session()
+                
+            except Exception as e:
+                print(f"    Error with model {model_id}: {str(e)}")
+                continue
+        
+        # Sort by competition score (highest wins)
+        competition_results.sort(key=lambda x: x[1], reverse=True)
+        
+        if competition_results:
+            winner_id, winner_score, winner_performance = competition_results[0]
+            print(f"    {prediction_type.capitalize()} winner: Model {winner_id} (score: {winner_score:.4f})")
+        
+        return competition_results
+    
     def _model_trained_on_day(self, model_id, trading_day, regime_base_df):
         """Check if a model was trained on the given trading day"""
         model_row = regime_base_df[regime_base_df['model_id'] == int(model_id)]
@@ -716,6 +1075,10 @@ class ModelTester:
     def generate_weekly_best_models(self, df, start_model, end_model):
         """Generate weekly best model tracking using competitive regime-based selection"""
         print("Generating weekly best model tracking with competitive regime-based selection...")
+        
+        # Ensure trading data is loaded for competitions
+        if self.trading_data is None:
+            self.load_trading_data()
         
         # Load the enhanced best regime summary with regime base columns
         best_regime_file = results_dir / 'best_regime_summary_1_425.csv'
@@ -813,53 +1176,29 @@ class ModelTester:
                     if not self._model_trained_during_week(model_id, week_trading_days, regime_base_df)
                 ]
                 
-                # Simulate weekly competition: find best performing model for upside
+                # Enhanced weekly competition: use pre-calculated performance data for efficiency
                 best_upside_model = None
                 best_upside_score = None
+                best_upside_performance = None
                 if upside_candidates:
-                    # Use performance scores from the test regime for competition
-                    upside_results = []
-                    for model_id in upside_candidates:
-                        # Find this model's performance in the test regime
-                        model_data = df[
-                            (df['model_id'] == int(model_id)) & 
-                            (df['regime'] == test_regime)
-                        ]
-                        if len(model_data) > 0:
-                            row = model_data.iloc[0]
-                            upside_accs = [row[f'upside_{t:.1f}'] for t in np.arange(0, 0.9, 0.1)]
-                            avg_upside_score = np.mean(upside_accs)
-                            upside_results.append((model_id, avg_upside_score))
-                    
-                    # Select best upside model (highest score wins the weekly competition)
+                    upside_results = self._select_weekly_winner(
+                        upside_candidates, week_trading_days, test_regime, 'upside', regime_base_df, df
+                    )
                     if upside_results:
-                        upside_results.sort(key=lambda x: x[1], reverse=True)
-                        best_upside_model, best_upside_score = upside_results[0]
+                        best_upside_model, best_upside_score, best_upside_performance = upside_results
                 
-                # Simulate weekly competition: find best performing model for downside
+                # Enhanced weekly competition: use pre-calculated performance data for efficiency
                 best_downside_model = None  
                 best_downside_score = None
+                best_downside_performance = None
                 if downside_candidates:
-                    # Use performance scores from the test regime for competition
-                    downside_results = []
-                    for model_id in downside_candidates:
-                        # Find this model's performance in the test regime
-                        model_data = df[
-                            (df['model_id'] == int(model_id)) & 
-                            (df['regime'] == test_regime)
-                        ]
-                        if len(model_data) > 0:
-                            row = model_data.iloc[0]
-                            downside_accs = [row[f'downside_{t:.1f}'] for t in np.arange(0, 0.9, 0.1)]
-                            avg_downside_score = np.mean(downside_accs)
-                            downside_results.append((model_id, avg_downside_score))
-                    
-                    # Select best downside model (highest score wins the weekly competition)
+                    downside_results = self._select_weekly_winner(
+                        downside_candidates, week_trading_days, test_regime, 'downside', regime_base_df, df
+                    )
                     if downside_results:
-                        downside_results.sort(key=lambda x: x[1], reverse=True)
-                        best_downside_model, best_downside_score = downside_results[0]
+                        best_downside_model, best_downside_score, best_downside_performance = downside_results
                 
-                # Record the weekly results
+                # Record the weekly results with detailed performance metrics
                 result = {
                     'week_start': week_start.strftime('%Y%m%d'),
                     'week_end': week_end.strftime('%Y%m%d'),
@@ -875,6 +1214,27 @@ class ModelTester:
                     'competing_upside_models': len(upside_candidates),
                     'competing_downside_models': len(downside_candidates)
                 }
+                
+                # Add detailed upside performance metrics for winning model
+                if best_upside_performance:
+                    for key, value in best_upside_performance.items():
+                        result[f'best_upside_{key}'] = value
+                else:
+                    # Add empty upside performance columns
+                    for t in np.arange(0, 0.9, 0.1):
+                        result[f'best_upside_upside_{t:.1f}'] = None
+                        result[f'best_upside_downside_{t:.1f}'] = None
+                
+                # Add detailed downside performance metrics for winning model
+                if best_downside_performance:
+                    for key, value in best_downside_performance.items():
+                        result[f'best_downside_{key}'] = value
+                else:
+                    # Add empty downside performance columns
+                    for t in np.arange(0, 0.9, 0.1):
+                        result[f'best_downside_upside_{t:.1f}'] = None
+                        result[f'best_downside_downside_{t:.1f}'] = None
+                
                 # Add regime distribution
                 result.update(regime_distribution)
                 weekly_results.append(result)
@@ -917,6 +1277,153 @@ class ModelTester:
                   f"Downside={row['best_downside_model_id']} (vs {row['competing_downside_models']} competitors)")
         
         return weekly_df
+    
+    def _run_weekly_competition(self, candidate_models, week_trading_days, test_regime, prediction_type, regime_base_df):
+        """Run real weekly competition by having models make actual predictions for the week"""
+        import tensorflow as tf
+        from tensorflow import keras
+        from sklearn.preprocessing import MinMaxScaler
+        import json
+        
+        print(f"    Running weekly {prediction_type} competition for {len(week_trading_days)} days in regime {test_regime}: {len(candidate_models)} models")
+        
+        # Ensure trading data is loaded
+        if self.trading_data is None:
+            self.load_trading_data()
+        
+        # Get the paradigm data for this test regime
+        paradigm_data = self.get_paradigm_data(test_regime)
+        
+        # Filter to data for this week
+        week_data = paradigm_data[paradigm_data['TradingDay'].isin(week_trading_days)]
+        
+        if len(week_data) == 0:
+            print(f"    No trading data found for week in regime {test_regime}")
+            return []
+        
+        competition_results = []
+        
+        for model_id in candidate_models:
+            try:
+                # Get model info
+                model_row = regime_base_df[regime_base_df['model_id'] == int(model_id)]
+                if len(model_row) == 0:
+                    continue
+                    
+                model_info = model_row.iloc[0]
+                
+                # Load model
+                model_path = models_dir / f'lstm_stock_model_{model_id}.keras'
+                if not model_path.exists():
+                    continue
+                    
+                model = keras.models.load_model(model_path, compile=False)
+                
+                # Load scaler
+                scaler_path = models_dir / f'scaler_params_{model_id}.json'
+                if not scaler_path.exists():
+                    continue
+                    
+                with open(scaler_path, 'r') as f:
+                    scaler_params = json.load(f)
+                
+                scaler = MinMaxScaler()
+                scaler.data_min_ = np.array(scaler_params['Min'])
+                scaler.data_max_ = np.array(scaler_params['Max'])
+                scaler.scale_ = 1.0 / (scaler.data_max_ - scaler.data_min_)
+                scaler.min_ = -scaler.data_min_ * scaler.scale_
+                
+                # Make predictions for this specific week
+                seq_length = int(model_info['seq_length'])
+                label_number = int(model_info['label_number'])
+                
+                # Get historical data needed for sequences (exclude training period)
+                train_from = int(model_info['training_from'])
+                train_to = int(model_info['training_to'])
+                historical_data = self.exclude_training_period(paradigm_data, train_from, train_to)
+                
+                # Filter to data up to and including this week
+                max_week_day = max(week_trading_days)
+                historical_data = historical_data[historical_data['TradingDay'] <= max_week_day]
+                
+                if len(historical_data) < seq_length:
+                    continue
+                
+                # Create sequences for this week's predictions
+                feature_cols = historical_data.columns[5:49]  # Features: columns 6 to 49
+                target_col = f'Label_{label_number}'
+                
+                X_test, y_test = self.create_sequences(historical_data, seq_length, feature_cols, target_col)
+                
+                if len(X_test) == 0:
+                    continue
+                
+                # Filter predictions to only include this week's data
+                # This is a simplified approach - in practice you'd want more sophisticated week filtering
+                week_indices = []
+                for i, day in enumerate(week_trading_days):
+                    # Find sequences that end on this trading day
+                    day_mask = historical_data['TradingDay'] == day
+                    if day_mask.any():
+                        seq_end_idx = historical_data[day_mask].index[-1]
+                        seq_start_idx = seq_end_idx - seq_length + 1
+                        if seq_start_idx >= 0 and seq_end_idx < len(historical_data):
+                            # Find corresponding sequence in X_test
+                            for j in range(len(X_test)):
+                                if j < len(y_test):  # Basic bounds check
+                                    week_indices.append(j)
+                                    break
+                
+                if not week_indices:
+                    # Fallback: use last few predictions as week predictions
+                    week_indices = list(range(max(0, len(X_test) - len(week_trading_days)), len(X_test)))
+                
+                if not week_indices:
+                    continue
+                
+                # Scale features and make predictions
+                num_features = len(feature_cols)
+                X_week = X_test[week_indices]
+                y_week = y_test[week_indices]
+                
+                X_week_reshaped = X_week.reshape(-1, num_features)
+                X_week_scaled = scaler.transform(X_week_reshaped).reshape(X_week.shape)
+                
+                # Make predictions
+                predictions = model.predict(X_week_scaled, verbose=0).flatten()
+                
+                if len(predictions) == 0 or len(y_week) == 0:
+                    continue
+                
+                # Calculate performance for this specific week's predictions
+                week_performance = self.get_thresholded_accuracies(y_week, predictions)
+                
+                # Calculate competition score based on prediction type
+                if prediction_type == 'upside':
+                    upside_accs = [week_performance[f'upside_{t:.1f}'] for t in np.arange(0, 0.9, 0.1)]
+                    competition_score = np.mean(upside_accs)
+                else:  # downside
+                    downside_accs = [week_performance[f'downside_{t:.1f}'] for t in np.arange(0, 0.9, 0.1)]
+                    competition_score = np.mean(downside_accs)
+                
+                competition_results.append((model_id, competition_score, week_performance))
+                
+                # Clean up to free memory
+                del model
+                tf.keras.backend.clear_session()
+                
+            except Exception as e:
+                print(f"    Error with model {model_id}: {str(e)}")
+                continue
+        
+        # Sort by competition score (highest wins)
+        competition_results.sort(key=lambda x: x[1], reverse=True)
+        
+        if competition_results:
+            winner_id, winner_score, winner_performance = competition_results[0]
+            print(f"    Weekly {prediction_type} winner: Model {winner_id} (score: {winner_score:.4f})")
+        
+        return competition_results
     
     def _model_trained_during_week(self, model_id, week_trading_days, regime_base_df):
         """Check if a model was trained during any day in the given week"""
