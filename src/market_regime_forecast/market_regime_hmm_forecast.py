@@ -1,0 +1,723 @@
+#!/usr/bin/env python3
+"""
+Hidden Markov Model Market Regime Forecasting
+
+This script uses Hidden Markov Models (HMM) to predict market regimes based on 
+statistical features extracted from history_spot_quote.csv data.
+
+Two Forecasting Modes:
+1. Daily Mode: Use today's complete history_spot_quotes.csv data to predict next day's regime
+2. Intraday Mode: Use today's data before 38100000ms to predict regime for 38160000-43200000ms period
+
+Key Features:
+- Extracts comprehensive statistical features from daily market data
+- Includes overnight gap features (prior day's last price to current day's first price)
+- Trains HMM models to capture regime transition dynamics
+- Provides regime predictions with confidence scores
+- Supports both daily and intraday forecasting modes
+
+Usage:
+    # Daily forecasting mode (uses default paths)
+    python market_regime_hmm_forecast.py --mode daily
+    
+    # Intraday forecasting mode (uses default paths)
+    python market_regime_hmm_forecast.py --mode intraday
+    
+    # Custom paths if needed
+    python market_regime_hmm_forecast.py --mode daily --data_file ../../data/history_spot_quote.csv --regime_file ../../regime_analysis/regime_assignments.csv
+"""
+
+import pandas as pd
+import numpy as np
+import os
+import sys
+import argparse
+import warnings
+from pathlib import Path
+from datetime import datetime, timedelta
+import pickle
+import json
+
+# Add the src directory to the path for imports
+script_dir = Path(__file__).parent
+src_dir = script_dir.parent
+sys.path.insert(0, str(src_dir))
+
+# Machine Learning imports
+from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import TimeSeriesSplit
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+from sklearn.feature_selection import SelectKBest, f_classif
+from hmmlearn import hmm
+import joblib
+
+# Statistical analysis
+from scipy import stats
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# Import our statistical features module
+from market_data_stat.statistical_features import StatisticalFeatureExtractor
+
+# Suppress warnings
+warnings.filterwarnings('ignore')
+
+class HMMRegimeForecaster:
+    """
+    Hidden Markov Model based market regime forecasting system
+    Supports both daily and intraday forecasting modes
+    """
+    
+    def __init__(self, mode='daily', n_components=6, n_features=20, covariance_type='full', 
+                 n_iter=100, random_state=42, trading_start_time='09:30',
+                 intraday_cutoff_time='10:35', intraday_start_time='10:36', 
+                 intraday_end_time='12:00'):
+        """
+        Initialize the HMM regime forecaster
+        
+        Args:
+            mode: Forecasting mode ('daily' or 'intraday')
+            n_components: Number of hidden states (regimes) in HMM
+            n_features: Number of top features to select for modeling
+            covariance_type: Type of covariance parameters ('full', 'diag', 'tied', 'spherical')
+            n_iter: Maximum number of iterations for HMM training
+            random_state: Random seed for reproducibility
+            trading_start_time: Daily trading start time (format: 'HH:MM')
+            intraday_cutoff_time: Cutoff time for intraday mode feature calculation (format: 'HH:MM')
+            intraday_start_time: Start of intraday prediction window (format: 'HH:MM')
+            intraday_end_time: End of intraday prediction window (format: 'HH:MM')
+        """
+        self.mode = mode
+        self.n_components = n_components
+        self.n_features = n_features
+        self.covariance_type = covariance_type
+        self.n_iter = n_iter
+        self.random_state = random_state
+        
+        # Time settings
+        self.trading_start_time = trading_start_time
+        self.intraday_cutoff_time = intraday_cutoff_time
+        self.intraday_start_time = intraday_start_time
+        self.intraday_end_time = intraday_end_time
+        
+        # Convert times to milliseconds
+        self.trading_start_ms = self._time_to_ms(trading_start_time)
+        self.intraday_cutoff_ms = self._time_to_ms(intraday_cutoff_time)  # 38100000ms (10:35)
+        self.intraday_start_ms = self._time_to_ms(intraday_start_time)    # 38160000ms (10:36)
+        self.intraday_end_ms = self._time_to_ms(intraday_end_time)        # 43200000ms (12:00)
+        
+        # Initialize components
+        self.feature_extractor = StatisticalFeatureExtractor()
+        self.hmm_model = None
+        self.scaler = StandardScaler()
+        self.feature_selector = SelectKBest(score_func=f_classif, k=n_features)
+        self.selected_features = None
+        self.regime_mapping = None
+        
+        print(f"HMM Regime Forecaster initialized in {mode} mode")
+        if mode == 'intraday':
+            print(f"  Cutoff time: {intraday_cutoff_time} ({self.intraday_cutoff_ms}ms)")
+            print(f"  Prediction window: {intraday_start_time} - {intraday_end_time}")
+    
+    
+    def _time_to_ms(self, time_str):
+        """Convert time string (HH:MM) to milliseconds from midnight"""
+        try:
+            hour, minute = map(int, time_str.split(':'))
+            # Convert to milliseconds from midnight
+            total_milliseconds = (hour * 60 + minute) * 60 * 1000
+            return total_milliseconds
+        except:
+            return 38100000  # Default to 10:35 AM
+    
+    def load_and_prepare_data(self, data_file, regime_file):
+        """
+        Load and prepare market data and regime assignments for history_spot_quote.csv format
+        
+        Args:
+            data_file: Path to history_spot_quote.csv file
+            regime_file: Path to regime assignments CSV file
+            
+        Returns:
+            tuple: (market_data_df, regime_df)
+        """
+        print(f"Loading market data from: {data_file}")
+        market_data = pd.read_csv(data_file)
+        
+        print(f"Loading regime assignments from: {regime_file}")
+        regime_data = pd.read_csv(regime_file)
+        
+        # Validate required columns for history_spot_quote.csv format
+        required_market_cols = ['trading_day', 'ms_of_day', 'mid']
+        missing_cols = [col for col in required_market_cols if col not in market_data.columns]
+        if missing_cols:
+            raise ValueError(f"Missing required columns in market data: {missing_cols}")
+        
+        # Validate regime data columns
+        if 'TradingDay' not in regime_data.columns or 'Regime' not in regime_data.columns:
+            raise ValueError("Regime data must contain 'TradingDay' and 'Regime' columns")
+        
+        # Convert trading_day to match regime data format if needed
+        if market_data['trading_day'].dtype != regime_data['TradingDay'].dtype:
+            market_data['trading_day'] = market_data['trading_day'].astype(int)
+            regime_data['TradingDay'] = regime_data['TradingDay'].astype(int)
+        
+        print(f"Market data shape: {market_data.shape}")
+        print(f"Regime data shape: {regime_data.shape}")
+        print(f"Date range: {market_data['trading_day'].min()} to {market_data['trading_day'].max()}")
+        print(f"Available regimes: {sorted(regime_data['Regime'].unique())}")
+        
+        return market_data, regime_data
+    
+    def extract_daily_features(self, market_data):
+        """
+        Extract statistical features for each trading day based on mode
+        
+        Args:
+            market_data: DataFrame with market data (history_spot_quote.csv format)
+            
+        Returns:
+            pd.DataFrame: Daily features
+        """
+        print(f"Extracting daily statistical features in {self.mode} mode...")
+        
+        # Prepare data based on mode
+        if self.mode == 'daily':
+            # Mode 1: Use complete daily data to predict next day's regime
+            filtered_data = market_data[market_data['ms_of_day'] >= self.trading_start_ms].copy()
+            reference_time_ms = self.intraday_cutoff_ms  # Still use 10:35 as reference for relative features
+            print(f"Daily mode: Using complete trading day data from {self.trading_start_time}")
+            
+        elif self.mode == 'intraday':
+            # Mode 2: Use data before 38100000ms to predict 38160000-43200000ms regime
+            filtered_data = market_data[
+                (market_data['ms_of_day'] >= self.trading_start_ms) & 
+                (market_data['ms_of_day'] <= self.intraday_cutoff_ms)
+            ].copy()
+            reference_time_ms = self.intraday_cutoff_ms
+            print(f"Intraday mode: Using data before {self.intraday_cutoff_time} to predict {self.intraday_start_time}-{self.intraday_end_time}")
+            
+        else:
+            raise ValueError(f"Invalid mode: {self.mode}. Must be 'daily' or 'intraday'")
+        
+        print(f"Data shape after filtering: {filtered_data.shape}")
+        
+        # Extract features using the statistical features module
+        daily_features = self.feature_extractor.extract_daily_features(
+            daily_data=filtered_data,
+            price_column='mid',
+            volume_column=None,  # history_spot_quote.csv doesn't have volume
+            reference_time_ms=reference_time_ms,
+            trading_day_column='trading_day',
+            time_column='ms_of_day',
+            use_relative=True,
+            include_overnight_gap=True  # Include the new overnight gap features
+        )
+        
+        print(f"Extracted features shape: {daily_features.shape}")
+        feature_cols = [col for col in daily_features.columns if col not in ['trading_day', 'reference_time_ms', 'reference_price', 'num_observations']]
+        print(f"Number of features per day: {len(feature_cols)}")
+        print(f"Feature list preview: {feature_cols[:10]}...")  # Show first 10 features
+        
+        return daily_features
+    
+    def prepare_training_data(self, daily_features, regime_data, train_start=None, 
+                            train_end=None):
+        """
+        Prepare training data by merging features with regime labels
+        
+        Args:
+            daily_features: DataFrame with daily features
+            regime_data: DataFrame with regime assignments
+            train_start: Start date for training (YYYYMMDD format)
+            train_end: End date for training (YYYYMMDD format)
+            
+        Returns:
+            tuple: (X_train, y_train, feature_names, trading_days)
+        """
+        print("Preparing training data...")
+        
+        # Merge features with regime data using the correct column mapping
+        merged_data = pd.merge(
+            daily_features, 
+            regime_data[['TradingDay', 'Regime']], 
+            left_on='trading_day', 
+            right_on='TradingDay', 
+            how='inner'
+        )
+        
+        # Filter by date range if specified
+        if train_start is not None:
+            merged_data = merged_data[merged_data['trading_day'] >= int(train_start)]
+        if train_end is not None:
+            merged_data = merged_data[merged_data['trading_day'] <= int(train_end)]
+        
+        print(f"Training data date range: {merged_data['trading_day'].min()} to {merged_data['trading_day'].max()}")
+        print(f"Training data shape: {merged_data.shape}")
+        
+        # Separate features and targets
+        feature_columns = [col for col in merged_data.columns 
+                         if col not in ['trading_day', 'TradingDay', 'Regime', 'reference_time_ms', 
+                                      'reference_price', 'num_observations']]
+        
+        X = merged_data[feature_columns].values
+        y = merged_data['Regime'].values
+        
+        # Handle missing values
+        X = np.nan_to_num(X, nan=0.0, posinf=0.0, neginf=0.0)
+        
+        print(f"Feature matrix shape: {X.shape}")
+        print(f"Target distribution: {dict(zip(*np.unique(y, return_counts=True)))}")
+        
+        return X, y, feature_columns, merged_data['trading_day'].values
+    
+    def train_hmm_model(self, X, y, trading_days):
+        """
+        Train the Hidden Markov Model
+        
+        Args:
+            X: Feature matrix
+            y: Regime labels
+            trading_days: Array of trading days
+            
+        Returns:
+            dict: Training results and metrics
+        """
+        print("Training HMM model...")
+        
+        # Scale features
+        X_scaled = self.scaler.fit_transform(X)
+        
+        # Select best features
+        X_selected = self.feature_selector.fit_transform(X_scaled, y)
+        self.selected_features = [self.feature_columns[i] for i in self.feature_selector.get_support(indices=True)]
+        
+        print(f"Selected {len(self.selected_features)} best features:")
+        for i, feature in enumerate(self.selected_features[:10]):  # Show top 10
+            score = self.feature_selector.scores_[self.feature_selector.get_support(indices=True)[i]]
+            print(f"  {feature}: {score:.3f}")
+        
+        # Create regime mapping (ensure regimes are 0-indexed for HMM)
+        unique_regimes = sorted(np.unique(y))
+        self.regime_mapping = {regime: idx for idx, regime in enumerate(unique_regimes)}
+        reverse_mapping = {idx: regime for regime, idx in self.regime_mapping.items()}
+        
+        # Convert regimes to 0-indexed
+        y_indexed = np.array([self.regime_mapping[regime] for regime in y])
+        
+        # Initialize and train HMM
+        self.hmm_model = hmm.GaussianHMM(
+            n_components=self.n_components,
+            covariance_type=self.covariance_type,
+            n_iter=self.n_iter,
+            random_state=self.random_state,
+            algorithm='viterbi'
+        )
+        
+        # Fit the model
+        self.hmm_model.fit(X_selected)
+        
+        # Get state sequence using Viterbi algorithm
+        predicted_states = self.hmm_model.predict(X_selected)
+        
+        # Calculate training metrics
+        log_likelihood = self.hmm_model.score(X_selected)
+        
+        # Map predicted states back to original regimes using most frequent mapping
+        state_to_regime = {}
+        for state in range(self.n_components):
+            state_mask = predicted_states == state
+            if np.sum(state_mask) > 0:
+                # Find most frequent actual regime for this state
+                actual_regimes_for_state = y_indexed[state_mask]
+                most_frequent_regime = stats.mode(actual_regimes_for_state, keepdims=True)[0][0]
+                state_to_regime[state] = reverse_mapping[most_frequent_regime]
+            else:
+                state_to_regime[state] = unique_regimes[0]  # Default
+        
+        # Convert predictions back to original regime labels
+        y_pred = np.array([state_to_regime[state] for state in predicted_states])
+        
+        # Calculate accuracy
+        accuracy = accuracy_score(y, y_pred)
+        
+        training_results = {
+            'log_likelihood': log_likelihood,
+            'training_accuracy': accuracy,
+            'n_components': self.n_components,
+            'n_features_selected': len(self.selected_features),
+            'regime_mapping': self.regime_mapping,
+            'state_to_regime_mapping': state_to_regime,
+            'selected_features': self.selected_features,
+            'transition_matrix': self.hmm_model.transmat_.tolist(),
+            'start_probabilities': self.hmm_model.startprob_.tolist()
+        }
+        
+        print(f"Training completed:")
+        print(f"  Log-likelihood: {log_likelihood:.4f}")
+        print(f"  Training accuracy: {accuracy:.4f}")
+        print(f"  Selected features: {len(self.selected_features)}")
+        
+        return training_results
+    
+    def predict_next_regime(self, X_test, current_regimes=None):
+        """
+        Predict next day's regime for test data
+        
+        Args:
+            X_test: Test feature matrix
+            current_regimes: Current regime labels (optional, for sequence prediction)
+            
+        Returns:
+            tuple: (predictions, probabilities, confidence_scores)
+        """
+        if self.hmm_model is None:
+            raise ValueError("Model must be trained before making predictions")
+        
+        print("Making regime predictions...")
+        
+        # Scale and select features
+        X_test_scaled = self.scaler.transform(X_test)
+        X_test_selected = self.feature_selector.transform(X_test_scaled)
+        
+        # Get state probabilities for each observation
+        log_probabilities = self.hmm_model.predict_proba(X_test_selected)
+        probabilities = np.exp(log_probabilities)
+        
+        # Get most likely state sequence
+        predicted_states = self.hmm_model.predict(X_test_selected)
+        
+        # Convert states back to regime labels
+        state_to_regime = {}
+        # Use the training mapping if available
+        if hasattr(self, 'state_to_regime_mapping'):
+            state_to_regime = self.state_to_regime_mapping
+        else:
+            # Fallback: simple mapping
+            unique_regimes = sorted(list(self.regime_mapping.keys()))
+            for i in range(self.n_components):
+                state_to_regime[i] = unique_regimes[i % len(unique_regimes)]
+        
+        predictions = np.array([state_to_regime[state] for state in predicted_states])
+        
+        # Calculate confidence scores (max probability)
+        confidence_scores = np.max(probabilities, axis=1)
+        
+        print(f"Prediction completed for {len(predictions)} samples")
+        print(f"Average confidence: {np.mean(confidence_scores):.4f}")
+        
+        return predictions, probabilities, confidence_scores
+    
+    def evaluate_model(self, X_test, y_test, trading_days_test):
+        """
+        Evaluate model performance on test data
+        
+        Args:
+            X_test: Test feature matrix
+            y_test: True regime labels
+            trading_days_test: Test trading days
+            
+        Returns:
+            dict: Evaluation metrics
+        """
+        print("Evaluating model performance...")
+        
+        predictions, probabilities, confidence_scores = self.predict_next_regime(X_test)
+        
+        # Calculate metrics
+        accuracy = accuracy_score(y_test, predictions)
+        
+        # Classification report
+        class_report = classification_report(y_test, predictions, output_dict=True)
+        
+        # Confusion matrix
+        conf_matrix = confusion_matrix(y_test, predictions)
+        unique_regimes = sorted(np.unique(np.concatenate([y_test, predictions])))
+        
+        evaluation_results = {
+            'test_accuracy': accuracy,
+            'classification_report': class_report,
+            'confusion_matrix': conf_matrix.tolist(),
+            'regime_labels': unique_regimes,
+            'average_confidence': np.mean(confidence_scores),
+            'predictions': predictions.tolist(),
+            'true_labels': y_test.tolist(),
+            'confidence_scores': confidence_scores.tolist(),
+            'trading_days': trading_days_test.tolist()
+        }
+        
+        print(f"Test accuracy: {accuracy:.4f}")
+        print(f"Average confidence: {np.mean(confidence_scores):.4f}")
+        
+        return evaluation_results
+    
+    def save_model(self, output_dir, model_name='hmm_regime_forecaster'):
+        """
+        Save the trained model and components
+        
+        Args:
+            output_dir: Directory to save model files
+            model_name: Base name for model files
+        """
+        os.makedirs(output_dir, exist_ok=True)
+        
+        # Save model components
+        model_path = os.path.join(output_dir, f'{model_name}.pkl')
+        
+        model_data = {
+            'hmm_model': self.hmm_model,
+            'scaler': self.scaler,
+            'feature_selector': self.feature_selector,
+            'selected_features': self.selected_features,
+            'regime_mapping': self.regime_mapping,
+            'state_to_regime_mapping': getattr(self, 'state_to_regime_mapping', {}),
+            'n_components': self.n_components,
+            'n_features': self.n_features,
+            'covariance_type': self.covariance_type,
+            'mode': self.mode,
+            'trading_start_ms': self.trading_start_ms,
+            'intraday_cutoff_ms': self.intraday_cutoff_ms,
+            'intraday_start_ms': self.intraday_start_ms,
+            'intraday_end_ms': self.intraday_end_ms
+        }
+        
+        with open(model_path, 'wb') as f:
+            pickle.dump(model_data, f)
+        
+        print(f"Model saved to: {model_path}")
+    
+    def load_model(self, model_path):
+        """
+        Load a previously trained model
+        
+        Args:
+            model_path: Path to saved model file
+        """
+        with open(model_path, 'rb') as f:
+            model_data = pickle.load(f)
+        
+        self.hmm_model = model_data['hmm_model']
+        self.scaler = model_data['scaler']
+        self.feature_selector = model_data['feature_selector']
+        self.selected_features = model_data['selected_features']
+        self.regime_mapping = model_data['regime_mapping']
+        self.state_to_regime_mapping = model_data.get('state_to_regime_mapping', {})
+        self.n_components = model_data['n_components']
+        self.n_features = model_data['n_features']
+        self.covariance_type = model_data['covariance_type']
+        self.mode = model_data.get('mode', 'daily')
+        self.trading_start_ms = model_data.get('trading_start_ms', 34200000)
+        self.intraday_cutoff_ms = model_data.get('intraday_cutoff_ms', 38100000)
+        self.intraday_start_ms = model_data.get('intraday_start_ms', 38160000)
+        self.intraday_end_ms = model_data.get('intraday_end_ms', 43200000)
+        
+        print(f"Model loaded from: {model_path}")
+
+def main():
+    """Main execution function"""
+    # Get script directory and set up default paths
+    script_dir = Path(__file__).parent
+    project_root = script_dir.parent.parent
+    
+    # Default file paths
+    default_data_file = project_root / 'data' / 'history_spot_quote.csv'
+    default_regime_file = project_root / 'regime_analysis' / 'regime_assignments.csv'
+    default_output_dir = project_root / 'market_regime_forecast'
+    
+    parser = argparse.ArgumentParser(description='HMM Market Regime Forecasting')
+    
+    # Mode selection
+    parser.add_argument('--mode', type=str, default='daily', choices=['daily', 'intraday'],
+                      help='Forecasting mode: daily (predict next day) or intraday (predict same day window)')
+    
+    # Data paths with defaults
+    parser.add_argument('--data_file', type=str, default=str(default_data_file),
+                      help=f'Path to history_spot_quote.csv file (default: {default_data_file})')
+    parser.add_argument('--regime_file', type=str, default=str(default_regime_file),
+                      help=f'Path to regime assignments CSV file (default: {default_regime_file})')
+    parser.add_argument('--output_dir', type=str, default=str(default_output_dir),
+                      help=f'Output directory for results (default: {default_output_dir})')
+    
+    # Date ranges
+    parser.add_argument('--train_start', type=str, default=None,
+                      help='Training start date (YYYYMMDD)')
+    parser.add_argument('--train_end', type=str, default=None,
+                      help='Training end date (YYYYMMDD)')
+    parser.add_argument('--test_start', type=str, default=None,
+                      help='Test start date (YYYYMMDD)')
+    parser.add_argument('--test_end', type=str, default=None,
+                      help='Test end date (YYYYMMDD)')
+    
+    # Model parameters
+    parser.add_argument('--n_components', type=int, default=6,
+                      help='Number of hidden states in HMM')
+    parser.add_argument('--n_features', type=int, default=20,
+                      help='Number of top features to select')
+    parser.add_argument('--covariance_type', type=str, default='full',
+                      choices=['full', 'diag', 'tied', 'spherical'],
+                      help='Type of covariance parameters')
+    parser.add_argument('--n_iter', type=int, default=100,
+                      help='Maximum iterations for HMM training')
+    
+    # Trading parameters
+    parser.add_argument('--trading_start', type=str, default='09:30',
+                      help='Daily trading start time (HH:MM)')
+    parser.add_argument('--intraday_cutoff', type=str, default='10:35',
+                      help='Intraday mode cutoff time (HH:MM)')
+    parser.add_argument('--intraday_start', type=str, default='10:36',
+                      help='Intraday prediction window start (HH:MM)')
+    parser.add_argument('--intraday_end', type=str, default='12:00',
+                      help='Intraday prediction window end (HH:MM)')
+    
+    args = parser.parse_args()
+    
+    # Verify required files exist
+    if not Path(args.data_file).exists():
+        print(f"ERROR: Data file not found: {args.data_file}")
+        print("Please ensure history_spot_quote.csv exists in the data/ directory")
+        sys.exit(1)
+    
+    if not Path(args.regime_file).exists():
+        print(f"ERROR: Regime file not found: {args.regime_file}")
+        print("Please run the GMM regime classification first to generate regime_assignments.csv")
+        sys.exit(1)
+    
+    print("="*80)
+    print(f"HMM MARKET REGIME FORECASTING - {args.mode.upper()} MODE")
+    print("="*80)
+    print(f"Mode: {args.mode}")
+    print(f"Data file: {args.data_file}")
+    print(f"Regime file: {args.regime_file}")
+    print(f"Output directory: {args.output_dir}")
+    print(f"HMM components: {args.n_components}")
+    print(f"Selected features: {args.n_features}")
+    if args.mode == 'daily':
+        print(f"Daily mode: Using complete trading day data from {args.trading_start}")
+        print(f"Predicting: Next trading day's regime")
+    else:
+        print(f"Intraday mode: Using data before {args.intraday_cutoff}")
+        print(f"Predicting: {args.intraday_start} - {args.intraday_end} regime")
+    print()
+    
+    # Initialize forecaster
+    forecaster = HMMRegimeForecaster(
+        mode=args.mode,
+        n_components=args.n_components,
+        n_features=args.n_features,
+        covariance_type=args.covariance_type,
+        n_iter=args.n_iter,
+        trading_start_time=args.trading_start,
+        intraday_cutoff_time=args.intraday_cutoff,
+        intraday_start_time=args.intraday_start,
+        intraday_end_time=args.intraday_end
+    )
+    
+    try:
+        # Load data (now uses history_spot_quote.csv format)
+        market_data, regime_data = forecaster.load_and_prepare_data(
+            args.data_file, args.regime_file
+        )
+        
+        # Extract daily features (mode-specific)
+        daily_features = forecaster.extract_daily_features(market_data)
+        
+        # Prepare training data
+        X_train, y_train, feature_names, train_days = forecaster.prepare_training_data(
+            daily_features, regime_data,
+            train_start=args.train_start,
+            train_end=args.train_end
+        )
+        
+        # Store feature names for later use
+        forecaster.feature_columns = feature_names
+        
+        # Train model
+        training_results = forecaster.train_hmm_model(X_train, y_train, train_days)
+        
+        # Prepare test data if test dates provided
+        if args.test_start is not None or args.test_end is not None:
+            X_test, y_test, _, test_days = forecaster.prepare_training_data(
+                daily_features, regime_data,
+                train_start=args.test_start,
+                train_end=args.test_end
+            )
+            
+            # Evaluate model
+            evaluation_results = forecaster.evaluate_model(X_test, y_test, test_days)
+            
+            # Create detailed predictions DataFrame
+            predictions, probabilities, confidence_scores = forecaster.predict_next_regime(X_test)
+            
+            predictions_df = pd.DataFrame({
+                'TradingDay': test_days,
+                'True_Regime': y_test,
+                'Predicted_Regime': predictions,
+                'Confidence': confidence_scores
+            })
+            
+            # Add probability columns for each regime
+            unique_regimes = sorted(np.unique(np.concatenate([y_train, y_test])))
+            for i, regime in enumerate(unique_regimes):
+                if i < probabilities.shape[1]:
+                    predictions_df[f'Prob_Regime_{regime}'] = probabilities[:, i]
+        
+        # Save results
+        os.makedirs(args.output_dir, exist_ok=True)
+        
+        # Convert numpy types to native Python types for JSON serialization
+        def convert_numpy_types(obj):
+            if isinstance(obj, np.integer):
+                return int(obj)
+            elif isinstance(obj, np.floating):
+                return float(obj)
+            elif isinstance(obj, np.ndarray):
+                return obj.tolist()
+            elif isinstance(obj, dict):
+                return {str(k): convert_numpy_types(v) for k, v in obj.items()}
+            elif isinstance(obj, list):
+                return [convert_numpy_types(item) for item in obj]
+            return obj
+        
+        # Save training results
+        training_results_clean = convert_numpy_types(training_results)
+        with open(os.path.join(args.output_dir, 'hmm_training_results.json'), 'w') as f:
+            json.dump(training_results_clean, f, indent=2)
+        
+        # Save evaluation results if available
+        if args.test_start is not None or args.test_end is not None:
+            evaluation_results_clean = convert_numpy_types(evaluation_results)
+            with open(os.path.join(args.output_dir, 'hmm_evaluation_results.json'), 'w') as f:
+                json.dump(evaluation_results_clean, f, indent=2)
+            
+            # Save predictions
+            predictions_df.to_csv(
+                os.path.join(args.output_dir, 'hmm_regime_predictions.csv'),
+                index=False
+            )
+        
+        # Save model
+        forecaster.save_model(args.output_dir, 'hmm_regime_forecaster')
+        
+        # Save daily features for future use
+        daily_features.to_csv(
+            os.path.join(args.output_dir, 'daily_features.csv'),
+            index=False
+        )
+        
+        print("\n" + "="*80)
+        print("EXECUTION COMPLETED SUCCESSFULLY")
+        print("="*80)
+        print(f"Results saved to: {args.output_dir}")
+        print(f"Training accuracy: {training_results['training_accuracy']:.4f}")
+        if args.test_start is not None or args.test_end is not None:
+            print(f"Test accuracy: {evaluation_results['test_accuracy']:.4f}")
+            print(f"Average confidence: {evaluation_results['average_confidence']:.4f}")
+        
+    except Exception as e:
+        print(f"Error during execution: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        sys.exit(1)
+
+if __name__ == "__main__":
+    main()

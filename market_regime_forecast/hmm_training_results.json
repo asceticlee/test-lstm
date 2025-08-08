@@ -1,0 +1,48 @@
+{
+  "log_likelihood": 24956.003715178966,
+  "training_accuracy": 1.0,
+  "n_components": 3,
+  "n_features_selected": 10,
+  "regime_mapping": {
+    "3": 0
+  },
+  "state_to_regime_mapping": {
+    "0": 3,
+    "1": 3,
+    "2": 3
+  },
+  "selected_features": [
+    "peak_trough_ratio",
+    "reversal_frequency",
+    "autocorr_lag1",
+    "num_jumps",
+    "jump_frequency",
+    "max_jump_size",
+    "overnight_gap_absolute",
+    "overnight_gap_percentage",
+    "overnight_gap_positive",
+    "overnight_gap_magnitude"
+  ],
+  "transition_matrix": [
+    [
+      6.704980259199078e-05,
+      0.999932950197408,
+      1.7338642953890866e-22
+    ],
+    [
+      0.9965012589414162,
+      0.0006008202825798582,
+      0.0028979207760039794
+    ],
+    [
+      0.005223724914875571,
+      0.0034719272588465255,
+      0.991304347826278
+    ]
+  ],
+  "start_probabilities": [
+    3.4542145022481118e-18,
+    1.0,
+    0.0
+  ]
+}
