@@ -37,7 +37,7 @@
   "trading_start_ms": 38100000,
   "trading_end_ms": 43200000,
   "reference_time_ms": 38100000,
-  "n_regimes": 6,
+  "n_regimes": 5,
   "total_days": 1407,
   "note": "All price-based features calculated as percentage change from reference time (10:35). Overnight gaps excluded for pure intraday clustering."
 }
