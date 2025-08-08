@@ -32,12 +32,16 @@
     "autocorr_lag1",
     "num_jumps",
     "jump_frequency",
-    "max_jump_size"
+    "max_jump_size",
+    "overnight_gap_absolute",
+    "overnight_gap_percentage",
+    "overnight_gap_positive",
+    "overnight_gap_magnitude"
   ],
   "trading_start_ms": 38100000,
   "trading_end_ms": 43200000,
   "reference_time_ms": 38100000,
-  "n_regimes": 6,
+  "n_regimes": 7,
   "total_days": 1407,
   "note": "All price-based features calculated as percentage change from reference time (10:35)"
 }

@@ -71,7 +71,7 @@ class HMMRegimeForecaster:
     def __init__(self, mode='daily', n_components=6, n_features=20, covariance_type='full', 
                  n_iter=100, random_state=42, trading_start_time='09:30',
                  intraday_cutoff_time='10:35', intraday_start_time='10:36', 
-                 intraday_end_time='12:00'):
+                 intraday_end_time='12:00', auto_components=True):
         """
         Initialize the HMM regime forecaster
         
@@ -86,6 +86,7 @@ class HMMRegimeForecaster:
             intraday_cutoff_time: Cutoff time for intraday mode feature calculation (format: 'HH:MM')
             intraday_start_time: Start of intraday prediction window (format: 'HH:MM')
             intraday_end_time: End of intraday prediction window (format: 'HH:MM')
+            auto_components: Whether to automatically determine number of components from data
         """
         self.mode = mode
         self.n_components = n_components
@@ -93,6 +94,7 @@ class HMMRegimeForecaster:
         self.covariance_type = covariance_type
         self.n_iter = n_iter
         self.random_state = random_state
+        self.auto_components = auto_components
         
         # Time settings
         self.trading_start_time = trading_start_time
@@ -113,11 +115,15 @@ class HMMRegimeForecaster:
         self.feature_selector = SelectKBest(score_func=f_classif, k=n_features)
         self.selected_features = None
         self.regime_mapping = None
+        self.actual_n_components = n_components
         
         print(f"HMM Regime Forecaster initialized in {mode} mode")
         if mode == 'intraday':
             print(f"  Cutoff time: {intraday_cutoff_time} ({self.intraday_cutoff_ms}ms)")
             print(f"  Prediction window: {intraday_start_time} - {intraday_end_time}")
+        print(f"  Auto-components: {auto_components}")
+        if auto_components:
+            print(f"  Components will be determined from training data (max: {n_components})")
     
     
     def _time_to_ms(self, time_str):
@@ -211,7 +217,7 @@ class HMMRegimeForecaster:
             trading_day_column='trading_day',
             time_column='ms_of_day',
             use_relative=True,
-            include_overnight_gap=True  # Include the new overnight gap features
+            include_overnight_gap=(self.mode == 'intraday')  # Include overnight gaps only for intraday mode
         )
         
         print(f"Extracted features shape: {daily_features.shape}")
@@ -237,10 +243,15 @@ class HMMRegimeForecaster:
         """
         print("Preparing training data...")
         
+        # Deduplicate regime data to have only one row per trading day
+        # Take the first occurrence of each TradingDay (they should all have the same regime anyway)
+        regime_data_dedup = regime_data.drop_duplicates(subset=['TradingDay'], keep='first')
+        print(f"Deduplicated regime data: {len(regime_data)} -> {len(regime_data_dedup)} rows")
+        
         # Merge features with regime data using the correct column mapping
         merged_data = pd.merge(
             daily_features, 
-            regime_data[['TradingDay', 'Regime']], 
+            regime_data_dedup[['TradingDay', 'Regime']], 
             left_on='trading_day', 
             right_on='TradingDay', 
             how='inner'
@@ -254,6 +265,7 @@ class HMMRegimeForecaster:
         
         print(f"Training data date range: {merged_data['trading_day'].min()} to {merged_data['trading_day'].max()}")
         print(f"Training data shape: {merged_data.shape}")
+        print(f"Unique trading days: {merged_data['trading_day'].nunique()}")
         
         # Separate features and targets
         feature_columns = [col for col in merged_data.columns 
@@ -273,7 +285,7 @@ class HMMRegimeForecaster:
     
     def train_hmm_model(self, X, y, trading_days):
         """
-        Train the Hidden Markov Model
+        Train the Hidden Markov Model with improved regime mapping
         
         Args:
             X: Feature matrix
@@ -284,6 +296,15 @@ class HMMRegimeForecaster:
             dict: Training results and metrics
         """
         print("Training HMM model...")
+        
+        # Determine actual number of components from data
+        unique_regimes = sorted(np.unique(y))
+        if self.auto_components:
+            self.actual_n_components = len(unique_regimes)
+            print(f"Auto-detected {self.actual_n_components} unique regimes in training data: {unique_regimes}")
+        else:
+            self.actual_n_components = min(self.n_components, len(unique_regimes))
+            print(f"Using {self.actual_n_components} components for {len(unique_regimes)} unique regimes: {unique_regimes}")
         
         # Scale features
         X_scaled = self.scaler.fit_transform(X)
@@ -298,42 +319,85 @@ class HMMRegimeForecaster:
             print(f"  {feature}: {score:.3f}")
         
         # Create regime mapping (ensure regimes are 0-indexed for HMM)
-        unique_regimes = sorted(np.unique(y))
         self.regime_mapping = {regime: idx for idx, regime in enumerate(unique_regimes)}
         reverse_mapping = {idx: regime for regime, idx in self.regime_mapping.items()}
         
         # Convert regimes to 0-indexed
         y_indexed = np.array([self.regime_mapping[regime] for regime in y])
         
-        # Initialize and train HMM
+        # Initialize and train HMM with better parameters
         self.hmm_model = hmm.GaussianHMM(
-            n_components=self.n_components,
-            covariance_type=self.covariance_type,
-            n_iter=self.n_iter,
+            n_components=self.actual_n_components,
+            covariance_type='diag',  # Use diagonal covariance for better stability
+            n_iter=200,  # Increase iterations
             random_state=self.random_state,
-            algorithm='viterbi'
+            algorithm='viterbi',
+            tol=1e-4,  # Stricter convergence tolerance
+            init_params='stmc'  # Initialize all parameters
         )
         
-        # Fit the model
-        self.hmm_model.fit(X_selected)
+        # Try multiple random initializations to find best model
+        best_model = None
+        best_score = -np.inf
+        n_trials = 5
+        
+        print(f"Training with {n_trials} random initializations...")
+        
+        for trial in range(n_trials):
+            try:
+                # Create new model for each trial
+                trial_model = hmm.GaussianHMM(
+                    n_components=self.actual_n_components,
+                    covariance_type='diag',
+                    n_iter=200,
+                    random_state=self.random_state + trial,
+                    algorithm='viterbi',
+                    tol=1e-4,
+                    init_params='stmc'
+                )
+                
+                # Fit the model
+                trial_model.fit(X_selected)
+                
+                # Calculate score
+                score = trial_model.score(X_selected)
+                print(f"  Trial {trial + 1}: Log-likelihood = {score:.4f}")
+                
+                if score > best_score:
+                    best_score = score
+                    best_model = trial_model
+                    
+            except Exception as e:
+                print(f"  Trial {trial + 1}: Failed with error: {str(e)}")
+                continue
+        
+        if best_model is None:
+            raise ValueError("All HMM training trials failed")
+        
+        self.hmm_model = best_model
+        log_likelihood = best_score
+        
+        print(f"Best model log-likelihood: {log_likelihood:.4f}")
         
         # Get state sequence using Viterbi algorithm
         predicted_states = self.hmm_model.predict(X_selected)
         
-        # Calculate training metrics
-        log_likelihood = self.hmm_model.score(X_selected)
-        
-        # Map predicted states back to original regimes using most frequent mapping
+        # Create better state-to-regime mapping using maximum likelihood
         state_to_regime = {}
-        for state in range(self.n_components):
+        for state in range(self.actual_n_components):
             state_mask = predicted_states == state
             if np.sum(state_mask) > 0:
                 # Find most frequent actual regime for this state
                 actual_regimes_for_state = y_indexed[state_mask]
-                most_frequent_regime = stats.mode(actual_regimes_for_state, keepdims=True)[0][0]
-                state_to_regime[state] = reverse_mapping[most_frequent_regime]
+                if len(actual_regimes_for_state) > 0:
+                    most_frequent_regime = stats.mode(actual_regimes_for_state, keepdims=True)[0][0]
+                    state_to_regime[state] = reverse_mapping[most_frequent_regime]
+                else:
+                    state_to_regime[state] = unique_regimes[state % len(unique_regimes)]
             else:
-                state_to_regime[state] = unique_regimes[0]  # Default
+                state_to_regime[state] = unique_regimes[state % len(unique_regimes)]
+        
+        self.state_to_regime_mapping = state_to_regime
         
         # Convert predictions back to original regime labels
         y_pred = np.array([state_to_regime[state] for state in predicted_states])
@@ -341,21 +405,29 @@ class HMMRegimeForecaster:
         # Calculate accuracy
         accuracy = accuracy_score(y, y_pred)
         
+        # Show state mapping
+        print("State to Regime Mapping:")
+        for state, regime in state_to_regime.items():
+            state_count = np.sum(predicted_states == state)
+            print(f"  State {state} -> Regime {regime} ({state_count} observations)")
+        
         training_results = {
             'log_likelihood': log_likelihood,
             'training_accuracy': accuracy,
-            'n_components': self.n_components,
+            'n_components': self.actual_n_components,
             'n_features_selected': len(self.selected_features),
             'regime_mapping': self.regime_mapping,
             'state_to_regime_mapping': state_to_regime,
             'selected_features': self.selected_features,
             'transition_matrix': self.hmm_model.transmat_.tolist(),
-            'start_probabilities': self.hmm_model.startprob_.tolist()
+            'start_probabilities': self.hmm_model.startprob_.tolist(),
+            'unique_regimes': unique_regimes
         }
         
         print(f"Training completed:")
         print(f"  Log-likelihood: {log_likelihood:.4f}")
         print(f"  Training accuracy: {accuracy:.4f}")
+        print(f"  Components: {self.actual_n_components}")
         print(f"  Selected features: {len(self.selected_features)}")
         
         return training_results
@@ -550,14 +622,16 @@ def main():
     
     # Model parameters
     parser.add_argument('--n_components', type=int, default=6,
-                      help='Number of hidden states in HMM')
+                      help='Number of hidden states in HMM (max if auto_components=True)')
     parser.add_argument('--n_features', type=int, default=20,
                       help='Number of top features to select')
-    parser.add_argument('--covariance_type', type=str, default='full',
+    parser.add_argument('--covariance_type', type=str, default='diag',
                       choices=['full', 'diag', 'tied', 'spherical'],
                       help='Type of covariance parameters')
-    parser.add_argument('--n_iter', type=int, default=100,
+    parser.add_argument('--n_iter', type=int, default=200,
                       help='Maximum iterations for HMM training')
+    parser.add_argument('--auto_components', type=bool, default=True,
+                      help='Automatically determine number of components from training data')
     
     # Trading parameters
     parser.add_argument('--trading_start', type=str, default='09:30',
@@ -606,6 +680,7 @@ def main():
         n_features=args.n_features,
         covariance_type=args.covariance_type,
         n_iter=args.n_iter,
+        auto_components=args.auto_components,
         trading_start_time=args.trading_start,
         intraday_cutoff_time=args.intraday_cutoff,
         intraday_start_time=args.intraday_start,
@@ -634,14 +709,56 @@ def main():
         # Train model
         training_results = forecaster.train_hmm_model(X_train, y_train, train_days)
         
-        # Prepare test data if test dates provided
+        # Prepare test data
+        test_data_available = False
+        predictions_df = None
+        evaluation_results = None
+        
         if args.test_start is not None or args.test_end is not None:
+            # Use explicitly provided test dates
             X_test, y_test, _, test_days = forecaster.prepare_training_data(
                 daily_features, regime_data,
                 train_start=args.test_start,
                 train_end=args.test_end
             )
+            test_data_available = True
             
+        else:
+            # Auto-generate test data for period after training
+            print("No test dates specified. Using all available data after training period for predictions...")
+            
+            # Determine test start date (day after train_end if specified, otherwise use all data)
+            if args.train_end is not None:
+                # Convert train_end to datetime and add 1 day
+                from datetime import datetime, timedelta
+                train_end_date = datetime.strptime(args.train_end, '%Y%m%d')
+                test_start_date = train_end_date + timedelta(days=1)
+                test_start_auto = test_start_date.strftime('%Y%m%d')
+                print(f"Auto-generated test period starts from: {test_start_auto}")
+                
+                # Get all available dates after training
+                available_test_data = daily_features.merge(
+                    regime_data[['TradingDay', 'Regime']], 
+                    left_on='trading_day', 
+                    right_on='TradingDay', 
+                    how='inner'
+                )
+                available_test_data = available_test_data[available_test_data['trading_day'] >= int(test_start_auto)]
+                
+                if len(available_test_data) > 0:
+                    X_test, y_test, _, test_days = forecaster.prepare_training_data(
+                        daily_features, regime_data,
+                        train_start=test_start_auto,
+                        train_end=None
+                    )
+                    test_data_available = True
+                    print(f"Auto-generated test data: {len(test_days)} days from {test_days.min()} to {test_days.max()}")
+                else:
+                    print("No data available after training period for testing.")
+            else:
+                print("No training end date specified. Skipping test predictions.")
+        
+        if test_data_available and len(test_days) > 0:
             # Evaluate model
             evaluation_results = forecaster.evaluate_model(X_test, y_test, test_days)
             
@@ -660,6 +777,8 @@ def main():
             for i, regime in enumerate(unique_regimes):
                 if i < probabilities.shape[1]:
                     predictions_df[f'Prob_Regime_{regime}'] = probabilities[:, i]
+        else:
+            print("No valid test data available. Predictions will not be generated.")
         
         # Save results
         os.makedirs(args.output_dir, exist_ok=True)
@@ -684,16 +803,20 @@ def main():
             json.dump(training_results_clean, f, indent=2)
         
         # Save evaluation results if available
-        if args.test_start is not None or args.test_end is not None:
+        if evaluation_results is not None:
             evaluation_results_clean = convert_numpy_types(evaluation_results)
             with open(os.path.join(args.output_dir, 'hmm_evaluation_results.json'), 'w') as f:
                 json.dump(evaluation_results_clean, f, indent=2)
-            
-            # Save predictions
+        
+        # Save predictions if available
+        if predictions_df is not None and len(predictions_df) > 0:
             predictions_df.to_csv(
                 os.path.join(args.output_dir, 'hmm_regime_predictions.csv'),
                 index=False
             )
+            print(f"Predictions saved for {len(predictions_df)} days")
+        else:
+            print("No predictions generated - no valid test data available")
         
         # Save model
         forecaster.save_model(args.output_dir, 'hmm_regime_forecaster')
@@ -709,9 +832,11 @@ def main():
         print("="*80)
         print(f"Results saved to: {args.output_dir}")
         print(f"Training accuracy: {training_results['training_accuracy']:.4f}")
-        if args.test_start is not None or args.test_end is not None:
+        if evaluation_results is not None:
             print(f"Test accuracy: {evaluation_results['test_accuracy']:.4f}")
             print(f"Average confidence: {evaluation_results['average_confidence']:.4f}")
+        else:
+            print("No test evaluation performed - no valid test data available")
         
     except Exception as e:
         print(f"Error during execution: {str(e)}")

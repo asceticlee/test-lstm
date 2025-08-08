@@ -27,6 +27,11 @@ import argparse
 import warnings
 warnings.filterwarnings('ignore')
 
+# Add the src directory to the path for imports
+script_dir = Path(__file__).parent
+src_dir = script_dir.parent
+sys.path.insert(0, str(src_dir))
+
 # Machine Learning imports
 from sklearn.mixture import GaussianMixture
 from sklearn.preprocessing import StandardScaler
@@ -145,7 +150,8 @@ class GMMRegimeClusterer:
             reference_time_ms=reference_time_ms,
             trading_day_column='trading_day',
             time_column='ms_of_day',
-            use_relative=True
+            use_relative=True,
+            include_overnight_gap=False  # Don't include overnight gaps for trading day clustering
         )
         
         # Add additional metadata
@@ -341,7 +347,7 @@ class GMMRegimeClusterer:
             'reference_time_ms': self.trading_start_ms,  # Reference time same as start time
             'n_regimes': len(np.unique(self.regime_labels)),
             'total_days': len(self.daily_features),
-            'note': f'All price-based features calculated as percentage change from reference time ({self.ms_to_time(self.trading_start_ms)})'
+            'note': f'All price-based features calculated as percentage change from reference time ({self.ms_to_time(self.trading_start_ms)}). Overnight gaps excluded for pure intraday clustering.'
         }
         
         feature_info_file = self.output_dir / 'clustering_info.json'
