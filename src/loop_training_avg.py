@@ -9,14 +9,14 @@ def date_to_str(d):
 
 # Initial dates and label number
 dates = [
-    "20240428", "20240622",  # trainFrom, trainTo
-    "20240623", "20240629",  # validationFrom, validationTo
-    "20240630", "20240706"   # testFrom, testTo
+    "20200105", "20200229",  # trainFrom, trainTo
+    "20200301", "20200307",  # validationFrom, validationTo
+    "20200308", "20200314"   # testFrom, testTo
 ]
-label_number = "5"  # Default label number for averaging (must be odd: 5, 7, 9, 11, 13, etc.)
+label_number = "11"  # Default label number for averaging (must be odd: 5, 7, 9, 11, 13, etc.)
 
 # End condition
-end_date = datetime(2025, 8, 2)
+end_date = datetime(2025, 8, 9)
 
 while True:
     # Run the averaging script
