@@ -372,7 +372,7 @@ class HMMRegimeForecaster:
         Initialize the forecaster
         
         Args:
-            n_components: Number of market regimes (hidden states)
+            n_components: Number of HMM hidden states (NOT the same as market regimes)
             n_features: Number of top features to select
             random_state: Random seed for reproducibility
         """
@@ -392,7 +392,7 @@ class HMMRegimeForecaster:
         self.feature_names = None
         
         print(f"HMM Regime Forecaster initialized:")
-        print(f"  Components: {n_components}")
+        print(f"  HMM Components (hidden states): {n_components}")
         print(f"  Features: {n_features}")
         print(f"  Time window: 10:35 AM - 12:00 PM")
     
@@ -779,7 +779,7 @@ def main():
     
     # Model parameters
     parser.add_argument('--n_components', type=int, default=5,
-                       help='Number of market regimes')
+                       help='Number of HMM hidden states (can be more than market regimes)')
     parser.add_argument('--n_features', type=int, default=15,
                        help='Number of features to select')
     parser.add_argument('--random_state', type=int, default=42,
