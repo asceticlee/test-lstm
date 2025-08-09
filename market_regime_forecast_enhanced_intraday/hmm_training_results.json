@@ -1,0 +1,135 @@
+{
+  "log_likelihood": 44552.15197998454,
+  "training_accuracy": 0.42168674698795183,
+  "n_components": 7,
+  "n_features_selected": 30,
+  "regime_mapping": {
+    "0": 0,
+    "1": 1,
+    "2": 2,
+    "3": 3,
+    "4": 4
+  },
+  "state_to_regime_mapping": {
+    "0": 3,
+    "1": 1,
+    "2": 1,
+    "3": 4,
+    "4": 2,
+    "5": 0,
+    "6": 2
+  },
+  "selected_features": [
+    "return_std",
+    "return_max",
+    "return_min",
+    "positive_return_ratio",
+    "realized_volatility",
+    "price_range",
+    "price_range_pct",
+    "price_change_std",
+    "max_price_change",
+    "rolling_vol_short",
+    "rolling_vol_medium",
+    "volatility_of_volatility",
+    "price_level_volatility",
+    "direction_consistency",
+    "velocity_consistency",
+    "price_coefficient_variation",
+    "avg_price_gap",
+    "max_price_gap",
+    "price_gap_variance",
+    "rel_price_std",
+    "rel_price_max",
+    "rel_price_min",
+    "rel_price_range",
+    "gap_magnitude_small",
+    "gap_magnitude_medium",
+    "gap_magnitude_large",
+    "gap_vs_prev_range",
+    "gap_above_prev_high",
+    "gap_below_prev_low",
+    "prev_day_momentum"
+  ],
+  "transition_matrix": [
+    [
+      0.0,
+      0.0,
+      0.0,
+      3.5143567614564755e-14,
+      0.0,
+      0.0,
+      0.9999999999999648
+    ],
+    [
+      0.0,
+      0.714285714285343,
+      0.0,
+      0.28571428571465696,
+      0.0,
+      0.0,
+      0.0
+    ],
+    [
+      0.0,
+      0.0,
+      0.0,
+      1.1542231071096996e-128,
+      1.0,
+      0.0,
+      0.0
+    ],
+    [
+      1.2360953410900566e-30,
+      1.0091638582471874e-74,
+      0.020536601513280354,
+      0.5978278941819677,
+      0.041073203027606746,
+      0.04107320302699956,
+      0.2994890982501459
+    ],
+    [
+      0.0,
+      0.0,
+      0.0,
+      6.841767899204707e-40,
+      0.20000000000734872,
+      0.1999999999931606,
+      0.5999999999994906
+    ],
+    [
+      0.0,
+      0.333333333332727,
+      0.0,
+      2.5358797701990456e-19,
+      0.0,
+      0.16666666666696983,
+      0.5000000000003032
+    ],
+    [
+      0.0047358973380107585,
+      0.0,
+      5.3156726917338786e-189,
+      0.04163608402746457,
+      0.009471794676323027,
+      0.0023679486689493845,
+      0.9417882752892524
+    ]
+  ],
+  "start_probabilities": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    1.0,
+    0.0,
+    0.0
+  ],
+  "unique_regimes": [
+    0,
+    1,
+    2,
+    3,
+    4
+  ]
+}

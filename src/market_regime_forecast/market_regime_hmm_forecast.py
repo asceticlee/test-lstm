@@ -220,11 +220,33 @@ class HMMRegimeForecaster:
                 (market_data['ms_of_day'] <= self.intraday_cutoff_ms)
             ].copy()
             print(f"Intraday mode: Using data before {self.intraday_cutoff_time} to predict {self.intraday_start_time}-{self.intraday_end_time}")
+            print(f"Intraday mode: Will include overnight gap features from previous day's close")
             
         else:
             raise ValueError(f"Invalid mode: {self.mode}. Must be 'daily' or 'intraday'")
         
         print(f"Data shape after filtering: {filtered_data.shape}")
+        
+        # For intraday mode, we need to calculate overnight gaps
+        # Get previous day closing prices for gap calculation
+        previous_day_closes = {}
+        if self.mode == 'intraday':
+            print("Calculating previous day closing prices for overnight gap features...")
+            
+            # Get end-of-day data (around 4:00 PM = 57600000ms) for gap calculation
+            eod_data = market_data[
+                (market_data['ms_of_day'] >= 57000000) &  # 3:50 PM onwards
+                (market_data['ms_of_day'] <= 57600000)    # 4:00 PM
+            ].copy()
+            
+            for trading_day in sorted(eod_data['trading_day'].unique()):
+                day_eod_data = eod_data[eod_data['trading_day'] == trading_day]
+                if len(day_eod_data) > 0:
+                    # Use last available price as closing price
+                    closing_price = day_eod_data['mid'].iloc[-1]
+                    previous_day_closes[trading_day] = closing_price
+            
+            print(f"Found closing prices for {len(previous_day_closes)} days")
         
         # Extract features using the successful TechnicalAnalysisFeatures approach
         daily_features = []
@@ -236,10 +258,17 @@ class HMMRegimeForecaster:
                 continue
             
             prices = day_data['mid'].values
-            reference_price = prices[0]  # First price of the day (10:35 AM)
+            reference_price = prices[0]  # First price of the day (9:30 AM for intraday, 10:35 AM for daily)
             
             # Extract all features using successful approach
             features = TechnicalAnalysisFeatures.extract_features(prices, reference_price)
+            
+            # Add overnight gap features for intraday mode
+            if self.mode == 'intraday':
+                gap_features = self.calculate_overnight_gap_features(
+                    trading_day, reference_price, previous_day_closes, filtered_data
+                )
+                features.update(gap_features)
             
             # Add metadata
             features['trading_day'] = trading_day
@@ -256,6 +285,126 @@ class HMMRegimeForecaster:
         print(f"Feature list preview: {feature_cols[:10]}...")  # Show first 10 features
         
         return features_df
+    
+    def calculate_overnight_gap_features(self, trading_day, current_open_price, previous_day_closes, full_market_data):
+        """
+        Calculate overnight gap features for intraday mode
+        
+        Args:
+            trading_day: Current trading day
+            current_open_price: Opening price of current day (9:30 AM price)
+            previous_day_closes: Dict of trading_day -> closing_price
+            full_market_data: Full market data for additional calculations
+            
+        Returns:
+            dict: Overnight gap features
+        """
+        gap_features = {}
+        
+        # Find previous trading day
+        previous_trading_day = None
+        sorted_days = sorted(previous_day_closes.keys())
+        
+        try:
+            current_day_idx = sorted_days.index(trading_day)
+            if current_day_idx > 0:
+                previous_trading_day = sorted_days[current_day_idx - 1]
+        except ValueError:
+            # Current day not in the list
+            for i, day in enumerate(sorted_days):
+                if day < trading_day:
+                    previous_trading_day = day
+                else:
+                    break
+        
+        if previous_trading_day is not None and previous_trading_day in previous_day_closes:
+            previous_close = previous_day_closes[previous_trading_day]
+            
+            # Basic overnight gap features
+            overnight_gap_abs = current_open_price - previous_close
+            overnight_gap_pct = (overnight_gap_abs / previous_close) * 100 if previous_close != 0 else 0
+            overnight_gap_direction = 1 if overnight_gap_abs > 0 else (-1 if overnight_gap_abs < 0 else 0)
+            
+            # Gap magnitude categories
+            gap_abs_pct = abs(overnight_gap_pct)
+            gap_small = 1 if gap_abs_pct < 0.5 else 0  # Less than 0.5%
+            gap_medium = 1 if 0.5 <= gap_abs_pct < 2.0 else 0  # 0.5% to 2%
+            gap_large = 1 if gap_abs_pct >= 2.0 else 0  # Greater than 2%
+            
+            # Gap relative to previous day's trading range
+            prev_day_data = full_market_data[
+                (full_market_data['trading_day'] == previous_trading_day) &
+                (full_market_data['ms_of_day'] >= self.trading_start_ms) &
+                (full_market_data['ms_of_day'] <= 57600000)  # Full trading day
+            ]
+            
+            if len(prev_day_data) > 0:
+                prev_day_high = prev_day_data['mid'].max()
+                prev_day_low = prev_day_data['mid'].min()
+                prev_day_range = prev_day_high - prev_day_low
+                
+                # Gap relative to previous day's range
+                gap_vs_range = abs(overnight_gap_abs) / prev_day_range if prev_day_range > 0 else 0
+                
+                # Whether gap breaks previous day's range
+                gap_above_high = 1 if current_open_price > prev_day_high else 0
+                gap_below_low = 1 if current_open_price < prev_day_low else 0
+                
+                # Previous day's momentum features
+                prev_day_prices = prev_day_data['mid'].values
+                if len(prev_day_prices) > 1:
+                    prev_day_open = prev_day_prices[0]
+                    prev_day_momentum = (previous_close - prev_day_open) / prev_day_open * 100 if prev_day_open != 0 else 0
+                    
+                    # Gap continuation vs reversal
+                    gap_continues_momentum = 1 if (prev_day_momentum > 0 and overnight_gap_abs > 0) or (prev_day_momentum < 0 and overnight_gap_abs < 0) else 0
+                    gap_reverses_momentum = 1 if (prev_day_momentum > 0 and overnight_gap_abs < 0) or (prev_day_momentum < 0 and overnight_gap_abs > 0) else 0
+                else:
+                    prev_day_momentum = 0
+                    gap_continues_momentum = 0
+                    gap_reverses_momentum = 0
+            else:
+                gap_vs_range = 0
+                gap_above_high = 0
+                gap_below_low = 0
+                prev_day_momentum = 0
+                gap_continues_momentum = 0
+                gap_reverses_momentum = 0
+            
+            gap_features = {
+                'overnight_gap_abs': overnight_gap_abs,
+                'overnight_gap_pct': overnight_gap_pct,
+                'overnight_gap_direction': overnight_gap_direction,
+                'gap_magnitude_small': gap_small,
+                'gap_magnitude_medium': gap_medium,
+                'gap_magnitude_large': gap_large,
+                'gap_vs_prev_range': gap_vs_range,
+                'gap_above_prev_high': gap_above_high,
+                'gap_below_prev_low': gap_below_low,
+                'prev_day_momentum': prev_day_momentum,
+                'gap_continues_momentum': gap_continues_momentum,
+                'gap_reverses_momentum': gap_reverses_momentum,
+                'has_gap_data': 1
+            }
+        else:
+            # No previous day data available - set default values
+            gap_features = {
+                'overnight_gap_abs': 0,
+                'overnight_gap_pct': 0,
+                'overnight_gap_direction': 0,
+                'gap_magnitude_small': 0,
+                'gap_magnitude_medium': 0,
+                'gap_magnitude_large': 0,
+                'gap_vs_prev_range': 0,
+                'gap_above_prev_high': 0,
+                'gap_below_prev_low': 0,
+                'prev_day_momentum': 0,
+                'gap_continues_momentum': 0,
+                'gap_reverses_momentum': 0,
+                'has_gap_data': 0
+            }
+        
+        return gap_features
     
     def prepare_training_data(self, daily_features, regime_data, trading_day_col, train_start=None, 
                             train_end=None):
