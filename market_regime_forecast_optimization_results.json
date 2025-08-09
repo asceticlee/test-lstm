@@ -1,0 +1,57 @@
+{
+  "best_result": {
+    "test_accuracy": 0.6051,
+    "train_accuracy": 0.6245,
+    "random_state": 84,
+    "output": "================================================================================\nHMM MARKET REGIME FORECASTER\n================================================================================\nData file: /home/stephen/projects/Testing/TestPy/test-lstm/src/market_regime_forecast/../../data/history_spot_quote.csv\nRegime file: /home/stephen/projects/Testing/TestPy/test-lstm/src/market_regime_forecast/../../market_regime/daily_regime_assignments.csv\nOutput directory: /home/stephen/projects/Testing/TestPy/test-lstm/src/market_regime_forecast/../../market_regime_forecast\nComponents: 7\nFeatures: 25\n\nHMM Regime Forecaster initialized:\n  Components: 7\n  Features: 25\n  Time window: 10:35 AM - 12:00 PM\nLoading market data from: /home/stephen/projects/Testing/TestPy/test-lstm/src/market_regime_forecast/../../data/history_spot_quote.csv\nOriginal data shape: (550137, 5)\nFiltered data shape: (121002, 5)\nDate range: 20200102 to 20250807\nUnique trading days: 1407\nLoading regime labels from: /home/stephen/projects/Testing/TestPy/test-lstm/src/market_regime_forecast/../../market_regime/daily_regime_assignments.csv\nLoaded 1397 regime assignments\nAvailable regimes: [np.int64(0), np.int64(1), np.int64(2), np.int64(3), np.int64(4)]\nRegime distribution: {0: np.int64(209), 1: np.int64(77), 2: np.int64(553), 3: np.int64(339), 4: np.int64(219)}\nExtracting daily technical analysis features...\nExtracted features for 1407 trading days\nFeature columns: 53\nPreparing training data...\nTraining date range: 20200102 to 20211231\nTraining samples: 498\nFeature matrix shape: (498, 53)\nRegime distribution: {np.int64(0): np.int64(67), np.int64(1): np.int64(36), np.int64(2): np.int64(187), np.int64(3): np.int64(120), np.int64(4): np.int64(88)}\nTraining HMM model...\nTraining regimes: [np.int64(0), np.int64(1), np.int64(2), np.int64(3), np.int64(4)]\nSelected 25 best features:\n   1. max_price_change: 154.4\n   2. max_price_gap: 154.4\n   3. return_min: 127.5\n   4. volatility_of_volatility: 123.3\n   5. return_max: 119.7\n   6. price_range: 116.8\n   7. rel_price_range: 112.0\n   8. price_range_pct: 111.7\n   9. price_gap_variance: 111.5\n  10. rel_price_min: 111.5\n  11. total_price_change_pct: 109.9\n  12. rel_price_final: 109.9\n  13. return_mean: 109.2\n  14. velocity_mean: 109.2\n  15. realized_volatility: 108.9\n  16. velocity_consistency: 107.9\n  17. return_std: 107.9\n  18. price_change_std: 107.8\n  19. trend_slope: 106.8\n  20. rel_price_std: 105.7\n  21. price_level_volatility: 105.3\n  22. price_coefficient_variation: 105.3\n  23. avg_price_gap: 97.3\n  24. rel_price_mean: 90.4\n  25. rel_price_max: 80.1\nTraining with multiple covariance types...\n  Testing covariance type: diag\n  Testing covariance type: full\n  Testing covariance type: spherical\n  Best covariance type: full\nBest model log-likelihood: 35135.6686\nTraining completed:\n  Log-likelihood: 35135.6686\n  Training accuracy: 0.6245\n  State-to-regime mapping: {0: np.int64(4), 1: np.int64(4), 2: np.int64(1), 3: np.int64(3), 4: np.int64(4), 5: np.int64(1), 6: np.int64(2)}\nPreparing training data...\nTraining date range: 20220103 to 20250807\nTraining samples: 899\nFeature matrix shape: (899, 53)\nRegime distribution: {np.int64(0): np.int64(142), np.int64(1): np.int64(41), np.int64(2): np.int64(366), np.int64(3): np.int64(219), np.int64(4): np.int64(131)}\n\nEvaluating on 899 test samples...\nTest accuracy: 0.6051\nAverage confidence: 0.9828\nModel saved to: /home/stephen/projects/Testing/TestPy/test-lstm/src/market_regime_forecast/../../market_regime_forecast/hmm_regime_forecaster.pkl\n\n================================================================================\nEXECUTION COMPLETED SUCCESSFULLY\n================================================================================\nResults saved to: /home/stephen/projects/Testing/TestPy/test-lstm/src/market_regime_forecast/../../market_regime_forecast\nTraining accuracy: 0.6245\nTest accuracy: 0.6051\n",
+    "balance_score": 0.6031599999999999
+  },
+  "all_results": [
+    {
+      "random_state": 84,
+      "train_accuracy": 0.6245,
+      "test_accuracy": 0.6051,
+      "balance_score": 0.6031599999999999
+    },
+    {
+      "random_state": 77,
+      "train_accuracy": 0.6847,
+      "test_accuracy": 0.5818,
+      "balance_score": 0.57151
+    },
+    {
+      "random_state": 63,
+      "train_accuracy": 0.6365,
+      "test_accuracy": 0.5228,
+      "balance_score": 0.51143
+    },
+    {
+      "random_state": 56,
+      "train_accuracy": 0.6104,
+      "test_accuracy": 0.5128,
+      "balance_score": 0.50304
+    },
+    {
+      "random_state": 70,
+      "train_accuracy": 0.5361,
+      "test_accuracy": 0.5028,
+      "balance_score": 0.49947
+    },
+    {
+      "random_state": 42,
+      "train_accuracy": 0.6165,
+      "test_accuracy": 0.4705,
+      "balance_score": 0.45589999999999997
+    },
+    {
+      "random_state": 49,
+      "train_accuracy": 0.6225,
+      "test_accuracy": 0.4549,
+      "balance_score": 0.43814000000000003
+    }
+  ],
+  "target_config": {
+    "n_components": 7,
+    "n_features": 25
+  }
+}
