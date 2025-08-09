@@ -24,7 +24,7 @@ Usage:
     python market_regime_hmm_forecast.py --mode intraday
     
     # Custom paths if needed
-    python market_regime_hmm_forecast.py --mode daily --data_file ../../data/history_spot_quote.csv --regime_file ../../regime_analysis/regime_assignments.csv
+    python market_regime_hmm_forecast.py --mode daily --data_file ../../data/history_spot_quote.csv --regime_file ../../market_regime/daily_regime_assignments.csv
 """
 
 import pandas as pd
@@ -793,7 +793,7 @@ def main():
     
     # Default file paths
     default_data_file = project_root / 'data' / 'history_spot_quote.csv'
-    default_regime_file = project_root / 'regime_analysis' / 'regime_assignments.csv'
+    default_regime_file = project_root / 'market_regime' / 'daily_regime_assignments.csv'
     default_output_dir = project_root / 'market_regime_forecast'
     
     parser = argparse.ArgumentParser(description='HMM Market Regime Forecasting')
@@ -853,7 +853,7 @@ def main():
     
     if not Path(args.regime_file).exists():
         print(f"ERROR: Regime file not found: {args.regime_file}")
-        print("Please run the GMM regime classification first to generate regime_assignments.csv")
+        print("Please run the GMM regime clustering first to generate daily_regime_assignments.csv")
         sys.exit(1)
     
     print("="*80)
