@@ -1,1 +1,0 @@
-python src/market_regime_forecast/market_regime_hmm_forecast.py --mode daily --train_end 20211231 --test_start 20220101 --n_components 7 --n_features 25 --random_state 82

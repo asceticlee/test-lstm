@@ -1,0 +1,83 @@
+{
+  "analysis_timestamp": "2025-08-11T14:34:34.763602",
+  "trading_period": "09:30 to 12:00",
+  "scenarios_tested": 4,
+  "successful_scenarios": 4,
+  "scenario_results": {
+    "standard": {
+      "scenario_name": "Standard (No Overnight)",
+      "include_overnight_gap": false,
+      "overnight_indicators": false,
+      "n_regimes": 7,
+      "n_features": 33,
+      "total_days": 1407,
+      "accuracy_50_time": "11:00",
+      "accuracy_50_minutes": 90.0,
+      "regime_distribution": {
+        "0": 172,
+        "1": 493,
+        "2": 228,
+        "3": 157,
+        "4": 8,
+        "5": 342,
+        "6": 7
+      }
+    },
+    "gap_only": {
+      "scenario_name": "Overnight Gap Only",
+      "include_overnight_gap": true,
+      "overnight_indicators": false,
+      "n_regimes": 7,
+      "n_features": 44,
+      "total_days": 1407,
+      "accuracy_50_time": "Never",
+      "accuracy_50_minutes": 999,
+      "regime_distribution": {
+        "0": 309,
+        "1": 396,
+        "2": 102,
+        "3": 57,
+        "4": 204,
+        "5": 14,
+        "6": 325
+      }
+    },
+    "indicators_only": {
+      "scenario_name": "Overnight Indicators Only",
+      "include_overnight_gap": false,
+      "overnight_indicators": true,
+      "n_regimes": 7,
+      "n_features": 47,
+      "total_days": 1407,
+      "accuracy_50_time": "Never",
+      "accuracy_50_minutes": 999,
+      "regime_distribution": {
+        "0": 306,
+        "1": 279,
+        "2": 307,
+        "3": 104,
+        "4": 17,
+        "5": 99,
+        "6": 295
+      }
+    },
+    "full_overnight": {
+      "scenario_name": "Full Overnight Analysis",
+      "include_overnight_gap": true,
+      "overnight_indicators": true,
+      "n_regimes": 6,
+      "n_features": 51,
+      "total_days": 1407,
+      "accuracy_50_time": "Never",
+      "accuracy_50_minutes": 999,
+      "regime_distribution": {
+        "0": 99,
+        "1": 287,
+        "2": 430,
+        "3": 17,
+        "4": 211,
+        "5": 363
+      }
+    }
+  }
+}

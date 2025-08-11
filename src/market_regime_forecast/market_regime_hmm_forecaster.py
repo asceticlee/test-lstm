@@ -1,19 +1,27 @@
 #!/usr/bin/env python3
 """
-Simplified HMM Market Regime Forecaster
+Enhanced HMM Market Regime Forecaster with Proper Temporal Logic
 
-A focused implementation for daily market regime forecasting using Hidden Markov Models.
-Uses one day's market data (10:35-12:00) to predict next day's market regime.
+A robust implementation for next-day market regime forecasting using Hidden Markov Models.
+CORRECTLY uses day T's market data (10:35-12:00) to predict day T+1's market regime.
 
 Key Features:
-- Single mode: Daily regime forecasting only
-- Custom technical analysis features optimized for regime detection
+- Proper temporal alignment: Day T features → Day T+1 regime prediction
+- Enhanced technical analysis features with volatility, momentum, and pattern detection
+- Mutual information-based feature selection for better regime discrimination
+- Robust preprocessing with outlier handling and enhanced scaling
+- Multi-configuration HMM training with validation
 - Uses 10:35-12:00 time window for consistency with regime labels
-- Predicts regime for next day's 10:35-12:00 period
-- Built-in feature engineering with volatility, momentum, and price patterns
+
+Enhanced Accuracy Features:
+- 60+ technical indicators including volatility regimes and momentum patterns
+- RobustScaler preprocessing for better outlier handling
+- Dynamic component selection based on data size
+- Confidence-weighted state-to-regime mapping
+- Multiple random restarts for robust model training
 
 Usage:
-    python market_regime_hmm_forecaster.py --train_end 20211231 --n_components 5
+    python market_regime_hmm_forecaster.py --train_end 20211231 --test_start 20220101 --n_components 7 --n_features 25
 """
 
 import pandas as pd
@@ -89,20 +97,44 @@ class TechnicalAnalysisFeatures:
         else:
             rolling_vol_short = rolling_vol_medium = vol_of_vol = np.std(returns)
         
-        # Garch-like features
+        # Enhanced volatility features for better regime detection
         if len(returns) > 1:
-            # Simple volatility persistence
+            # Volatility persistence and jumps
             vol_persistence = np.corrcoef(abs_returns[:-1], abs_returns[1:])[0, 1] if len(abs_returns) > 2 else 0
-            
-            # Volatility jumps
             vol_threshold = 2 * np.std(abs_returns)
             vol_jumps = np.sum(abs_returns > vol_threshold)
+            
+            # Volatility regimes within the day
+            vol_percentiles = [np.percentile(abs_returns, p) for p in [25, 50, 75, 90]]
+            vol_p25, vol_p50, vol_p75, vol_p90 = vol_percentiles
+            
+            # High volatility periods
+            high_vol_ratio = np.sum(abs_returns > vol_p75) / len(abs_returns)
+            extreme_vol_ratio = np.sum(abs_returns > vol_p90) / len(abs_returns)
+            
+            # Volatility skewness and concentration
+            vol_skew = stats.skew(abs_returns)
+            vol_concentration = vol_p90 / max(vol_p50, 1e-6)  # Avoid division by zero
+            
         else:
-            vol_persistence = 0
-            vol_jumps = 0
+            vol_persistence = vol_jumps = 0
+            vol_p25 = vol_p50 = vol_p75 = vol_p90 = np.std(returns)
+            high_vol_ratio = extreme_vol_ratio = 0
+            vol_skew = 0
+            vol_concentration = 1
         
         # Price level volatility
         price_level_vol = np.std(prices) / np.mean(prices) if np.mean(prices) != 0 else 0
+        
+        # Intraday volatility decay (early vs late period)
+        if len(returns) >= 4:
+            early_returns = returns[:len(returns)//2]
+            late_returns = returns[len(returns)//2:]
+            early_vol = np.std(early_returns)
+            late_vol = np.std(late_returns)
+            vol_decay = (early_vol - late_vol) / max(early_vol, 1e-6)
+        else:
+            vol_decay = 0
         
         return {
             'realized_volatility': realized_vol,
@@ -117,6 +149,16 @@ class TechnicalAnalysisFeatures:
             'volatility_persistence': vol_persistence if not np.isnan(vol_persistence) else 0,
             'volatility_jumps': vol_jumps,
             'price_level_volatility': price_level_vol,
+            # Enhanced volatility features
+            'vol_p25': vol_p25,
+            'vol_p50': vol_p50,
+            'vol_p75': vol_p75,
+            'vol_p90': vol_p90,
+            'high_vol_ratio': high_vol_ratio,
+            'extreme_vol_ratio': extreme_vol_ratio,
+            'vol_skewness': vol_skew if not np.isnan(vol_skew) else 0,
+            'vol_concentration': vol_concentration,
+            'vol_decay': vol_decay,
         }
     
     @staticmethod
@@ -178,10 +220,55 @@ class TechnicalAnalysisFeatures:
         else:
             velocity_std = velocity_mean = 0
         
+        # Enhanced momentum features
+        # Price momentum strength and persistence
+        if len(prices) >= 6:
+            # Early vs late momentum
+            early_prices = prices[:len(prices)//2]
+            late_prices = prices[len(prices)//2:]
+            early_momentum = (early_prices[-1] - early_prices[0]) / early_prices[0] * 100
+            late_momentum = (late_prices[-1] - late_prices[0]) / late_prices[0] * 100
+            momentum_acceleration = late_momentum - early_momentum
+            
+            # Momentum regime consistency
+            returns_early = np.diff(early_prices) / early_prices[:-1]
+            returns_late = np.diff(late_prices) / late_prices[:-1]
+            momentum_regime_change = np.sign(np.mean(returns_early)) != np.sign(np.mean(returns_late))
+        else:
+            early_momentum = late_momentum = momentum_acceleration = 0
+            momentum_regime_change = False
+        
+        # Price breakout patterns
+        price_range = max_price - min_price
+        breakout_threshold = price_range * 0.8
+        near_high = (last_price - min_price) > breakout_threshold
+        near_low = (max_price - last_price) > breakout_threshold
+        
+        # Momentum reversals
+        if len(returns) >= 4:
+            # Count momentum reversals
+            momentum_signs = np.sign(returns)
+            reversals = np.sum(np.diff(momentum_signs) != 0)
+            reversal_frequency = reversals / len(momentum_signs)
+            
+            # Strength of final momentum
+            final_momentum_strength = np.abs(np.mean(returns[-3:]))
+        else:
+            reversal_frequency = final_momentum_strength = 0
+        
+        # Trend strength categorization
+        trend_strength_raw = abs(slope) * (r_value**2)
+        if trend_strength_raw > 0.1:
+            trend_category = 2  # Strong trend
+        elif trend_strength_raw > 0.05:
+            trend_category = 1  # Moderate trend
+        else:
+            trend_category = 0  # Weak/no trend
+        
         return {
             'trend_slope': slope,
             'trend_r_squared': r_value**2,
-            'trend_strength': abs(slope) * (r_value**2),
+            'trend_strength': trend_strength_raw,
             'price_momentum': momentum,
             'price_momentum_medium': momentum_medium,
             'price_position': price_position,
@@ -192,6 +279,16 @@ class TechnicalAnalysisFeatures:
             'price_acceleration': acceleration,
             'velocity_consistency': 1 / (1 + velocity_std) if velocity_std > 0 else 1,
             'velocity_mean': velocity_mean,
+            # Enhanced momentum features
+            'early_momentum': early_momentum,
+            'late_momentum': late_momentum,
+            'momentum_acceleration': momentum_acceleration,
+            'momentum_regime_change': float(momentum_regime_change),
+            'near_high_breakout': float(near_high),
+            'near_low_breakout': float(near_low),
+            'reversal_frequency': reversal_frequency,
+            'final_momentum_strength': final_momentum_strength,
+            'trend_category': trend_category,
         }
     
     @staticmethod
@@ -367,12 +464,12 @@ class HMMRegimeForecaster:
     Simplified HMM-based market regime forecaster
     """
     
-    def __init__(self, n_components=5, n_features=15, random_state=42):
+    def __init__(self, n_components=7, n_features=25, random_state=42):
         """
         Initialize the forecaster
         
         Args:
-            n_components: Number of HMM hidden states (NOT the same as market regimes)
+            n_components: Number of HMM hidden states (should be >= number of regimes for better modeling)
             n_features: Number of top features to select
             random_state: Random seed for reproducibility
         """
@@ -387,14 +484,17 @@ class HMMRegimeForecaster:
         # Model components
         self.hmm_model = None
         self.scaler = StandardScaler()
-        self.feature_selector = SelectKBest(score_func=f_classif, k=n_features)
+        from sklearn.feature_selection import SelectKBest, mutual_info_classif
+        self.feature_selector = SelectKBest(score_func=mutual_info_classif, k=n_features)
         self.selected_features = None
         self.feature_names = None
         
-        print(f"HMM Regime Forecaster initialized:")
+        print(f"Enhanced HMM Regime Forecaster initialized:")
         print(f"  HMM Components (hidden states): {n_components}")
         print(f"  Features: {n_features}")
+        print(f"  Feature selection: Mutual Information")
         print(f"  Time window: 10:35 AM - 12:00 PM")
+        print(f"  Prediction: Day T features -> Day T+1 regime")
     
     def load_market_data(self, data_file):
         """
@@ -514,6 +614,7 @@ class HMMRegimeForecaster:
     def prepare_training_data(self, features_df, regime_data, train_start=None, train_end=None):
         """
         Merge features with regime labels and prepare training data
+        CRITICAL: Uses day T features to predict day T+1 regime
         
         Args:
             features_df: Daily features DataFrame
@@ -524,10 +625,20 @@ class HMMRegimeForecaster:
         Returns:
             tuple: (X, y, trading_days)
         """
-        print("Preparing training data...")
+        print("Preparing training data with proper temporal alignment...")
         
-        # Merge features with regime labels
-        merged_data = pd.merge(features_df, regime_data, on='trading_day', how='inner')
+        # Sort both dataframes by trading day
+        features_df = features_df.sort_values('trading_day').reset_index(drop=True)
+        regime_data = regime_data.sort_values('trading_day').reset_index(drop=True)
+        
+        # Create next-day regime mapping: day T features -> day T+1 regime
+        # Shift regime data forward by 1 day (regime today will be predicted from yesterday's features)
+        regime_shifted = regime_data.copy()
+        regime_shifted['trading_day'] = regime_shifted['trading_day'] - 1  # Match with previous day's features
+        regime_shifted = regime_shifted.rename(columns={'Regime': 'Next_Day_Regime'})
+        
+        # Merge features from day T with regime from day T+1
+        merged_data = pd.merge(features_df, regime_shifted, on='trading_day', how='inner')
         
         # Filter by date range
         if train_start:
@@ -536,14 +647,14 @@ class HMMRegimeForecaster:
             merged_data = merged_data[merged_data['trading_day'] <= int(train_end)]
         
         print(f"Training date range: {merged_data['trading_day'].min()} to {merged_data['trading_day'].max()}")
-        print(f"Training samples: {len(merged_data)}")
+        print(f"Training samples: {len(merged_data)} (day T features -> day T+1 regime)")
         
         # Separate features and targets
         feature_columns = [col for col in merged_data.columns 
-                          if col not in ['trading_day', 'Regime', 'num_observations', 'reference_price']]
+                          if col not in ['trading_day', 'Next_Day_Regime', 'num_observations', 'reference_price']]
         
         X = merged_data[feature_columns].values
-        y = merged_data['Regime'].values
+        y = merged_data['Next_Day_Regime'].values
         trading_days = merged_data['trading_day'].values
         
         # Handle missing values
@@ -559,7 +670,7 @@ class HMMRegimeForecaster:
     
     def train(self, X, y):
         """
-        Train the HMM model
+        Train the HMM model with enhanced preprocessing and validation
         
         Args:
             X: Feature matrix
@@ -568,105 +679,195 @@ class HMMRegimeForecaster:
         Returns:
             dict: Training results
         """
-        print("Training HMM model...")
+        print("Training Enhanced HMM model...")
         
         unique_regimes = sorted(np.unique(y))
         print(f"Training regimes: {unique_regimes}")
+        print(f"Regime distribution: {dict(zip(*np.unique(y, return_counts=True)))}")
         
-        # Scale features
-        X_scaled = self.scaler.fit_transform(X)
+        # Enhanced preprocessing
+        # 1. Handle infinite values and outliers
+        X_clean = np.copy(X)
         
-        # Select best features using original F-classif method (best performing)
+        # Replace infinite values
+        X_clean = np.where(np.isinf(X_clean), 0, X_clean)
+        X_clean = np.where(np.isnan(X_clean), 0, X_clean)
+        
+        # Outlier capping (3-sigma rule per feature)
+        for i in range(X_clean.shape[1]):
+            feature_data = X_clean[:, i]
+            mean_val = np.mean(feature_data)
+            std_val = np.std(feature_data)
+            
+            if std_val > 0:
+                lower_bound = mean_val - 3 * std_val
+                upper_bound = mean_val + 3 * std_val
+                X_clean[:, i] = np.clip(feature_data, lower_bound, upper_bound)
+        
+        print(f"Feature preprocessing: Handled {np.sum(np.isinf(X)) + np.sum(np.isnan(X))} invalid values")
+        
+        # 2. Scale features using RobustScaler for better outlier handling
+        from sklearn.preprocessing import RobustScaler
+        self.scaler = RobustScaler()
+        X_scaled = self.scaler.fit_transform(X_clean)
+        
+        # 3. Enhanced feature selection with mutual information
         X_selected = self.feature_selector.fit_transform(X_scaled, y)
         selected_indices = self.feature_selector.get_support(indices=True)
         self.selected_features = [self.feature_names[i] for i in selected_indices]
         
-        print(f"Selected {len(self.selected_features)} best features:")
+        print(f"Selected {len(self.selected_features)} best features using mutual information:")
         feature_scores = [(self.feature_names[i], self.feature_selector.scores_[i]) 
                          for i in selected_indices]
         feature_scores.sort(key=lambda x: x[1], reverse=True)
         
-        for i, (feature, score) in enumerate(feature_scores):
-            print(f"  {i+1:2d}. {feature}: {score:.1f}")
+        for i, (feature, score) in enumerate(feature_scores[:15]):  # Show top 15
+            print(f"  {i+1:2d}. {feature}: {score:.3f}")
+        
+        if len(feature_scores) > 15:
+            print(f"  ... and {len(feature_scores) - 15} more features")
         
         # Store feature indices for later use
         self.feature_indices = selected_indices
         
-        # Train HMM with multiple covariance types (original best performing approach)
+        # 4. Enhanced HMM training with multiple trials and validation
         best_model = None
         best_score = -np.inf
         best_cov_type = 'diag'
+        best_n_components = self.n_components
         
-        # Try different covariance types
-        covariance_types = ['diag', 'full', 'spherical']
-        n_trials_per_type = 7  # Total ~20 trials
+        # Try different numbers of components if training set is large enough
+        min_samples_per_component = 10
+        max_components = min(self.n_components + 2, len(X_selected) // min_samples_per_component)
+        component_range = range(max(3, self.n_components - 1), max_components + 1)
         
-        print(f"Training with multiple covariance types...")
+        print(f"Testing {len(component_range)} different component counts: {list(component_range)}")
         
-        for cov_type in covariance_types:
-            print(f"  Testing covariance type: {cov_type}")
+        # Try different covariance types and component counts
+        covariance_types = ['diag', 'spherical', 'full']
+        n_trials_per_config = 5  # Multiple random starts per configuration
+        
+        total_trials = 0
+        successful_trials = 0
+        
+        for n_comp in component_range:
+            print(f"  Testing {n_comp} components...")
             
-            for trial in range(n_trials_per_type):
-                try:
-                    model = hmm.GaussianHMM(
-                        n_components=self.n_components,
-                        covariance_type=cov_type,
-                        n_iter=200,  # Increased iterations for better convergence
-                        random_state=self.random_state + trial,
-                        tol=1e-6,    # Tighter tolerance
-                        verbose=False
-                    )
-                    
-                    model.fit(X_selected)
-                    score = model.score(X_selected)
-                    
-                    if score > best_score:
-                        best_score = score
-                        best_model = model
-                        best_cov_type = cov_type
+            for cov_type in covariance_types:
+                for trial in range(n_trials_per_config):
+                    total_trials += 1
+                    try:
+                        model = hmm.GaussianHMM(
+                            n_components=n_comp,
+                            covariance_type=cov_type,
+                            n_iter=300,  # More iterations for better convergence
+                            random_state=self.random_state + trial,
+                            tol=1e-6,
+                            verbose=False,
+                            init_params='stmc'  # Initialize all parameters
+                        )
                         
-                except Exception as e:
-                    continue
+                        model.fit(X_selected)
+                        score = model.score(X_selected)
+                        successful_trials += 1
+                        
+                        # Additional validation: check if model produces reasonable state transitions
+                        predicted_states = model.predict(X_selected)
+                        unique_states_used = len(np.unique(predicted_states))
+                        
+                        # Penalize models that don't use enough states
+                        state_usage_penalty = (n_comp - unique_states_used) * 0.1
+                        adjusted_score = score - state_usage_penalty
+                        
+                        if adjusted_score > best_score:
+                            best_score = adjusted_score
+                            best_model = model
+                            best_cov_type = cov_type
+                            best_n_components = n_comp
+                            
+                    except Exception as e:
+                        continue
+        
+        print(f"Training completed: {successful_trials}/{total_trials} trials successful")
         
         if best_model is None:
             raise ValueError("All HMM training trials failed")
         
-        print(f"  Best covariance type: {best_cov_type}")
+        print(f"  Best configuration: {best_n_components} components, {best_cov_type} covariance")
+        print(f"  Best model log-likelihood: {best_score:.4f}")
+        
         self.hmm_model = best_model
-        print(f"Best model log-likelihood: {best_score:.4f}")
+        self.n_components = best_n_components  # Update to best found
         
-        # Evaluate training performance
+        # 5. Enhanced state-to-regime mapping with confidence weighting
         predicted_states = self.hmm_model.predict(X_selected)
+        state_probabilities = self.hmm_model.predict_proba(X_selected)
         
-        # Create state-to-regime mapping
+        # Create state-to-regime mapping using confidence-weighted voting
         state_to_regime = {}
+        state_confidence = {}
+        
         for state in range(self.n_components):
             state_mask = predicted_states == state
+            
             if np.sum(state_mask) > 0:
                 actual_regimes = y[state_mask]
-                most_frequent_regime = stats.mode(actual_regimes, keepdims=True)[0][0]
-                state_to_regime[state] = most_frequent_regime
+                state_probs = state_probabilities[state_mask, state]
+                
+                # Weight regime votes by prediction confidence
+                weighted_votes = {}
+                for regime, prob in zip(actual_regimes, state_probs):
+                    if regime not in weighted_votes:
+                        weighted_votes[regime] = 0
+                    weighted_votes[regime] += prob
+                
+                # Select regime with highest weighted vote
+                best_regime = max(weighted_votes.items(), key=lambda x: x[1])[0]
+                state_to_regime[state] = best_regime
+                state_confidence[state] = np.mean(state_probs)
             else:
-                state_to_regime[state] = state  # Fallback
+                # Fallback for unused states
+                state_to_regime[state] = state % len(unique_regimes)
+                state_confidence[state] = 0.0
         
         self.state_to_regime = state_to_regime
+        self.state_confidence = state_confidence
         
-        # Calculate training accuracy
+        # 6. Calculate enhanced training metrics
         regime_predictions = np.array([state_to_regime[state] for state in predicted_states])
         training_accuracy = accuracy_score(y, regime_predictions)
         
-        print(f"Training completed:")
-        print(f"  Log-likelihood: {best_score:.4f}")
-        print(f"  Training accuracy: {training_accuracy:.4f}")
-        print(f"  State-to-regime mapping: {state_to_regime}")
+        # Calculate per-regime accuracy
+        regime_accuracies = {}
+        for regime in unique_regimes:
+            regime_mask = (y == regime)
+            if np.sum(regime_mask) > 0:
+                regime_acc = accuracy_score(y[regime_mask], regime_predictions[regime_mask])
+                regime_accuracies[int(regime)] = regime_acc  # Convert to int for JSON serialization
+        
+        # Overall confidence
+        avg_confidence = np.mean([state_confidence[state] for state in predicted_states])
+        
+        print(f"Training Results:")
+        print(f"  Overall accuracy: {training_accuracy:.4f}")
+        print(f"  Average confidence: {avg_confidence:.4f}")
+        print(f"  Per-regime accuracy:")
+        for regime in sorted(regime_accuracies.keys()):
+            print(f"    Regime {regime}: {regime_accuracies[regime]:.4f}")
         
         return {
             'log_likelihood': best_score,
             'training_accuracy': training_accuracy,
-            'state_to_regime': state_to_regime,
+            'regime_accuracies': regime_accuracies,
+            'average_confidence': avg_confidence,
+            'state_to_regime': {int(k): int(v) for k, v in state_to_regime.items()},  # Convert for JSON
+            'state_confidence': {int(k): float(v) for k, v in state_confidence.items()},  # Convert for JSON
             'selected_features': self.selected_features,
             'n_components': self.n_components,
-            'n_features': len(self.selected_features)
+            'n_features': len(self.selected_features),
+            'covariance_type': best_cov_type,
+            'successful_trials': successful_trials,
+            'total_trials': total_trials
         }
     
     def predict(self, X):
@@ -778,10 +979,10 @@ def main():
                        help='Test end date (YYYYMMDD)')
     
     # Model parameters
-    parser.add_argument('--n_components', type=int, default=5,
-                       help='Number of HMM hidden states (can be more than market regimes)')
-    parser.add_argument('--n_features', type=int, default=15,
-                       help='Number of features to select')
+    parser.add_argument('--n_components', type=int, default=7,
+                       help='Number of HMM hidden states (should be >= number of regimes)')
+    parser.add_argument('--n_features', type=int, default=25,
+                       help='Number of features to select (increased for better coverage)')
     parser.add_argument('--random_state', type=int, default=42,
                        help='Random seed')
     

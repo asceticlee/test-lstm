@@ -53,8 +53,9 @@ class GMMRegimeClusterer:
     Gaussian Mixture Model based market regime clustering for intraday periods
     """
     
-    def __init__(self, data_path, output_dir='../../market_regime', 
-                 trading_start_ms=38100000, trading_end_ms=43200000):
+    def __init__(self, data_path, output_dir='../../market_regime/gmm/daily', 
+                 trading_start_ms=38100000, trading_end_ms=43200000, 
+                 include_overnight_gap=False, overnight_indicators=False):
         """
         Initialize the regime clusterer
         
@@ -63,6 +64,8 @@ class GMMRegimeClusterer:
             output_dir: Directory to save results (relative to script location)
             trading_start_ms: Start of trading period (10:35 AM = 38100000) - also reference time
             trading_end_ms: End of trading period (12:00 PM = 43200000)
+            include_overnight_gap: Whether to include overnight gap features
+            overnight_indicators: Whether to include overnight-specific technical indicators
         """
         # Get the absolute path to the script directory
         script_dir = Path(__file__).parent.absolute()
@@ -79,10 +82,12 @@ class GMMRegimeClusterer:
         else:
             self.output_dir = Path(output_dir)
         
-        self.output_dir.mkdir(exist_ok=True)
+        self.output_dir.mkdir(parents=True, exist_ok=True)
         
         self.trading_start_ms = trading_start_ms
         self.trading_end_ms = trading_end_ms
+        self.include_overnight_gap = include_overnight_gap
+        self.overnight_indicators = overnight_indicators
         
         # Model components
         self.scaler = StandardScaler()
@@ -101,6 +106,8 @@ class GMMRegimeClusterer:
         print(f"GMM Regime Clusterer initialized")
         print(f"Data path: {self.data_path}")
         print(f"Trading period: {self.ms_to_time(trading_start_ms)} to {self.ms_to_time(trading_end_ms)}")
+        print(f"Include overnight gap: {include_overnight_gap}")
+        print(f"Overnight indicators: {overnight_indicators}")
         print(f"Output directory: {self.output_dir}")
     
     def ms_to_time(self, ms):
@@ -108,6 +115,93 @@ class GMMRegimeClusterer:
         hours = ms // 3600000
         minutes = (ms % 3600000) // 60000
         return f"{hours:02d}:{minutes:02d}"
+    
+    def calculate_overnight_indicators(self, daily_data):
+        """
+        Calculate overnight-specific technical indicators (not basic gap features)
+        
+        Basic gap features are handled by StatisticalFeatureExtractor.
+        This method only adds advanced overnight indicators like gap fill analysis, opening patterns, etc.
+        
+        Args:
+            daily_data: DataFrame with trading data including previous day's close
+            
+        Returns:
+            Dictionary with overnight indicator features
+        """
+        overnight_features = {}
+        
+        try:
+            # Get the first price of current day (market open)
+            first_price = daily_data['mid'].iloc[0] if len(daily_data) > 0 else np.nan
+            
+            # Get previous day's close - simple approach using prev_close column
+            if 'prev_close' in daily_data.columns:
+                prev_close = daily_data['prev_close'].iloc[0]
+            else:
+                prev_close = np.nan
+            
+            # Calculate basic overnight gap for use in indicators
+            if not np.isnan(prev_close) and not np.isnan(first_price) and prev_close != 0:
+                overnight_gap = (first_price - prev_close) / prev_close
+            else:
+                overnight_gap = 0
+            
+            # Calculate overnight-specific technical indicators
+            prices = daily_data['mid'].values
+            if len(prices) > 10 and not np.isnan(prev_close) and prev_close != 0:  # Need sufficient data
+                
+                # Gap fill analysis: does price return to previous close level?
+                gap_direction = 1 if first_price > prev_close else -1
+                
+                # Check if gap gets filled during the day
+                if gap_direction > 0:  # Gap up - check if price goes back down to prev_close
+                    gap_filled = np.any(prices <= prev_close)
+                else:  # Gap down - check if price goes back up to prev_close
+                    gap_filled = np.any(prices >= prev_close)
+                
+                overnight_features['gap_filled'] = 1 if gap_filled else 0
+                
+                # Time to gap fill (in 5-minute intervals from start)
+                if gap_filled:
+                    if gap_direction > 0:
+                        fill_idx = np.argmax(prices <= prev_close)
+                    else:
+                        fill_idx = np.argmax(prices >= prev_close)
+                    overnight_features['gap_fill_time_minutes'] = fill_idx * 5  # Assuming 5-min intervals
+                else:
+                    overnight_features['gap_fill_time_minutes'] = 999  # Not filled
+                
+                # Opening direction (first 30 minutes): does it continue gap direction?
+                first_30min_data = prices[:min(6, len(prices))]  # First 6 intervals (30 min)
+                if len(first_30min_data) > 1:
+                    opening_move = (first_30min_data[-1] - first_price) / first_price if first_price != 0 else 0
+                    overnight_features['opening_direction'] = opening_move
+                    overnight_features['opening_momentum'] = abs(opening_move)
+                    
+                    # Gap continuation: same direction as overnight gap
+                    gap_continuation = (overnight_gap * opening_move > 0) if overnight_gap != 0 else False
+                    overnight_features['gap_continuation'] = 1 if gap_continuation else 0
+            else:
+                # Default values when insufficient data
+                overnight_features['gap_filled'] = 0
+                overnight_features['gap_fill_time_minutes'] = 0
+                overnight_features['opening_direction'] = 0
+                overnight_features['opening_momentum'] = 0
+                overnight_features['gap_continuation'] = 0
+                
+        except Exception as e:
+            print(f"Warning: Error calculating overnight indicator features: {e}")
+            # Ensure all expected features exist with default values
+            overnight_indicator_features = [
+                'gap_filled', 'gap_fill_time_minutes', 'opening_direction',
+                'opening_momentum', 'gap_continuation'
+            ]
+            for feature in overnight_indicator_features:
+                if feature not in overnight_features:
+                    overnight_features[feature] = 0
+        
+        return overnight_features
     
     def load_and_filter_data(self):
         """Load trading data from history_spot_quote.csv and filter for specified time period"""
@@ -137,6 +231,8 @@ class GMMRegimeClusterer:
             
         print(f"Extracting daily statistical features with reference time: {self.ms_to_time(reference_time_ms)}...")
         print(f"Analysis period: {self.ms_to_time(self.trading_start_ms)} to {self.ms_to_time(self.trading_end_ms)}")
+        print(f"Include overnight gap: {self.include_overnight_gap}")
+        print(f"Overnight indicators: {self.overnight_indicators}")
         
         # Use mid price and check for volume columns from history_spot_quote.csv
         price_column = 'mid'  # history_spot_quote.csv has mid prices
@@ -151,16 +247,60 @@ class GMMRegimeClusterer:
             trading_day_column='trading_day',
             time_column='ms_of_day',
             use_relative=True,
-            include_overnight_gap=False  # Don't include overnight gaps for trading day clustering
+            include_overnight_gap=self.include_overnight_gap
         )
+        
+        # Add overnight-specific technical indicators if enabled (gap fill, opening direction, etc.)
+        if self.overnight_indicators:
+            print("Adding overnight-specific technical indicator features...")
+            
+            # Calculate overnight indicator features for each trading day
+            overnight_features_list = []
+            
+            # Group data by trading day
+            daily_groups = self.raw_data.groupby('trading_day')
+            
+            for trading_day, day_data in daily_groups:
+                # Calculate overnight indicator features for this day
+                overnight_features = self.calculate_overnight_indicators(day_data)
+                overnight_features['trading_day'] = trading_day
+                overnight_features_list.append(overnight_features)
+            
+            # Convert to DataFrame and merge with existing features
+            if overnight_features_list:
+                overnight_df = pd.DataFrame(overnight_features_list)
+                
+                # Merge with existing daily features
+                self.daily_features = self.daily_features.merge(
+                    overnight_df, 
+                    on='trading_day', 
+                    how='left'
+                )
+                
+                # Fill any missing overnight features with zeros
+                overnight_columns = [col for col in overnight_df.columns if col != 'trading_day']
+                for col in overnight_columns:
+                    if col in self.daily_features.columns:
+                        self.daily_features[col] = self.daily_features[col].fillna(0)
+                
+                print(f"Added {len(overnight_columns)} overnight indicator features")
         
         # Add additional metadata
         self.daily_features['FromMsOfDay'] = self.trading_start_ms
         self.daily_features['ToMsOfDay'] = self.trading_end_ms
         self.daily_features['time_range_minutes'] = (self.trading_end_ms - self.trading_start_ms) / 60000
         
+        # Count total features (excluding metadata)
+        metadata_cols = ['trading_day', 'FromMsOfDay', 'ToMsOfDay', 'reference_time_ms', 'reference_price', 'num_observations', 'time_range_minutes']
+        feature_cols = [col for col in self.daily_features.columns if col not in metadata_cols]
+        
         print(f"Extracted features for {len(self.daily_features)} trading days")
-        print(f"Feature dimensions: {self.daily_features.shape[1] - 7} features per day")  # Subtract metadata columns
+        print(f"Total feature dimensions: {len(feature_cols)} features per day")
+        
+        if self.include_overnight_gap or self.overnight_indicators:
+            overnight_cols = [col for col in feature_cols if 'overnight' in col or 'gap' in col or 'opening' in col or 'vwap' in col]
+            print(f"  - Standard features: {len(feature_cols) - len(overnight_cols)}")
+            print(f"  - Overnight features: {len(overnight_cols)}")
         
         return self.daily_features
     
@@ -345,9 +485,11 @@ class GMMRegimeClusterer:
             'trading_start_ms': self.trading_start_ms,
             'trading_end_ms': self.trading_end_ms,
             'reference_time_ms': self.trading_start_ms,  # Reference time same as start time
+            'include_overnight_gap': self.include_overnight_gap,
+            'overnight_indicators': self.overnight_indicators,
             'n_regimes': len(np.unique(self.regime_labels)),
             'total_days': len(self.daily_features),
-            'note': f'All price-based features calculated as percentage change from reference time ({self.ms_to_time(self.trading_start_ms)}). Overnight gaps excluded for pure intraday clustering.'
+            'note': f'All price-based features calculated as percentage change from reference time ({self.ms_to_time(self.trading_start_ms)}). Overnight gaps {"included" if self.include_overnight_gap else "excluded"}. Overnight indicators {"enabled" if self.overnight_indicators else "disabled"}.'
         }
         
         feature_info_file = self.output_dir / 'clustering_info.json'
@@ -472,7 +614,7 @@ def main():
                        help='Path to trading data CSV file (relative to project root)')
     parser.add_argument('--n_regimes', type=int, default=None,
                        help='Number of regimes (if not specified, will optimize)')
-    parser.add_argument('--output_dir', default='../../market_regime',
+    parser.add_argument('--output_dir', default='../../market_regime/gmm/daily',
                        help='Output directory for results (relative to script)')
     parser.add_argument('--trading_start', default='10:35',
                        help='Trading start time (HH:MM format) - also used as reference time')
@@ -482,6 +624,10 @@ def main():
                        help='Reference time for relative price calculations (HH:MM format) - defaults to trading_start')
     parser.add_argument('--use_pca', action='store_true', default=True,
                        help='Use PCA for dimensionality reduction')
+    parser.add_argument('--include_overnight_gap', action='store_true', default=False,
+                       help='Include overnight gap features in regime clustering')
+    parser.add_argument('--overnight_indicators', action='store_true', default=False,
+                       help='Include overnight-specific technical indicators')
     args = parser.parse_args()
 
     trading_start_ms = time_to_ms(args.trading_start)
@@ -495,7 +641,9 @@ def main():
         data_path=args.data_path,
         output_dir=args.output_dir,
         trading_start_ms=trading_start_ms,
-        trading_end_ms=trading_end_ms
+        trading_end_ms=trading_end_ms,
+        include_overnight_gap=args.include_overnight_gap,
+        overnight_indicators=args.overnight_indicators
     )
 
     if args.n_regimes is not None:
@@ -511,6 +659,8 @@ def main():
     print(f"Data file: {clusterer.data_path}")
     print(f"Analysis window: {args.trading_start} to {args.trading_end}")
     print(f"Reference time: {args.reference_time if args.reference_time else args.trading_start} (for relative price calculation)")
+    print(f"Include overnight gap: {args.include_overnight_gap}")
+    print(f"Overnight indicators: {args.overnight_indicators}")
     print(f"Total trading days: {len(clusterer.daily_features)}")
     print(f"Number of regimes: {len(np.unique(clusterer.regime_labels))}")
     print(f"Features extracted: {len(clusterer.feature_names)}")

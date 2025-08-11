@@ -3,15 +3,20 @@
 Model Regime Performance Tester
 
 This script tests each model's performance on different market regimes and generates ranking files.
+Supports both daily and sequence-based regime clustering methods.
 
 Pipeline:
 1. Load model metadata from models/model_log_avg.csv
-2. For each model, test performance on each regime using daily_regime_assignments.csv
-3. Generate model_regime_test_results.csv with detailed performance metrics
-4. Generate model_regime_ranking.csv with regime-based rankings
+2. Load regime assignments from:
+   - Daily clustering: market_regime/gmm/daily/daily_regime_assignments.csv
+   - Sequence clustering: market_regime/gmm/sequence/sequence_regime_assignments.csv
+3. For each model, test performance on each regime
+4. Generate model_regime_test_results_{method}.csv with detailed performance metrics
+5. Generate model_regime_ranking_{method}.csv with regime-based rankings
 
 Usage:
-    python model_regime_tester.py
+    python model_regime_tester.py --clustering_method daily
+    python model_regime_tester.py --clustering_method sequence
 """
 
 import pandas as pd
@@ -33,13 +38,14 @@ sys.path.append(str(project_root / "src"))
 class ModelRegimeTester:
     """Test models on different market regimes and generate rankings"""
     
-    def __init__(self, max_models=None):
+    def __init__(self, max_models=None, clustering_method='daily'):
         self.project_root = Path(__file__).parent / ".." / ".."
         self.models_dir = self.project_root / "models"
         self.data_dir = self.project_root / "data"
         self.market_regime_dir = self.project_root / "market_regime"
         self.output_dir = self.project_root / "model_regime"
         self.max_models = max_models  # Limit number of models for testing
+        self.clustering_method = clustering_method  # 'daily' or 'sequence'
         
         # Ensure output directory exists
         self.output_dir.mkdir(exist_ok=True)
@@ -55,7 +61,7 @@ class ModelRegimeTester:
         
     def load_data(self):
         """Load all required data files"""
-        print("Loading data files...")
+        print(f"Loading data files for {self.clustering_method} clustering method...")
         
         # Load model log
         model_log_file = self.models_dir / "model_log_avg.csv"
@@ -70,12 +76,20 @@ class ModelRegimeTester:
         
         print(f"Loaded {len(self.model_log)} models from model log")
         
-        # Load regime assignments
-        regime_file = self.market_regime_dir / "daily_regime_assignments.csv"
+        # Load regime assignments based on clustering method
+        if self.clustering_method == 'daily':
+            regime_file = self.market_regime_dir / "gmm" / "daily" / "daily_regime_assignments.csv"
+            regime_char_file = self.market_regime_dir / "gmm" / "daily" / "regime_characteristics.csv"
+        elif self.clustering_method == 'sequence':
+            regime_file = self.market_regime_dir / "gmm" / "sequence" / "sequence_regime_assignments.csv"
+            regime_char_file = self.market_regime_dir / "gmm" / "sequence" / "regime_characteristics.csv"
+        else:
+            raise ValueError(f"Unknown clustering method: {self.clustering_method}. Use 'daily' or 'sequence'")
+        
         if not regime_file.exists():
             raise FileNotFoundError(f"Regime assignments not found: {regime_file}")
         self.regime_assignments = pd.read_csv(regime_file)
-        print(f"Loaded regime assignments for {len(self.regime_assignments)} days")
+        print(f"Loaded regime assignments for {len(self.regime_assignments)} entries from {self.clustering_method} clustering")
         
         # Load trading data
         trading_file = self.data_dir / "trainingData.csv"
@@ -85,11 +99,10 @@ class ModelRegimeTester:
         print(f"Loaded trading data with {len(self.trading_data)} rows")
         
         # Load regime characteristics to get number of regimes
-        regime_char_file = self.market_regime_dir / "regime_characteristics.csv"
         if not regime_char_file.exists():
             raise FileNotFoundError(f"Regime characteristics not found: {regime_char_file}")
         self.regime_characteristics = pd.read_csv(regime_char_file)
-        print(f"Found {len(self.regime_characteristics)} regimes")
+        print(f"Found {len(self.regime_characteristics)} regimes using {self.clustering_method} clustering")
         
     def create_sequences_for_inference(self, df, seq_length, feature_cols, target_col):
         """Create sequences for inference - targeting exact single label, not average"""
@@ -262,15 +275,23 @@ class ModelRegimeTester:
             with open(scaler_file, 'r') as f:
                 scaler_params = json.load(f)
             
-            # Get regime days
-            regime_days = self.regime_assignments[self.regime_assignments['Regime'] == regime]['trading_day'].unique()
+            # Get regime days - handle different formats for daily vs sequence clustering
+            if self.clustering_method == 'daily':
+                # Daily clustering: one regime per trading day
+                regime_days = self.regime_assignments[self.regime_assignments['Regime'] == regime]['trading_day'].unique()
+            elif self.clustering_method == 'sequence':
+                # Sequence clustering: multiple regime assignments per day, need to get unique trading days
+                regime_days = self.regime_assignments[self.regime_assignments['Regime'] == regime]['trading_day'].unique()
             
             if len(regime_days) == 0:
                 print(f"Warning: No days found for regime {regime}")
                 return None
             
             # Filter trading data for the specific regime dates
-            regime_dates = self.regime_assignments[self.regime_assignments['Regime'] == regime]['trading_day'].values
+            if self.clustering_method == 'daily':
+                regime_dates = self.regime_assignments[self.regime_assignments['Regime'] == regime]['trading_day'].values
+            else:  # sequence
+                regime_dates = self.regime_assignments[self.regime_assignments['Regime'] == regime]['trading_day'].values
             
             # Convert regime dates to match trading data format (as float)
             # Trading data has dates as float64 (e.g., 20200102.0)
@@ -291,7 +312,10 @@ class ModelRegimeTester:
                                     if not (train_start <= date <= train_end)]
             
             print(f"Model {model_id} training period: {train_start} to {train_end}")
-            print(f"Regime {regime}: {len(regime_dates_formatted)} total days, {len(regime_dates_test_only)} test days (excluding training period)")
+            if self.clustering_method == 'daily':
+                print(f"Regime {regime}: {len(regime_dates_formatted)} total days, {len(regime_dates_test_only)} test days (excluding training period)")
+            else:  # sequence
+                print(f"Regime {regime}: {len(regime_dates_formatted)} total time windows, {len(regime_dates_test_only)} test days (excluding training period)")
             
             if len(regime_dates_test_only) == 0:
                 print(f"Warning: No test data for regime {regime} outside training period for model {model_id}")
@@ -531,7 +555,7 @@ class ModelRegimeTester:
         results_df = results_df[available_cols]
         
         # Save to file
-        output_file = self.output_dir / "model_regime_test_results.csv"
+        output_file = self.output_dir / f"model_regime_test_results_{self.clustering_method}.csv"
         results_df.to_csv(output_file, index=False)
         print(f"Saved detailed test results to: {output_file}")
     
@@ -603,7 +627,7 @@ class ModelRegimeTester:
         # Create DataFrame and save
         ranking_df = pd.DataFrame(ranking_data)
         
-        output_file = self.output_dir / "model_regime_ranking.csv"
+        output_file = self.output_dir / f"model_regime_ranking_{self.clustering_method}.csv"
         ranking_df.to_csv(output_file, index=False)
         print(f"Saved ranking summary to: {output_file}")
         
@@ -638,14 +662,16 @@ def main():
                        help='Maximum number of models to test (for quick testing)')
     parser.add_argument('--test_filtering', action='store_true',
                        help='Only test the filtering logic without running full tests')
+    parser.add_argument('--clustering_method', choices=['daily', 'sequence'], default='daily',
+                       help='Clustering method to use: daily (GMM daily clustering) or sequence (GMM sequence clustering)')
     args = parser.parse_args()
     
     print("="*60)
-    print("MODEL REGIME PERFORMANCE TESTER")
+    print(f"MODEL REGIME PERFORMANCE TESTER ({args.clustering_method.upper()} CLUSTERING)")
     print("="*60)
     
     # Create tester instance
-    tester = ModelRegimeTester(max_models=args.max_models)
+    tester = ModelRegimeTester(max_models=args.max_models, clustering_method=args.clustering_method)
     
     try:
         # Load data
@@ -667,9 +693,13 @@ def main():
         tester.save_ranking_summary()
         
         print("\n" + "="*60)
-        print("TESTING COMPLETED SUCCESSFULLY")
+        print(f"TESTING COMPLETED SUCCESSFULLY ({args.clustering_method.upper()} CLUSTERING)")
         print("="*60)
         print(f"Results saved to: {tester.output_dir}")
+        print(f"Clustering method: {args.clustering_method}")
+        print(f"Output files:")
+        print(f"  - model_regime_test_results_{args.clustering_method}.csv")
+        print(f"  - model_regime_ranking_{args.clustering_method}.csv")
         
     except Exception as e:
         print(f"Error during execution: {e}")

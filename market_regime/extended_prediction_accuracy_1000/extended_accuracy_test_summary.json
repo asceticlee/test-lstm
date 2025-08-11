@@ -1,0 +1,16 @@
+{
+  "test_intervals": 14,
+  "extended_start_time": "10:00",
+  "regime_start_time": "10:35",
+  "regime_end_time": "12:00",
+  "additional_trading_time_minutes": 35.0,
+  "min_accuracy": 0.2146410803127221,
+  "max_accuracy": 0.5366027007818053,
+  "final_accuracy": 0.5366027007818053,
+  "mean_accuracy": 0.3828307442379937,
+  "accuracy_at_regime_start": 0.25515280739161333,
+  "best_early_accuracy": 0.24449182658137883,
+  "best_early_time": "10:33",
+  "viable_for_trading": false,
+  "best_early_additional_time": 85.0
+}

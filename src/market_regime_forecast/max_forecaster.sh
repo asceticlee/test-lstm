@@ -1,2 +1,0 @@
-# This script runs the market regime HMM forecaster with specified parameters.
-python market_regime_hmm_forecaster.py --train_end 20211231 --test_start 20220101 --n_components 7 --n_features 25 --random_state 84
