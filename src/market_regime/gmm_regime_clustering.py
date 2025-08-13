@@ -374,7 +374,7 @@ class GMMRegimeClusterer:
                     bic = gmm.bic(features_to_use)
                     aic = gmm.aic(features_to_use)
                     
-                    # Combined score (higher silhouette, lower BIC)
+                    # Combined score (higher silhouette, lower BIC) - original version
                     combined_score = silhouette - (bic / 10000)  # Scale BIC down
                     
                     scores[n_components] = {

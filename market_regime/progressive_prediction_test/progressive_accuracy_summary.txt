@@ -1,36 +1,36 @@
 Progressive Market Regime Prediction Test Summary
 ============================================================
-Test date: 2025-08-11 15:15:20
+Test date: 2025-08-11 20:49:06
 Base period: 9:30 AM to 12:00 PM (150 minutes)
 Reference regime: Full day clustering (9:30-12:00)
 Test strategy: Progressive end times from 9:30 start
 Number of test periods: 10
-Number of trading days: 1407
+Number of trading days: 1408
 
 Progressive Accuracy Results:
 ----------------------------------------
-9:30 to 09:45 ( 15 min,  10.0%): 0.259
-9:30 to 10:00 ( 30 min,  20.0%): 0.304
-9:30 to 10:15 ( 45 min,  30.0%): 0.369
-9:30 to 10:30 ( 60 min,  40.0%): 0.454
-9:30 to 10:45 ( 75 min,  50.0%): 0.558
-9:30 to 11:00 ( 90 min,  60.0%): 0.623
-9:30 to 11:15 (105 min,  70.0%): 0.686
-9:30 to 11:30 (120 min,  80.0%): 0.754
-9:30 to 11:45 (135 min,  90.0%): 0.847
+9:30 to 09:45 ( 15 min,  10.0%): 0.143
+9:30 to 10:00 ( 30 min,  20.0%): 0.200
+9:30 to 10:15 ( 45 min,  30.0%): 0.288
+9:30 to 10:30 ( 60 min,  40.0%): 0.382
+9:30 to 10:45 ( 75 min,  50.0%): 0.499
+9:30 to 11:00 ( 90 min,  60.0%): 0.575
+9:30 to 11:15 (105 min,  70.0%): 0.639
+9:30 to 11:30 (120 min,  80.0%): 0.713
+9:30 to 11:45 (135 min,  90.0%): 0.822
 9:30 to 12:00 (150 min, 100.0%): 1.000
 
 Key Findings:
 --------------------
 Best accuracy: 1.000 at 12:00 (150 min)
 Final accuracy (12:00): 1.000 (should be 1.000)
-50% accuracy first achieved: 10:45 (75 min, 50.0% complete)
+50% accuracy first achieved: 11:00 (90 min, 60.0% complete)
 70% accuracy first achieved: 11:30 (120 min, 80.0% complete)
 80% accuracy first achieved: 11:45 (135 min, 90.0% complete)
 90% accuracy first achieved: 12:00 (150 min, 100.0% complete)
 
 Improvement Analysis:
 --------------------
-Total accuracy improvement: 0.741
+Total accuracy improvement: 0.857
 Total time span: 135 minutes
-Average improvement rate: 0.0055 per minute
+Average improvement rate: 0.0063 per minute

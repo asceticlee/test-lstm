@@ -1,0 +1,36 @@
+Progressive Market Regime Prediction Test Summary
+============================================================
+Test date: 2025-08-11 21:05:47
+Base period: 9:30 AM to 12:00 PM (150 minutes)
+Reference regime: Full day clustering (9:30-12:00)
+Test strategy: Progressive end times from 9:30 start
+Number of test periods: 10
+Number of trading days: 1408
+
+Progressive Accuracy Results:
+----------------------------------------
+9:30 to 09:45 ( 15 min,  10.0%): 0.116
+9:30 to 10:00 ( 30 min,  20.0%): 0.170
+9:30 to 10:15 ( 45 min,  30.0%): 0.240
+9:30 to 10:30 ( 60 min,  40.0%): 0.359
+9:30 to 10:45 ( 75 min,  50.0%): 0.477
+9:30 to 11:00 ( 90 min,  60.0%): 0.573
+9:30 to 11:15 (105 min,  70.0%): 0.634
+9:30 to 11:30 (120 min,  80.0%): 0.712
+9:30 to 11:45 (135 min,  90.0%): 0.812
+9:30 to 12:00 (150 min, 100.0%): 1.000
+
+Key Findings:
+--------------------
+Best accuracy: 1.000 at 12:00 (150 min)
+Final accuracy (12:00): 1.000 (should be 1.000)
+50% accuracy first achieved: 11:00 (90 min, 60.0% complete)
+70% accuracy first achieved: 11:30 (120 min, 80.0% complete)
+80% accuracy first achieved: 11:45 (135 min, 90.0% complete)
+90% accuracy first achieved: 12:00 (150 min, 100.0% complete)
+
+Improvement Analysis:
+--------------------
+Total accuracy improvement: 0.884
+Total time span: 135 minutes
+Average improvement rate: 0.0065 per minute

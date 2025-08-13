@@ -564,21 +564,14 @@ class StatisticalFeatureExtractor:
             if include_overnight_gap and previous_day_last_price is not None:
                 current_day_first_price = prices[0]
                 gap_absolute = current_day_first_price - previous_day_last_price
-                gap_percentage = (gap_absolute / previous_day_last_price) * 100 if previous_day_last_price != 0 else 0
                 
                 features.update({
                     'overnight_gap_absolute': gap_absolute,
-                    'overnight_gap_percentage': gap_percentage,
-                    'overnight_gap_positive': 1 if gap_absolute > 0 else 0,
-                    'overnight_gap_magnitude': abs(gap_percentage),
                 })
             else:
                 # Set default values for first day or when feature is disabled
                 features.update({
                     'overnight_gap_absolute': 0,
-                    'overnight_gap_percentage': 0,
-                    'overnight_gap_positive': 0,
-                    'overnight_gap_magnitude': 0,
                 })
             
             # Store last price of current day for next iteration
