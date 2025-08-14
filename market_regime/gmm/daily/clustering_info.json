@@ -40,7 +40,7 @@
   "reference_time_ms": 34200000,
   "include_overnight_gap": true,
   "overnight_indicators": false,
-  "n_regimes": 6,
-  "total_days": 1409,
+  "n_regimes": 5,
+  "total_days": 1411,
   "note": "All price-based features calculated as percentage change from reference time (09:30). Overnight gaps included. Overnight indicators disabled."
 }
