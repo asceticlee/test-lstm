@@ -135,9 +135,11 @@ def process_model_prediction(model_id, data_df, model_dir, prediction_dir):
         with open(scaler_path, 'r') as f:
             scaler_params = json.load(f)
         
-        # Get label number from model log
+        # Get training period and label number from model log
         model_log_path = os.path.join(model_dir, 'model_log.csv')
         label_number = 10  # Default fallback
+        train_from = None
+        train_to = None
         
         if os.path.exists(model_log_path):
             with open(model_log_path, 'r') as f:
@@ -145,10 +147,22 @@ def process_model_prediction(model_id, data_df, model_dir, prediction_dir):
                 for row in reader:
                     if row.get('model_id') == model_id:
                         label_number = int(row.get('label_number', 10))
+                        train_from = int(row.get('train_from')) if row.get('train_from') else None
+                        train_to = int(row.get('train_to')) if row.get('train_to') else None
                         break
         
+        # Filter out training period from data
+        if train_from is not None and train_to is not None:
+            print(f"  Excluding training period: {train_from} to {train_to}")
+            # Exclude training period data
+            filtered_df = data_df[~((data_df['TradingDay'] >= train_from) & (data_df['TradingDay'] <= train_to))].copy()
+            print(f"  Original data: {len(data_df):,} rows, After excluding training: {len(filtered_df):,} rows")
+        else:
+            print(f"  Warning: Could not find training period for model {model_id}, using all data")
+            filtered_df = data_df.copy()
+        
         # Feature columns (same as training)
-        feature_cols = data_df.columns[5:49]  # Assuming columns 5-48 are features
+        feature_cols = filtered_df.columns[5:49]  # Assuming columns 5-48 are features
         target_col = f'Label_{label_number}'
         num_features = len(feature_cols)
         seq_length = 30  # Must match training
@@ -156,7 +170,7 @@ def process_model_prediction(model_id, data_df, model_dir, prediction_dir):
         print(f"  Using {len(feature_cols)} features and target {target_col}")
         
         # Create sequences
-        X, y, day_indices, ms_indices = create_sequences(data_df, seq_length, feature_cols, target_col)
+        X, y, day_indices, ms_indices = create_sequences(filtered_df, seq_length, feature_cols, target_col)
         
         if len(X) == 0:
             print(f"  No valid sequences found for model {model_id}")

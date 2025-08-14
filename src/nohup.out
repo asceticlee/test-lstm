@@ -1,0 +1,2559 @@
+
+Processing models 00001 to 00425
+Prediction directory: /home/stephen/projects/Testing/TestPy/test-lstm/model_predictions
+Performance output directory: /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance
+Started at: 2025-08-13 19:17:32
+======================================================================
+Processing model 00001...
+  Found 1410 existing trading days
+  Loaded 117,282 prediction records
+  No new trading days to process for model 00001
+
+Processing model 00002...
+  Found 1410 existing trading days
+  Loaded 117,368 prediction records
+  No new trading days to process for model 00002
+
+Processing model 00003...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00003_daily_performance.csv
+
+Processing model 00004...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00004_daily_performance.csv
+
+Processing model 00005...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00005_daily_performance.csv
+
+Processing model 00006...
+  Found 0 existing trading days
+  Loaded 117,454 prediction records
+  Processing 1372 new trading days
+  Successfully saved 1372 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00006_daily_performance.csv
+
+Processing model 00007...
+  Found 0 existing trading days
+  Loaded 117,540 prediction records
+  Processing 1373 new trading days
+  Successfully saved 1373 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00007_daily_performance.csv
+
+Processing model 00008...
+  Found 0 existing trading days
+  Loaded 117,626 prediction records
+  Processing 1374 new trading days
+  Successfully saved 1374 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00008_daily_performance.csv
+
+Processing model 00009...
+  Found 0 existing trading days
+  Loaded 117,626 prediction records
+  Processing 1374 new trading days
+  Successfully saved 1374 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00009_daily_performance.csv
+
+Processing model 00010...
+  Found 0 existing trading days
+  Loaded 117,626 prediction records
+  Processing 1374 new trading days
+  Successfully saved 1374 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00010_daily_performance.csv
+
+Processing model 00011...
+  Found 0 existing trading days
+  Loaded 117,626 prediction records
+  Processing 1374 new trading days
+  Successfully saved 1374 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00011_daily_performance.csv
+
+Processing model 00012...
+  Found 0 existing trading days
+  Loaded 117,626 prediction records
+  Processing 1374 new trading days
+  Successfully saved 1374 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00012_daily_performance.csv
+
+Processing model 00013...
+  Found 0 existing trading days
+  Loaded 117,626 prediction records
+  Processing 1374 new trading days
+  Successfully saved 1374 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00013_daily_performance.csv
+
+Processing model 00014...
+  Found 0 existing trading days
+  Loaded 117,626 prediction records
+  Processing 1374 new trading days
+  Successfully saved 1374 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00014_daily_performance.csv
+
+Processing model 00015...
+  Found 0 existing trading days
+  Loaded 117,540 prediction records
+  Processing 1373 new trading days
+  Successfully saved 1373 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00015_daily_performance.csv
+
+Processing model 00016...
+  Found 0 existing trading days
+  Loaded 117,454 prediction records
+  Processing 1372 new trading days
+  Successfully saved 1372 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00016_daily_performance.csv
+
+Processing model 00017...
+  Found 0 existing trading days
+  Loaded 117,454 prediction records
+  Processing 1372 new trading days
+  Successfully saved 1372 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00017_daily_performance.csv
+
+Processing model 00018...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00018_daily_performance.csv
+
+Processing model 00019...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00019_daily_performance.csv
+
+Processing model 00020...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00020_daily_performance.csv
+
+Processing model 00021...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00021_daily_performance.csv
+
+Processing model 00022...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00022_daily_performance.csv
+
+Processing model 00023...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00023_daily_performance.csv
+
+Processing model 00024...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00024_daily_performance.csv
+
+Processing model 00025...
+  Found 0 existing trading days
+  Loaded 117,398 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00025_daily_performance.csv
+
+Processing model 00026...
+  Found 0 existing trading days
+  Loaded 117,398 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00026_daily_performance.csv
+
+Processing model 00027...
+  Found 0 existing trading days
+  Loaded 117,398 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00027_daily_performance.csv
+
+Processing model 00028...
+  Found 0 existing trading days
+  Loaded 117,484 prediction records
+  Processing 1372 new trading days
+  Successfully saved 1372 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00028_daily_performance.csv
+
+Processing model 00029...
+  Found 0 existing trading days
+  Loaded 117,484 prediction records
+  Processing 1372 new trading days
+  Successfully saved 1372 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00029_daily_performance.csv
+
+Processing model 00030...
+  Found 0 existing trading days
+  Loaded 117,398 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00030_daily_performance.csv
+
+Processing model 00031...
+  Found 0 existing trading days
+  Loaded 117,484 prediction records
+  Processing 1372 new trading days
+  Successfully saved 1372 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00031_daily_performance.csv
+
+Processing model 00032...
+  Found 0 existing trading days
+  Loaded 117,484 prediction records
+  Processing 1372 new trading days
+  Successfully saved 1372 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00032_daily_performance.csv
+
+Processing model 00033...
+  Found 0 existing trading days
+  Loaded 117,540 prediction records
+  Processing 1373 new trading days
+  Successfully saved 1373 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00033_daily_performance.csv
+
+Processing model 00034...
+  Found 0 existing trading days
+  Loaded 117,540 prediction records
+  Processing 1373 new trading days
+  Successfully saved 1373 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00034_daily_performance.csv
+
+Processing model 00035...
+  Found 0 existing trading days
+  Loaded 117,540 prediction records
+  Processing 1373 new trading days
+  Successfully saved 1373 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00035_daily_performance.csv
+
+Processing model 00036...
+  Found 0 existing trading days
+  Loaded 117,282 prediction records
+  Processing 1370 new trading days
+  Successfully saved 1370 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00036_daily_performance.csv
+
+Processing model 00037...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00037_daily_performance.csv
+
+Processing model 00038...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00038_daily_performance.csv
+
+Processing model 00039...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00039_daily_performance.csv
+
+Processing model 00040...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00040_daily_performance.csv
+
+Processing model 00041...
+  Found 0 existing trading days
+  Loaded 117,454 prediction records
+  Processing 1372 new trading days
+  Successfully saved 1372 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00041_daily_performance.csv
+
+Processing model 00042...
+  Found 0 existing trading days
+  Loaded 117,540 prediction records
+  Processing 1373 new trading days
+  Successfully saved 1373 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00042_daily_performance.csv
+
+Processing model 00043...
+  Found 0 existing trading days
+  Loaded 117,626 prediction records
+  Processing 1374 new trading days
+  Successfully saved 1374 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00043_daily_performance.csv
+
+Processing model 00044...
+  Found 0 existing trading days
+  Loaded 117,626 prediction records
+  Processing 1374 new trading days
+  Successfully saved 1374 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00044_daily_performance.csv
+
+Processing model 00045...
+  Found 0 existing trading days
+  Loaded 117,626 prediction records
+  Processing 1374 new trading days
+  Successfully saved 1374 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00045_daily_performance.csv
+
+Processing model 00046...
+  Found 0 existing trading days
+  Loaded 117,626 prediction records
+  Processing 1374 new trading days
+  Successfully saved 1374 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00046_daily_performance.csv
+
+Processing model 00047...
+  Found 0 existing trading days
+  Loaded 117,626 prediction records
+  Processing 1374 new trading days
+  Successfully saved 1374 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00047_daily_performance.csv
+
+Processing model 00048...
+  Found 0 existing trading days
+  Loaded 117,626 prediction records
+  Processing 1374 new trading days
+  Successfully saved 1374 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00048_daily_performance.csv
+
+Processing model 00049...
+  Found 0 existing trading days
+  Loaded 117,626 prediction records
+  Processing 1374 new trading days
+  Successfully saved 1374 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00049_daily_performance.csv
+
+Processing model 00050...
+  Found 0 existing trading days
+  Loaded 117,540 prediction records
+  Processing 1373 new trading days
+  Successfully saved 1373 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00050_daily_performance.csv
+
+Processing model 00051...
+  Found 0 existing trading days
+  Loaded 117,454 prediction records
+  Processing 1372 new trading days
+  Successfully saved 1372 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00051_daily_performance.csv
+
+Processing model 00052...
+  Found 0 existing trading days
+  Loaded 117,454 prediction records
+  Processing 1372 new trading days
+  Successfully saved 1372 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00052_daily_performance.csv
+
+Processing model 00053...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00053_daily_performance.csv
+
+Processing model 00054...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00054_daily_performance.csv
+
+Processing model 00055...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00055_daily_performance.csv
+
+Processing model 00056...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00056_daily_performance.csv
+
+Processing model 00057...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00057_daily_performance.csv
+
+Processing model 00058...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00058_daily_performance.csv
+
+Processing model 00059...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00059_daily_performance.csv
+
+Processing model 00060...
+  Found 0 existing trading days
+  Loaded 117,398 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00060_daily_performance.csv
+
+Processing model 00061...
+  Found 0 existing trading days
+  Loaded 117,398 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00061_daily_performance.csv
+
+Processing model 00062...
+  Found 0 existing trading days
+  Loaded 117,398 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00062_daily_performance.csv
+
+Processing model 00063...
+  Found 0 existing trading days
+  Loaded 117,484 prediction records
+  Processing 1372 new trading days
+  Successfully saved 1372 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00063_daily_performance.csv
+
+Processing model 00064...
+  Found 0 existing trading days
+  Loaded 117,484 prediction records
+  Processing 1372 new trading days
+  Successfully saved 1372 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00064_daily_performance.csv
+
+Processing model 00065...
+  Found 0 existing trading days
+  Loaded 117,398 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00065_daily_performance.csv
+
+Processing model 00066...
+  Found 0 existing trading days
+  Loaded 117,484 prediction records
+  Processing 1372 new trading days
+  Successfully saved 1372 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00066_daily_performance.csv
+
+Processing model 00067...
+  Found 0 existing trading days
+  Loaded 117,484 prediction records
+  Processing 1372 new trading days
+  Successfully saved 1372 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00067_daily_performance.csv
+
+Processing model 00068...
+  Found 0 existing trading days
+  Loaded 117,540 prediction records
+  Processing 1373 new trading days
+  Successfully saved 1373 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00068_daily_performance.csv
+
+Processing model 00069...
+  Found 0 existing trading days
+  Loaded 117,540 prediction records
+  Processing 1373 new trading days
+  Successfully saved 1373 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00069_daily_performance.csv
+
+Processing model 00070...
+  Found 0 existing trading days
+  Loaded 117,484 prediction records
+  Processing 1372 new trading days
+  Successfully saved 1372 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00070_daily_performance.csv
+
+Processing model 00071...
+  Found 0 existing trading days
+  Loaded 117,484 prediction records
+  Processing 1372 new trading days
+  Successfully saved 1372 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00071_daily_performance.csv
+
+Processing model 00072...
+  Found 0 existing trading days
+  Loaded 117,484 prediction records
+  Processing 1372 new trading days
+  Successfully saved 1372 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00072_daily_performance.csv
+
+Processing model 00073...
+  Found 0 existing trading days
+  Loaded 117,398 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00073_daily_performance.csv
+
+Processing model 00074...
+  Found 0 existing trading days
+  Loaded 117,398 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00074_daily_performance.csv
+
+Processing model 00075...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00075_daily_performance.csv
+
+Processing model 00076...
+  Found 0 existing trading days
+  Loaded 117,454 prediction records
+  Processing 1372 new trading days
+  Successfully saved 1372 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00076_daily_performance.csv
+
+Processing model 00077...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00077_daily_performance.csv
+
+Processing model 00078...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00078_daily_performance.csv
+
+Processing model 00079...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00079_daily_performance.csv
+
+Processing model 00080...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00080_daily_performance.csv
+
+Processing model 00081...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00081_daily_performance.csv
+
+Processing model 00082...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00082_daily_performance.csv
+
+Processing model 00083...
+  Found 0 existing trading days
+  Loaded 117,454 prediction records
+  Processing 1372 new trading days
+  Successfully saved 1372 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00083_daily_performance.csv
+
+Processing model 00084...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00084_daily_performance.csv
+
+Processing model 00085...
+  Found 0 existing trading days
+  Loaded 117,389 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00085_daily_performance.csv
+
+Processing model 00086...
+  Found 0 existing trading days
+  Loaded 117,389 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00086_daily_performance.csv
+
+Processing model 00087...
+  Found 0 existing trading days
+  Loaded 117,419 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00087_daily_performance.csv
+
+Processing model 00088...
+  Found 0 existing trading days
+  Loaded 117,505 prediction records
+  Processing 1372 new trading days
+  Successfully saved 1372 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00088_daily_performance.csv
+
+Processing model 00089...
+  Found 0 existing trading days
+  Loaded 117,505 prediction records
+  Processing 1372 new trading days
+  Successfully saved 1372 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00089_daily_performance.csv
+
+Processing model 00090...
+  Found 0 existing trading days
+  Loaded 117,505 prediction records
+  Processing 1372 new trading days
+  Successfully saved 1372 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00090_daily_performance.csv
+
+Processing model 00091...
+  Found 0 existing trading days
+  Loaded 117,419 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00091_daily_performance.csv
+
+Processing model 00092...
+  Found 0 existing trading days
+  Loaded 117,419 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00092_daily_performance.csv
+
+Processing model 00093...
+  Found 0 existing trading days
+  Loaded 117,398 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00093_daily_performance.csv
+
+Processing model 00094...
+  Found 0 existing trading days
+  Loaded 117,398 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00094_daily_performance.csv
+
+Processing model 00095...
+  Found 0 existing trading days
+  Loaded 117,398 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00095_daily_performance.csv
+
+Processing model 00096...
+  Found 0 existing trading days
+  Loaded 117,312 prediction records
+  Processing 1370 new trading days
+  Successfully saved 1370 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00096_daily_performance.csv
+
+Processing model 00097...
+  Found 0 existing trading days
+  Loaded 117,312 prediction records
+  Processing 1370 new trading days
+  Successfully saved 1370 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00097_daily_performance.csv
+
+Processing model 00098...
+  Found 0 existing trading days
+  Loaded 117,398 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00098_daily_performance.csv
+
+Processing model 00099...
+  Found 0 existing trading days
+  Loaded 117,398 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00099_daily_performance.csv
+
+Processing model 00100...
+  Found 0 existing trading days
+  Loaded 117,398 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00100_daily_performance.csv
+
+Processing model 00101...
+  Found 0 existing trading days
+  Loaded 117,398 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00101_daily_performance.csv
+
+Processing model 00102...
+  Found 0 existing trading days
+  Loaded 117,428 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00102_daily_performance.csv
+
+Processing model 00103...
+  Found 0 existing trading days
+  Loaded 117,398 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00103_daily_performance.csv
+
+Processing model 00104...
+  Found 0 existing trading days
+  Loaded 117,398 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00104_daily_performance.csv
+
+Processing model 00105...
+  Found 0 existing trading days
+  Loaded 117,398 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00105_daily_performance.csv
+
+Processing model 00106...
+  Found 0 existing trading days
+  Loaded 117,312 prediction records
+  Processing 1370 new trading days
+  Successfully saved 1370 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00106_daily_performance.csv
+
+Processing model 00107...
+  Found 0 existing trading days
+  Loaded 117,312 prediction records
+  Processing 1370 new trading days
+  Successfully saved 1370 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00107_daily_performance.csv
+
+Processing model 00108...
+  Found 0 existing trading days
+  Loaded 117,312 prediction records
+  Processing 1370 new trading days
+  Successfully saved 1370 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00108_daily_performance.csv
+
+Processing model 00109...
+  Found 0 existing trading days
+  Loaded 117,398 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00109_daily_performance.csv
+
+Processing model 00110...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00110_daily_performance.csv
+
+Processing model 00111...
+  Found 0 existing trading days
+  Loaded 117,398 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00111_daily_performance.csv
+
+Processing model 00112...
+  Found 0 existing trading days
+  Loaded 117,398 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00112_daily_performance.csv
+
+Processing model 00113...
+  Found 0 existing trading days
+  Loaded 117,484 prediction records
+  Processing 1372 new trading days
+  Successfully saved 1372 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00113_daily_performance.csv
+
+Processing model 00114...
+  Found 0 existing trading days
+  Loaded 117,570 prediction records
+  Processing 1373 new trading days
+  Successfully saved 1373 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00114_daily_performance.csv
+
+Processing model 00115...
+  Found 0 existing trading days
+  Loaded 117,570 prediction records
+  Processing 1373 new trading days
+  Successfully saved 1373 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00115_daily_performance.csv
+
+Processing model 00116...
+  Found 0 existing trading days
+  Loaded 117,570 prediction records
+  Processing 1373 new trading days
+  Successfully saved 1373 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00116_daily_performance.csv
+
+Processing model 00117...
+  Found 0 existing trading days
+  Loaded 117,570 prediction records
+  Processing 1373 new trading days
+  Successfully saved 1373 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00117_daily_performance.csv
+
+Processing model 00118...
+  Found 0 existing trading days
+  Loaded 117,570 prediction records
+  Processing 1373 new trading days
+  Successfully saved 1373 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00118_daily_performance.csv
+
+Processing model 00119...
+  Found 0 existing trading days
+  Loaded 117,540 prediction records
+  Processing 1373 new trading days
+  Successfully saved 1373 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00119_daily_performance.csv
+
+Processing model 00120...
+  Found 0 existing trading days
+  Loaded 117,562 prediction records
+  Processing 1373 new trading days
+  Successfully saved 1373 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00120_daily_performance.csv
+
+Processing model 00121...
+  Found 0 existing trading days
+  Loaded 117,562 prediction records
+  Processing 1373 new trading days
+  Successfully saved 1373 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00121_daily_performance.csv
+
+Processing model 00122...
+  Found 0 existing trading days
+  Loaded 117,476 prediction records
+  Processing 1372 new trading days
+  Successfully saved 1372 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00122_daily_performance.csv
+
+Processing model 00123...
+  Found 0 existing trading days
+  Loaded 117,476 prediction records
+  Processing 1372 new trading days
+  Successfully saved 1372 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00123_daily_performance.csv
+
+Processing model 00124...
+  Found 0 existing trading days
+  Loaded 117,476 prediction records
+  Processing 1372 new trading days
+  Successfully saved 1372 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00124_daily_performance.csv
+
+Processing model 00125...
+  Found 0 existing trading days
+  Loaded 117,390 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00125_daily_performance.csv
+
+Processing model 00126...
+  Found 0 existing trading days
+  Loaded 117,390 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00126_daily_performance.csv
+
+Processing model 00127...
+  Found 0 existing trading days
+  Loaded 117,490 prediction records
+  Processing 1372 new trading days
+  Successfully saved 1372 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00127_daily_performance.csv
+
+Processing model 00128...
+  Found 0 existing trading days
+  Loaded 117,468 prediction records
+  Processing 1372 new trading days
+  Successfully saved 1372 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00128_daily_performance.csv
+
+Processing model 00129...
+  Found 0 existing trading days
+  Loaded 117,382 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00129_daily_performance.csv
+
+Processing model 00130...
+  Found 0 existing trading days
+  Loaded 117,382 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00130_daily_performance.csv
+
+Processing model 00131...
+  Found 0 existing trading days
+  Loaded 117,382 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00131_daily_performance.csv
+
+Processing model 00132...
+  Found 0 existing trading days
+  Loaded 117,413 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00132_daily_performance.csv
+
+Processing model 00133...
+  Found 0 existing trading days
+  Loaded 117,413 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00133_daily_performance.csv
+
+Processing model 00134...
+  Found 0 existing trading days
+  Loaded 117,413 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00134_daily_performance.csv
+
+Processing model 00135...
+  Found 0 existing trading days
+  Loaded 117,324 prediction records
+  Processing 1370 new trading days
+  Successfully saved 1370 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00135_daily_performance.csv
+
+Processing model 00136...
+  Found 0 existing trading days
+  Loaded 117,429 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00136_daily_performance.csv
+
+Processing model 00137...
+  Found 0 existing trading days
+  Loaded 117,429 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00137_daily_performance.csv
+
+Processing model 00138...
+  Found 0 existing trading days
+  Loaded 117,429 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00138_daily_performance.csv
+
+Processing model 00139...
+  Found 0 existing trading days
+  Loaded 117,429 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00139_daily_performance.csv
+
+Processing model 00140...
+  Found 0 existing trading days
+  Loaded 117,428 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00140_daily_performance.csv
+
+Processing model 00141...
+  Found 0 existing trading days
+  Loaded 117,514 prediction records
+  Processing 1372 new trading days
+  Successfully saved 1372 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00141_daily_performance.csv
+
+Processing model 00142...
+  Found 0 existing trading days
+  Loaded 117,544 prediction records
+  Processing 1372 new trading days
+  Successfully saved 1372 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00142_daily_performance.csv
+
+Processing model 00143...
+  Found 0 existing trading days
+  Loaded 117,533 prediction records
+  Processing 1372 new trading days
+  Successfully saved 1372 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00143_daily_performance.csv
+
+Processing model 00144...
+  Found 0 existing trading days
+  Loaded 117,428 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00144_daily_performance.csv
+
+Processing model 00145...
+  Found 0 existing trading days
+  Loaded 117,428 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00145_daily_performance.csv
+
+Processing model 00146...
+  Found 0 existing trading days
+  Loaded 117,428 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00146_daily_performance.csv
+
+Processing model 00147...
+  Found 0 existing trading days
+  Loaded 117,428 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00147_daily_performance.csv
+
+Processing model 00148...
+  Found 0 existing trading days
+  Loaded 117,422 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00148_daily_performance.csv
+
+Processing model 00149...
+  Found 0 existing trading days
+  Loaded 117,336 prediction records
+  Processing 1370 new trading days
+  Successfully saved 1370 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00149_daily_performance.csv
+
+Processing model 00150...
+  Found 0 existing trading days
+  Loaded 117,392 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00150_daily_performance.csv
+
+Processing model 00151...
+  Found 0 existing trading days
+  Loaded 117,392 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00151_daily_performance.csv
+
+Processing model 00152...
+  Found 0 existing trading days
+  Loaded 117,392 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00152_daily_performance.csv
+
+Processing model 00153...
+  Found 0 existing trading days
+  Loaded 117,392 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00153_daily_performance.csv
+
+Processing model 00154...
+  Found 0 existing trading days
+  Loaded 117,392 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00154_daily_performance.csv
+
+Processing model 00155...
+  Found 0 existing trading days
+  Loaded 117,392 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00155_daily_performance.csv
+
+Processing model 00156...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00156_daily_performance.csv
+
+Processing model 00157...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00157_daily_performance.csv
+
+Processing model 00158...
+  Found 0 existing trading days
+  Loaded 117,282 prediction records
+  Processing 1370 new trading days
+  Successfully saved 1370 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00158_daily_performance.csv
+
+Processing model 00159...
+  Found 0 existing trading days
+  Loaded 117,282 prediction records
+  Processing 1370 new trading days
+  Successfully saved 1370 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00159_daily_performance.csv
+
+Processing model 00160...
+  Found 0 existing trading days
+  Loaded 117,282 prediction records
+  Processing 1370 new trading days
+  Successfully saved 1370 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00160_daily_performance.csv
+
+Processing model 00161...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00161_daily_performance.csv
+
+Processing model 00162...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00162_daily_performance.csv
+
+Processing model 00163...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00163_daily_performance.csv
+
+Processing model 00164...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00164_daily_performance.csv
+
+Processing model 00165...
+  Found 0 existing trading days
+  Loaded 117,454 prediction records
+  Processing 1372 new trading days
+  Successfully saved 1372 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00165_daily_performance.csv
+
+Processing model 00166...
+  Found 0 existing trading days
+  Loaded 117,454 prediction records
+  Processing 1372 new trading days
+  Successfully saved 1372 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00166_daily_performance.csv
+
+Processing model 00167...
+  Found 0 existing trading days
+  Loaded 117,454 prediction records
+  Processing 1372 new trading days
+  Successfully saved 1372 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00167_daily_performance.csv
+
+Processing model 00168...
+  Found 0 existing trading days
+  Loaded 117,454 prediction records
+  Processing 1372 new trading days
+  Successfully saved 1372 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00168_daily_performance.csv
+
+Processing model 00169...
+  Found 0 existing trading days
+  Loaded 117,454 prediction records
+  Processing 1372 new trading days
+  Successfully saved 1372 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00169_daily_performance.csv
+
+Processing model 00170...
+  Found 0 existing trading days
+  Loaded 117,454 prediction records
+  Processing 1372 new trading days
+  Successfully saved 1372 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00170_daily_performance.csv
+
+Processing model 00171...
+  Found 0 existing trading days
+  Loaded 117,454 prediction records
+  Processing 1372 new trading days
+  Successfully saved 1372 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00171_daily_performance.csv
+
+Processing model 00172...
+  Found 0 existing trading days
+  Loaded 117,454 prediction records
+  Processing 1372 new trading days
+  Successfully saved 1372 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00172_daily_performance.csv
+
+Processing model 00173...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00173_daily_performance.csv
+
+Processing model 00174...
+  Found 0 existing trading days
+  Loaded 117,454 prediction records
+  Processing 1372 new trading days
+  Successfully saved 1372 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00174_daily_performance.csv
+
+Processing model 00175...
+  Found 0 existing trading days
+  Loaded 117,454 prediction records
+  Processing 1372 new trading days
+  Successfully saved 1372 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00175_daily_performance.csv
+
+Processing model 00176...
+  Found 0 existing trading days
+  Loaded 117,454 prediction records
+  Processing 1372 new trading days
+  Successfully saved 1372 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00176_daily_performance.csv
+
+Processing model 00177...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00177_daily_performance.csv
+
+Processing model 00178...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00178_daily_performance.csv
+
+Processing model 00179...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00179_daily_performance.csv
+
+Processing model 00180...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00180_daily_performance.csv
+
+Processing model 00181...
+  Found 0 existing trading days
+  Loaded 117,454 prediction records
+  Processing 1372 new trading days
+  Successfully saved 1372 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00181_daily_performance.csv
+
+Processing model 00182...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00182_daily_performance.csv
+
+Processing model 00183...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00183_daily_performance.csv
+
+Processing model 00184...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00184_daily_performance.csv
+
+Processing model 00185...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00185_daily_performance.csv
+
+Processing model 00186...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00186_daily_performance.csv
+
+Processing model 00187...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00187_daily_performance.csv
+
+Processing model 00188...
+  Found 0 existing trading days
+  Loaded 117,454 prediction records
+  Processing 1372 new trading days
+  Successfully saved 1372 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00188_daily_performance.csv
+
+Processing model 00189...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00189_daily_performance.csv
+
+Processing model 00190...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00190_daily_performance.csv
+
+Processing model 00191...
+  Found 0 existing trading days
+  Loaded 117,454 prediction records
+  Processing 1372 new trading days
+  Successfully saved 1372 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00191_daily_performance.csv
+
+Processing model 00192...
+  Found 0 existing trading days
+  Loaded 117,454 prediction records
+  Processing 1372 new trading days
+  Successfully saved 1372 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00192_daily_performance.csv
+
+Processing model 00193...
+  Found 0 existing trading days
+  Loaded 117,540 prediction records
+  Processing 1373 new trading days
+  Successfully saved 1373 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00193_daily_performance.csv
+
+Processing model 00194...
+  Found 0 existing trading days
+  Loaded 117,540 prediction records
+  Processing 1373 new trading days
+  Successfully saved 1373 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00194_daily_performance.csv
+
+Processing model 00195...
+  Found 0 existing trading days
+  Loaded 117,540 prediction records
+  Processing 1373 new trading days
+  Successfully saved 1373 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00195_daily_performance.csv
+
+Processing model 00196...
+  Found 0 existing trading days
+  Loaded 117,454 prediction records
+  Processing 1372 new trading days
+  Successfully saved 1372 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00196_daily_performance.csv
+
+Processing model 00197...
+  Found 0 existing trading days
+  Loaded 117,454 prediction records
+  Processing 1372 new trading days
+  Successfully saved 1372 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00197_daily_performance.csv
+
+Processing model 00198...
+  Found 0 existing trading days
+  Loaded 117,454 prediction records
+  Processing 1372 new trading days
+  Successfully saved 1372 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00198_daily_performance.csv
+
+Processing model 00199...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00199_daily_performance.csv
+
+Processing model 00200...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00200_daily_performance.csv
+
+Processing model 00201...
+  Found 0 existing trading days
+  Loaded 117,282 prediction records
+  Processing 1370 new trading days
+  Successfully saved 1370 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00201_daily_performance.csv
+
+Processing model 00202...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00202_daily_performance.csv
+
+Processing model 00203...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00203_daily_performance.csv
+
+Processing model 00204...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00204_daily_performance.csv
+
+Processing model 00205...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00205_daily_performance.csv
+
+Processing model 00206...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00206_daily_performance.csv
+
+Processing model 00207...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00207_daily_performance.csv
+
+Processing model 00208...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00208_daily_performance.csv
+
+Processing model 00209...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00209_daily_performance.csv
+
+Processing model 00210...
+  Found 0 existing trading days
+  Loaded 117,282 prediction records
+  Processing 1370 new trading days
+  Successfully saved 1370 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00210_daily_performance.csv
+
+Processing model 00211...
+  Found 0 existing trading days
+  Loaded 117,282 prediction records
+  Processing 1370 new trading days
+  Successfully saved 1370 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00211_daily_performance.csv
+
+Processing model 00212...
+  Found 0 existing trading days
+  Loaded 117,282 prediction records
+  Processing 1370 new trading days
+  Successfully saved 1370 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00212_daily_performance.csv
+
+Processing model 00213...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00213_daily_performance.csv
+
+Processing model 00214...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00214_daily_performance.csv
+
+Processing model 00215...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00215_daily_performance.csv
+
+Processing model 00216...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00216_daily_performance.csv
+
+Processing model 00217...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00217_daily_performance.csv
+
+Processing model 00218...
+  Found 0 existing trading days
+  Loaded 117,454 prediction records
+  Processing 1372 new trading days
+  Successfully saved 1372 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00218_daily_performance.csv
+
+Processing model 00219...
+  Found 0 existing trading days
+  Loaded 117,540 prediction records
+  Processing 1373 new trading days
+  Successfully saved 1373 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00219_daily_performance.csv
+
+Processing model 00220...
+  Found 0 existing trading days
+  Loaded 117,540 prediction records
+  Processing 1373 new trading days
+  Successfully saved 1373 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00220_daily_performance.csv
+
+Processing model 00221...
+  Found 0 existing trading days
+  Loaded 117,540 prediction records
+  Processing 1373 new trading days
+  Successfully saved 1373 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00221_daily_performance.csv
+
+Processing model 00222...
+  Found 0 existing trading days
+  Loaded 117,540 prediction records
+  Processing 1373 new trading days
+  Successfully saved 1373 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00222_daily_performance.csv
+
+Processing model 00223...
+  Found 0 existing trading days
+  Loaded 117,540 prediction records
+  Processing 1373 new trading days
+  Successfully saved 1373 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00223_daily_performance.csv
+
+Processing model 00224...
+  Found 0 existing trading days
+  Loaded 117,540 prediction records
+  Processing 1373 new trading days
+  Successfully saved 1373 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00224_daily_performance.csv
+
+Processing model 00225...
+  Found 0 existing trading days
+  Loaded 117,540 prediction records
+  Processing 1373 new trading days
+  Successfully saved 1373 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00225_daily_performance.csv
+
+Processing model 00226...
+  Found 0 existing trading days
+  Loaded 117,540 prediction records
+  Processing 1373 new trading days
+  Successfully saved 1373 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00226_daily_performance.csv
+
+Processing model 00227...
+  Found 0 existing trading days
+  Loaded 117,454 prediction records
+  Processing 1372 new trading days
+  Successfully saved 1372 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00227_daily_performance.csv
+
+Processing model 00228...
+  Found 0 existing trading days
+  Loaded 117,454 prediction records
+  Processing 1372 new trading days
+  Successfully saved 1372 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00228_daily_performance.csv
+
+Processing model 00229...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00229_daily_performance.csv
+
+Processing model 00230...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00230_daily_performance.csv
+
+Processing model 00231...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00231_daily_performance.csv
+
+Processing model 00232...
+  Found 0 existing trading days
+  Loaded 117,454 prediction records
+  Processing 1372 new trading days
+  Successfully saved 1372 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00232_daily_performance.csv
+
+Processing model 00233...
+  Found 0 existing trading days
+  Loaded 117,454 prediction records
+  Processing 1372 new trading days
+  Successfully saved 1372 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00233_daily_performance.csv
+
+Processing model 00234...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00234_daily_performance.csv
+
+Processing model 00235...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00235_daily_performance.csv
+
+Processing model 00236...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00236_daily_performance.csv
+
+Processing model 00237...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00237_daily_performance.csv
+
+Processing model 00238...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00238_daily_performance.csv
+
+Processing model 00239...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00239_daily_performance.csv
+
+Processing model 00240...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00240_daily_performance.csv
+
+Processing model 00241...
+  Found 0 existing trading days
+  Loaded 117,384 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00241_daily_performance.csv
+
+Processing model 00242...
+  Found 0 existing trading days
+  Loaded 117,384 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00242_daily_performance.csv
+
+Processing model 00243...
+  Found 0 existing trading days
+  Loaded 117,470 prediction records
+  Processing 1372 new trading days
+  Successfully saved 1372 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00243_daily_performance.csv
+
+Processing model 00244...
+  Found 0 existing trading days
+  Loaded 117,470 prediction records
+  Processing 1372 new trading days
+  Successfully saved 1372 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00244_daily_performance.csv
+
+Processing model 00245...
+  Found 0 existing trading days
+  Loaded 117,556 prediction records
+  Processing 1373 new trading days
+  Successfully saved 1373 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00245_daily_performance.csv
+
+Processing model 00246...
+  Found 0 existing trading days
+  Loaded 117,556 prediction records
+  Processing 1373 new trading days
+  Successfully saved 1373 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00246_daily_performance.csv
+
+Processing model 00247...
+  Found 0 existing trading days
+  Loaded 117,556 prediction records
+  Processing 1373 new trading days
+  Successfully saved 1373 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00247_daily_performance.csv
+
+Processing model 00248...
+  Found 0 existing trading days
+  Loaded 117,470 prediction records
+  Processing 1372 new trading days
+  Successfully saved 1372 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00248_daily_performance.csv
+
+Processing model 00249...
+  Found 0 existing trading days
+  Loaded 117,454 prediction records
+  Processing 1372 new trading days
+  Successfully saved 1372 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00249_daily_performance.csv
+
+Processing model 00250...
+  Found 0 existing trading days
+  Loaded 117,454 prediction records
+  Processing 1372 new trading days
+  Successfully saved 1372 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00250_daily_performance.csv
+
+Processing model 00251...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00251_daily_performance.csv
+
+Processing model 00252...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00252_daily_performance.csv
+
+Processing model 00253...
+  Found 0 existing trading days
+  Loaded 117,312 prediction records
+  Processing 1370 new trading days
+  Successfully saved 1370 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00253_daily_performance.csv
+
+Processing model 00254...
+  Found 0 existing trading days
+  Loaded 117,398 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00254_daily_performance.csv
+
+Processing model 00255...
+  Found 0 existing trading days
+  Loaded 117,398 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00255_daily_performance.csv
+
+Processing model 00256...
+  Found 0 existing trading days
+  Loaded 117,398 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00256_daily_performance.csv
+
+Processing model 00257...
+  Found 0 existing trading days
+  Loaded 117,398 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00257_daily_performance.csv
+
+Processing model 00258...
+  Found 0 existing trading days
+  Loaded 117,398 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00258_daily_performance.csv
+
+Processing model 00259...
+  Found 0 existing trading days
+  Loaded 117,398 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00259_daily_performance.csv
+
+Processing model 00260...
+  Found 0 existing trading days
+  Loaded 117,398 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00260_daily_performance.csv
+
+Processing model 00261...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00261_daily_performance.csv
+
+Processing model 00262...
+  Found 0 existing trading days
+  Loaded 117,282 prediction records
+  Processing 1370 new trading days
+  Successfully saved 1370 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00262_daily_performance.csv
+
+Processing model 00263...
+  Found 0 existing trading days
+  Loaded 117,282 prediction records
+  Processing 1370 new trading days
+  Successfully saved 1370 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00263_daily_performance.csv
+
+Processing model 00264...
+  Found 0 existing trading days
+  Loaded 117,282 prediction records
+  Processing 1370 new trading days
+  Successfully saved 1370 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00264_daily_performance.csv
+
+Processing model 00265...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00265_daily_performance.csv
+
+Processing model 00266...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00266_daily_performance.csv
+
+Processing model 00267...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00267_daily_performance.csv
+
+Processing model 00268...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00268_daily_performance.csv
+
+Processing model 00269...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00269_daily_performance.csv
+
+Processing model 00270...
+  Found 0 existing trading days
+  Loaded 117,454 prediction records
+  Processing 1372 new trading days
+  Successfully saved 1372 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00270_daily_performance.csv
+
+Processing model 00271...
+  Found 0 existing trading days
+  Loaded 117,540 prediction records
+  Processing 1373 new trading days
+  Successfully saved 1373 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00271_daily_performance.csv
+
+Processing model 00272...
+  Found 0 existing trading days
+  Loaded 117,540 prediction records
+  Processing 1373 new trading days
+  Successfully saved 1373 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00272_daily_performance.csv
+
+Processing model 00273...
+  Found 0 existing trading days
+  Loaded 117,570 prediction records
+  Processing 1373 new trading days
+  Successfully saved 1373 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00273_daily_performance.csv
+
+Processing model 00274...
+  Found 0 existing trading days
+  Loaded 117,570 prediction records
+  Processing 1373 new trading days
+  Successfully saved 1373 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00274_daily_performance.csv
+
+Processing model 00275...
+  Found 0 existing trading days
+  Loaded 117,570 prediction records
+  Processing 1373 new trading days
+  Successfully saved 1373 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00275_daily_performance.csv
+
+Processing model 00276...
+  Found 0 existing trading days
+  Loaded 117,570 prediction records
+  Processing 1373 new trading days
+  Successfully saved 1373 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00276_daily_performance.csv
+
+Processing model 00277...
+  Found 0 existing trading days
+  Loaded 117,570 prediction records
+  Processing 1373 new trading days
+  Successfully saved 1373 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00277_daily_performance.csv
+
+Processing model 00278...
+  Found 0 existing trading days
+  Loaded 117,570 prediction records
+  Processing 1373 new trading days
+  Successfully saved 1373 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00278_daily_performance.csv
+
+Processing model 00279...
+  Found 0 existing trading days
+  Loaded 117,484 prediction records
+  Processing 1372 new trading days
+  Successfully saved 1372 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00279_daily_performance.csv
+
+Processing model 00280...
+  Found 0 existing trading days
+  Loaded 117,484 prediction records
+  Processing 1372 new trading days
+  Successfully saved 1372 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00280_daily_performance.csv
+
+Processing model 00281...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00281_daily_performance.csv
+
+Processing model 00282...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00282_daily_performance.csv
+
+Processing model 00283...
+  Found 0 existing trading days
+  Loaded 117,454 prediction records
+  Processing 1372 new trading days
+  Successfully saved 1372 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00283_daily_performance.csv
+
+Processing model 00284...
+  Found 0 existing trading days
+  Loaded 117,454 prediction records
+  Processing 1372 new trading days
+  Successfully saved 1372 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00284_daily_performance.csv
+
+Processing model 00285...
+  Found 0 existing trading days
+  Loaded 117,454 prediction records
+  Processing 1372 new trading days
+  Successfully saved 1372 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00285_daily_performance.csv
+
+Processing model 00286...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00286_daily_performance.csv
+
+Processing model 00287...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00287_daily_performance.csv
+
+Processing model 00288...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00288_daily_performance.csv
+
+Processing model 00289...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00289_daily_performance.csv
+
+Processing model 00290...
+  Found 0 existing trading days
+  Loaded 117,398 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00290_daily_performance.csv
+
+Processing model 00291...
+  Found 0 existing trading days
+  Loaded 117,312 prediction records
+  Processing 1370 new trading days
+  Successfully saved 1370 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00291_daily_performance.csv
+
+Processing model 00292...
+  Found 0 existing trading days
+  Loaded 117,398 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00292_daily_performance.csv
+
+Processing model 00293...
+  Found 0 existing trading days
+  Loaded 117,418 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00293_daily_performance.csv
+
+Processing model 00294...
+  Found 0 existing trading days
+  Loaded 117,418 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00294_daily_performance.csv
+
+Processing model 00295...
+  Found 0 existing trading days
+  Loaded 117,504 prediction records
+  Processing 1372 new trading days
+  Successfully saved 1372 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00295_daily_performance.csv
+
+Processing model 00296...
+  Found 0 existing trading days
+  Loaded 117,504 prediction records
+  Processing 1372 new trading days
+  Successfully saved 1372 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00296_daily_performance.csv
+
+Processing model 00297...
+  Found 0 existing trading days
+  Loaded 117,590 prediction records
+  Processing 1373 new trading days
+  Successfully saved 1373 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00297_daily_performance.csv
+
+Processing model 00298...
+  Found 0 existing trading days
+  Loaded 117,560 prediction records
+  Processing 1373 new trading days
+  Successfully saved 1373 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00298_daily_performance.csv
+
+Processing model 00299...
+  Found 0 existing trading days
+  Loaded 117,560 prediction records
+  Processing 1373 new trading days
+  Successfully saved 1373 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00299_daily_performance.csv
+
+Processing model 00300...
+  Found 0 existing trading days
+  Loaded 117,474 prediction records
+  Processing 1372 new trading days
+  Successfully saved 1372 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00300_daily_performance.csv
+
+Processing model 00301...
+  Found 0 existing trading days
+  Loaded 117,454 prediction records
+  Processing 1372 new trading days
+  Successfully saved 1372 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00301_daily_performance.csv
+
+Processing model 00302...
+  Found 0 existing trading days
+  Loaded 117,454 prediction records
+  Processing 1372 new trading days
+  Successfully saved 1372 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00302_daily_performance.csv
+
+Processing model 00303...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00303_daily_performance.csv
+
+Processing model 00304...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00304_daily_performance.csv
+
+Processing model 00305...
+  Found 0 existing trading days
+  Loaded 117,282 prediction records
+  Processing 1370 new trading days
+  Successfully saved 1370 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00305_daily_performance.csv
+
+Processing model 00306...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00306_daily_performance.csv
+
+Processing model 00307...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00307_daily_performance.csv
+
+Processing model 00308...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00308_daily_performance.csv
+
+Processing model 00309...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00309_daily_performance.csv
+
+Processing model 00310...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00310_daily_performance.csv
+
+Processing model 00311...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00311_daily_performance.csv
+
+Processing model 00312...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00312_daily_performance.csv
+
+Processing model 00313...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00313_daily_performance.csv
+
+Processing model 00314...
+  Found 0 existing trading days
+  Loaded 117,282 prediction records
+  Processing 1370 new trading days
+  Successfully saved 1370 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00314_daily_performance.csv
+
+Processing model 00315...
+  Found 0 existing trading days
+  Loaded 117,282 prediction records
+  Processing 1370 new trading days
+  Successfully saved 1370 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00315_daily_performance.csv
+
+Processing model 00316...
+  Found 0 existing trading days
+  Loaded 117,282 prediction records
+  Processing 1370 new trading days
+  Successfully saved 1370 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00316_daily_performance.csv
+
+Processing model 00317...
+  Found 0 existing trading days
+  Loaded 117,282 prediction records
+  Processing 1370 new trading days
+  Successfully saved 1370 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00317_daily_performance.csv
+
+Processing model 00318...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00318_daily_performance.csv
+
+Processing model 00319...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00319_daily_performance.csv
+
+Processing model 00320...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00320_daily_performance.csv
+
+Processing model 00321...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00321_daily_performance.csv
+
+Processing model 00322...
+  Found 0 existing trading days
+  Loaded 117,454 prediction records
+  Processing 1372 new trading days
+  Successfully saved 1372 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00322_daily_performance.csv
+
+Processing model 00323...
+  Found 0 existing trading days
+  Loaded 117,540 prediction records
+  Processing 1373 new trading days
+  Successfully saved 1373 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00323_daily_performance.csv
+
+Processing model 00324...
+  Found 0 existing trading days
+  Loaded 117,626 prediction records
+  Processing 1374 new trading days
+  Successfully saved 1374 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00324_daily_performance.csv
+
+Processing model 00325...
+  Found 0 existing trading days
+  Loaded 117,626 prediction records
+  Processing 1374 new trading days
+  Successfully saved 1374 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00325_daily_performance.csv
+
+Processing model 00326...
+  Found 0 existing trading days
+  Loaded 117,626 prediction records
+  Processing 1374 new trading days
+  Successfully saved 1374 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00326_daily_performance.csv
+
+Processing model 00327...
+  Found 0 existing trading days
+  Loaded 117,626 prediction records
+  Processing 1374 new trading days
+  Successfully saved 1374 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00327_daily_performance.csv
+
+Processing model 00328...
+  Found 0 existing trading days
+  Loaded 117,626 prediction records
+  Processing 1374 new trading days
+  Successfully saved 1374 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00328_daily_performance.csv
+
+Processing model 00329...
+  Found 0 existing trading days
+  Loaded 117,626 prediction records
+  Processing 1374 new trading days
+  Successfully saved 1374 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00329_daily_performance.csv
+
+Processing model 00330...
+  Found 0 existing trading days
+  Loaded 117,626 prediction records
+  Processing 1374 new trading days
+  Successfully saved 1374 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00330_daily_performance.csv
+
+Processing model 00331...
+  Found 0 existing trading days
+  Loaded 117,540 prediction records
+  Processing 1373 new trading days
+  Successfully saved 1373 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00331_daily_performance.csv
+
+Processing model 00332...
+  Found 0 existing trading days
+  Loaded 117,454 prediction records
+  Processing 1372 new trading days
+  Successfully saved 1372 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00332_daily_performance.csv
+
+Processing model 00333...
+  Found 0 existing trading days
+  Loaded 117,454 prediction records
+  Processing 1372 new trading days
+  Successfully saved 1372 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00333_daily_performance.csv
+
+Processing model 00334...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00334_daily_performance.csv
+
+Processing model 00335...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00335_daily_performance.csv
+
+Processing model 00336...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00336_daily_performance.csv
+
+Processing model 00337...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00337_daily_performance.csv
+
+Processing model 00338...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00338_daily_performance.csv
+
+Processing model 00339...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00339_daily_performance.csv
+
+Processing model 00340...
+  Found 0 existing trading days
+  Loaded 117,368 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00340_daily_performance.csv
+
+Processing model 00341...
+  Found 0 existing trading days
+  Loaded 117,398 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00341_daily_performance.csv
+
+Processing model 00342...
+  Found 0 existing trading days
+  Loaded 117,398 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00342_daily_performance.csv
+
+Processing model 00343...
+  Found 0 existing trading days
+  Loaded 117,398 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00343_daily_performance.csv
+
+Processing model 00344...
+  Found 0 existing trading days
+  Loaded 117,484 prediction records
+  Processing 1372 new trading days
+  Successfully saved 1372 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00344_daily_performance.csv
+
+Processing model 00345...
+  Found 0 existing trading days
+  Loaded 117,484 prediction records
+  Processing 1372 new trading days
+  Successfully saved 1372 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00345_daily_performance.csv
+
+Processing model 00346...
+  Found 0 existing trading days
+  Loaded 117,398 prediction records
+  Processing 1371 new trading days
+  Successfully saved 1371 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00346_daily_performance.csv
+
+Processing model 00347...
+  Found 0 existing trading days
+  Loaded 117,484 prediction records
+  Processing 1372 new trading days
+  Successfully saved 1372 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00347_daily_performance.csv
+
+Processing model 00348...
+  Found 0 existing trading days
+  Loaded 117,484 prediction records
+  Processing 1372 new trading days
+  Successfully saved 1372 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00348_daily_performance.csv
+
+Processing model 00349...
+  Found 0 existing trading days
+  Loaded 117,540 prediction records
+  Processing 1373 new trading days
+  Successfully saved 1373 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00349_daily_performance.csv
+
+Processing model 00350...
+  Found 0 existing trading days
+  Loaded 117,540 prediction records
+  Processing 1373 new trading days
+  Successfully saved 1373 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00350_daily_performance.csv
+
+Processing model 00351...
+  Found 0 existing trading days
+  Loaded 118,258 prediction records
+  Processing 1381 new trading days
+  Successfully saved 1381 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00351_daily_performance.csv
+
+Processing model 00352...
+  Found 0 existing trading days
+  Loaded 118,344 prediction records
+  Processing 1382 new trading days
+  Successfully saved 1382 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00352_daily_performance.csv
+
+Processing model 00353...
+  Found 0 existing trading days
+  Loaded 118,228 prediction records
+  Processing 1381 new trading days
+  Successfully saved 1381 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00353_daily_performance.csv
+
+Processing model 00354...
+  Found 0 existing trading days
+  Loaded 118,228 prediction records
+  Processing 1381 new trading days
+  Successfully saved 1381 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00354_daily_performance.csv
+
+Processing model 00355...
+  Found 0 existing trading days
+  Loaded 118,228 prediction records
+  Processing 1381 new trading days
+  Successfully saved 1381 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00355_daily_performance.csv
+
+Processing model 00356...
+  Found 0 existing trading days
+  Loaded 118,228 prediction records
+  Processing 1381 new trading days
+  Successfully saved 1381 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00356_daily_performance.csv
+
+Processing model 00357...
+  Found 0 existing trading days
+  Loaded 118,314 prediction records
+  Processing 1382 new trading days
+  Successfully saved 1382 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00357_daily_performance.csv
+
+Processing model 00358...
+  Found 0 existing trading days
+  Loaded 118,228 prediction records
+  Processing 1381 new trading days
+  Successfully saved 1381 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00358_daily_performance.csv
+
+Processing model 00359...
+  Found 0 existing trading days
+  Loaded 118,228 prediction records
+  Processing 1381 new trading days
+  Successfully saved 1381 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00359_daily_performance.csv
+
+Processing model 00360...
+  Found 0 existing trading days
+  Loaded 118,228 prediction records
+  Processing 1381 new trading days
+  Successfully saved 1381 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00360_daily_performance.csv
+
+Processing model 00361...
+  Found 0 existing trading days
+  Loaded 118,228 prediction records
+  Processing 1381 new trading days
+  Successfully saved 1381 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00361_daily_performance.csv
+
+Processing model 00362...
+  Found 0 existing trading days
+  Loaded 118,228 prediction records
+  Processing 1381 new trading days
+  Successfully saved 1381 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00362_daily_performance.csv
+
+Processing model 00363...
+  Found 0 existing trading days
+  Loaded 118,142 prediction records
+  Processing 1380 new trading days
+  Successfully saved 1380 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00363_daily_performance.csv
+
+Processing model 00364...
+  Found 0 existing trading days
+  Loaded 118,172 prediction records
+  Processing 1380 new trading days
+  Successfully saved 1380 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00364_daily_performance.csv
+
+Processing model 00365...
+  Found 0 existing trading days
+  Loaded 118,172 prediction records
+  Processing 1380 new trading days
+  Successfully saved 1380 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00365_daily_performance.csv
+
+Processing model 00366...
+  Found 0 existing trading days
+  Loaded 118,258 prediction records
+  Processing 1381 new trading days
+  Successfully saved 1381 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00366_daily_performance.csv
+
+Processing model 00367...
+  Found 0 existing trading days
+  Loaded 118,278 prediction records
+  Processing 1381 new trading days
+  Successfully saved 1381 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00367_daily_performance.csv
+
+Processing model 00368...
+  Found 0 existing trading days
+  Loaded 118,278 prediction records
+  Processing 1381 new trading days
+  Successfully saved 1381 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00368_daily_performance.csv
+
+Processing model 00369...
+  Found 0 existing trading days
+  Loaded 118,364 prediction records
+  Processing 1382 new trading days
+  Successfully saved 1382 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00369_daily_performance.csv
+
+Processing model 00370...
+  Found 0 existing trading days
+  Loaded 118,334 prediction records
+  Processing 1382 new trading days
+  Successfully saved 1382 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00370_daily_performance.csv
+
+Processing model 00371...
+  Found 0 existing trading days
+  Loaded 118,420 prediction records
+  Processing 1383 new trading days
+  Successfully saved 1383 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00371_daily_performance.csv
+
+Processing model 00372...
+  Found 0 existing trading days
+  Loaded 118,334 prediction records
+  Processing 1382 new trading days
+  Successfully saved 1382 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00372_daily_performance.csv
+
+Processing model 00373...
+  Found 0 existing trading days
+  Loaded 118,314 prediction records
+  Processing 1382 new trading days
+  Successfully saved 1382 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00373_daily_performance.csv
+
+Processing model 00374...
+  Found 0 existing trading days
+  Loaded 118,314 prediction records
+  Processing 1382 new trading days
+  Successfully saved 1382 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00374_daily_performance.csv
+
+Processing model 00375...
+  Found 0 existing trading days
+  Loaded 118,228 prediction records
+  Processing 1381 new trading days
+  Successfully saved 1381 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00375_daily_performance.csv
+
+Processing model 00376...
+  Found 0 existing trading days
+  Loaded 118,228 prediction records
+  Processing 1381 new trading days
+  Successfully saved 1381 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00376_daily_performance.csv
+
+Processing model 00377...
+  Found 0 existing trading days
+  Loaded 118,142 prediction records
+  Processing 1380 new trading days
+  Successfully saved 1380 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00377_daily_performance.csv
+
+Processing model 00378...
+  Found 0 existing trading days
+  Loaded 118,142 prediction records
+  Processing 1380 new trading days
+  Successfully saved 1380 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00378_daily_performance.csv
+
+Processing model 00379...
+  Found 0 existing trading days
+  Loaded 118,142 prediction records
+  Processing 1380 new trading days
+  Successfully saved 1380 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00379_daily_performance.csv
+
+Processing model 00380...
+  Found 0 existing trading days
+  Loaded 118,228 prediction records
+  Processing 1381 new trading days
+  Successfully saved 1381 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00380_daily_performance.csv
+
+Processing model 00381...
+  Found 0 existing trading days
+  Loaded 118,228 prediction records
+  Processing 1381 new trading days
+  Successfully saved 1381 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00381_daily_performance.csv
+
+Processing model 00382...
+  Found 0 existing trading days
+  Loaded 118,228 prediction records
+  Processing 1381 new trading days
+  Successfully saved 1381 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00382_daily_performance.csv
+
+Processing model 00383...
+  Found 0 existing trading days
+  Loaded 118,228 prediction records
+  Processing 1381 new trading days
+  Successfully saved 1381 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00383_daily_performance.csv
+
+Processing model 00384...
+  Found 0 existing trading days
+  Loaded 118,228 prediction records
+  Processing 1381 new trading days
+  Successfully saved 1381 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00384_daily_performance.csv
+
+Processing model 00385...
+  Found 0 existing trading days
+  Loaded 118,228 prediction records
+  Processing 1381 new trading days
+  Successfully saved 1381 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00385_daily_performance.csv
+
+Processing model 00386...
+  Found 0 existing trading days
+  Loaded 118,142 prediction records
+  Processing 1380 new trading days
+  Successfully saved 1380 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00386_daily_performance.csv
+
+Processing model 00387...
+  Found 0 existing trading days
+  Loaded 118,142 prediction records
+  Processing 1380 new trading days
+  Successfully saved 1380 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00387_daily_performance.csv
+
+Processing model 00388...
+  Found 0 existing trading days
+  Loaded 118,142 prediction records
+  Processing 1380 new trading days
+  Successfully saved 1380 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00388_daily_performance.csv
+
+Processing model 00389...
+  Found 0 existing trading days
+  Loaded 118,142 prediction records
+  Processing 1380 new trading days
+  Successfully saved 1380 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00389_daily_performance.csv
+
+Processing model 00390...
+  Found 0 existing trading days
+  Loaded 118,142 prediction records
+  Processing 1380 new trading days
+  Successfully saved 1380 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00390_daily_performance.csv
+
+Processing model 00391...
+  Found 0 existing trading days
+  Loaded 118,142 prediction records
+  Processing 1380 new trading days
+  Successfully saved 1380 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00391_daily_performance.csv
+
+Processing model 00392...
+  Found 0 existing trading days
+  Loaded 118,228 prediction records
+  Processing 1381 new trading days
+  Successfully saved 1381 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00392_daily_performance.csv
+
+Processing model 00393...
+  Found 0 existing trading days
+  Loaded 118,228 prediction records
+  Processing 1381 new trading days
+  Successfully saved 1381 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00393_daily_performance.csv
+
+Processing model 00394...
+  Found 0 existing trading days
+  Loaded 118,228 prediction records
+  Processing 1381 new trading days
+  Successfully saved 1381 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00394_daily_performance.csv
+
+Processing model 00395...
+  Found 0 existing trading days
+  Loaded 118,228 prediction records
+  Processing 1381 new trading days
+  Successfully saved 1381 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00395_daily_performance.csv
+
+Processing model 00396...
+  Found 0 existing trading days
+  Loaded 118,314 prediction records
+  Processing 1382 new trading days
+  Successfully saved 1382 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00396_daily_performance.csv
+
+Processing model 00397...
+  Found 0 existing trading days
+  Loaded 118,400 prediction records
+  Processing 1383 new trading days
+  Successfully saved 1383 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00397_daily_performance.csv
+
+Processing model 00398...
+  Found 0 existing trading days
+  Loaded 118,400 prediction records
+  Processing 1383 new trading days
+  Successfully saved 1383 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00398_daily_performance.csv
+
+Processing model 00399...
+  Found 0 existing trading days
+  Loaded 118,400 prediction records
+  Processing 1383 new trading days
+  Successfully saved 1383 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00399_daily_performance.csv
+
+Processing model 00400...
+  Found 0 existing trading days
+  Loaded 118,486 prediction records
+  Processing 1384 new trading days
+  Successfully saved 1384 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00400_daily_performance.csv
+
+Processing model 00401...
+  Found 0 existing trading days
+  Loaded 118,486 prediction records
+  Processing 1384 new trading days
+  Successfully saved 1384 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00401_daily_performance.csv
+
+Processing model 00402...
+  Found 0 existing trading days
+  Loaded 118,400 prediction records
+  Processing 1383 new trading days
+  Successfully saved 1383 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00402_daily_performance.csv
+
+Processing model 00403...
+  Found 0 existing trading days
+  Loaded 118,314 prediction records
+  Processing 1382 new trading days
+  Successfully saved 1382 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00403_daily_performance.csv
+
+Processing model 00404...
+  Found 0 existing trading days
+  Loaded 118,314 prediction records
+  Processing 1382 new trading days
+  Successfully saved 1382 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00404_daily_performance.csv
+
+Processing model 00405...
+  Found 0 existing trading days
+  Loaded 118,314 prediction records
+  Processing 1382 new trading days
+  Successfully saved 1382 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00405_daily_performance.csv
+
+Processing model 00406...
+  Found 0 existing trading days
+  Loaded 118,228 prediction records
+  Processing 1381 new trading days
+  Successfully saved 1381 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00406_daily_performance.csv
+
+Processing model 00407...
+  Found 0 existing trading days
+  Loaded 118,228 prediction records
+  Processing 1381 new trading days
+  Successfully saved 1381 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00407_daily_performance.csv
+
+Processing model 00408...
+  Found 0 existing trading days
+  Loaded 118,228 prediction records
+  Processing 1381 new trading days
+  Successfully saved 1381 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00408_daily_performance.csv
+
+Processing model 00409...
+  Found 0 existing trading days
+  Loaded 118,228 prediction records
+  Processing 1381 new trading days
+  Successfully saved 1381 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00409_daily_performance.csv
+
+Processing model 00410...
+  Found 0 existing trading days
+  Loaded 118,142 prediction records
+  Processing 1380 new trading days
+  Successfully saved 1380 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00410_daily_performance.csv
+
+Processing model 00411...
+  Found 0 existing trading days
+  Loaded 118,142 prediction records
+  Processing 1380 new trading days
+  Successfully saved 1380 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00411_daily_performance.csv
+
+Processing model 00412...
+  Found 0 existing trading days
+  Loaded 118,228 prediction records
+  Processing 1381 new trading days
+  Successfully saved 1381 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00412_daily_performance.csv
+
+Processing model 00413...
+  Found 0 existing trading days
+  Loaded 118,228 prediction records
+  Processing 1381 new trading days
+  Successfully saved 1381 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00413_daily_performance.csv
+
+Processing model 00414...
+  Found 0 existing trading days
+  Loaded 118,228 prediction records
+  Processing 1381 new trading days
+  Successfully saved 1381 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00414_daily_performance.csv
+
+Processing model 00415...
+  Found 0 existing trading days
+  Loaded 118,258 prediction records
+  Processing 1381 new trading days
+  Successfully saved 1381 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00415_daily_performance.csv
+
+Processing model 00416...
+  Found 0 existing trading days
+  Loaded 118,258 prediction records
+  Processing 1381 new trading days
+  Successfully saved 1381 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00416_daily_performance.csv
+
+Processing model 00417...
+  Found 0 existing trading days
+  Loaded 118,258 prediction records
+  Processing 1381 new trading days
+  Successfully saved 1381 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00417_daily_performance.csv
+
+Processing model 00418...
+  Found 0 existing trading days
+  Loaded 118,258 prediction records
+  Processing 1381 new trading days
+  Successfully saved 1381 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00418_daily_performance.csv
+
+Processing model 00419...
+  Found 0 existing trading days
+  Loaded 118,258 prediction records
+  Processing 1381 new trading days
+  Successfully saved 1381 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00419_daily_performance.csv
+
+Processing model 00420...
+  Found 0 existing trading days
+  Loaded 118,258 prediction records
+  Processing 1381 new trading days
+  Successfully saved 1381 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00420_daily_performance.csv
+
+Processing model 00421...
+  Found 0 existing trading days
+  Loaded 118,314 prediction records
+  Processing 1382 new trading days
+  Successfully saved 1382 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00421_daily_performance.csv
+
+Processing model 00422...
+  Found 0 existing trading days
+  Loaded 118,314 prediction records
+  Processing 1382 new trading days
+  Successfully saved 1382 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00422_daily_performance.csv
+
+Processing model 00423...
+  Found 0 existing trading days
+  Loaded 118,400 prediction records
+  Processing 1383 new trading days
+  Successfully saved 1383 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00423_daily_performance.csv
+
+Processing model 00424...
+  Found 0 existing trading days
+  Loaded 118,314 prediction records
+  Processing 1382 new trading days
+  Successfully saved 1382 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00424_daily_performance.csv
+
+Processing model 00425...
+  Found 0 existing trading days
+  Loaded 118,314 prediction records
+  Processing 1382 new trading days
+  Successfully saved 1382 days to /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/model_daily_performance/model_00425_daily_performance.csv
+
+======================================================================
+Batch processing completed at: 2025-08-13 19:36:46
+Successfully processed: 425 models
+Failed to process: 0 models
+Total models attempted: 425
