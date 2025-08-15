@@ -1,5 +1,0 @@
-scenario,overnight_gap,overnight_indicators,n_regimes,n_features,total_days,accuracy_50_time,accuracy_50_minutes
-Standard (No Overnight),False,False,7,33,1407,11:00,90.0
-Overnight Gap Only,True,False,7,44,1407,Never,999.0
-Overnight Indicators Only,False,True,7,47,1407,Never,999.0
-Full Overnight Analysis,True,True,6,51,1407,Never,999.0
