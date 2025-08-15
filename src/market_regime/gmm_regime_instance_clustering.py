@@ -215,13 +215,20 @@ class GMMRegimeInstanceClassifier:
         
         # Create feature vector in the same order as training
         feature_vector = []
+        missing_features = []
         for feature_name in self.feature_names:
             if feature_name in features:
                 feature_vector.append(features[feature_name])
             else:
-                # Handle missing features with default values
-                print(f"Warning: Feature '{feature_name}' not found, using 0")
+                # Handle missing features with default values (common for early time points)
+                missing_features.append(feature_name)
                 feature_vector.append(0.0)
+        
+        # Only warn about unexpected missing features (not the common early-timepoint ones)
+        expected_missing = {'rel_momentum_mean', 'rel_momentum_std', 'rel_momentum_final', 'autocorr_lag1'}
+        unexpected_missing = [f for f in missing_features if f not in expected_missing]
+        if unexpected_missing:
+            print(f"Warning: Unexpected features not found: {unexpected_missing}")
         
         return np.array(feature_vector).reshape(1, -1)
     
