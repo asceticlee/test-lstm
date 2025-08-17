@@ -6,8 +6,8 @@ This script evaluates trading performance based on prediction thresholds and cal
 various performance metrics including Sharpe ratio, maximum drawdown, win rate, etc.
 
 The script supports both upside and downside trading strategies:
-- Upside: Trade when predicted >= positive threshold, gain if actual > 0
-- Downside: Trade when predicted <= negative threshold, gain if actual < 0
+- Upside: Trade when predicted > positive threshold, gain if actual > 0
+- Downside: Trade when predicted < negative threshold, gain if actual < 0
 
 Trading hours are restricted to 10:36 AM to 12:00 PM (38160000 to 43200000 ms).
 Transaction fees are specified in dollars (e.g., 0.02 = $0.02 per trade).
@@ -128,15 +128,15 @@ class TradingPerformanceAnalyzer:
         predicted = np.array(predicted)
         
         if threshold > 0:
-            # Upside trading: trade when predicted >= threshold
-            trade_signals = predicted >= threshold
+            # Upside trading: trade when predicted > threshold (exclusive)
+            trade_signals = predicted > threshold
             # Gain when actual > 0, loss when actual <= 0
             raw_pnl = np.where(trade_signals, 
                               np.where(actual > 0, actual, actual),  # actual value (positive gain, negative loss)
                               0)  # No trade
         elif threshold < 0:
-            # Downside trading: trade when predicted <= threshold  
-            trade_signals = predicted <= threshold
+            # Downside trading: trade when predicted < threshold (exclusive)
+            trade_signals = predicted < threshold
             # Gain when actual < 0 (take absolute value), loss when actual >= 0
             raw_pnl = np.where(trade_signals,
                               np.where(actual < 0, -actual, actual),  # -actual for gain, actual for loss
@@ -201,33 +201,39 @@ class TradingPerformanceAnalyzer:
         
         # Handle upside trades (positive thresholds)
         upside_mask = thresholds > 0
-        upside_trade_signals = (predicted >= thresholds) & upside_mask
+        upside_trade_signals = (predicted > thresholds) & upside_mask
         trade_signals |= upside_trade_signals
         # Gain when actual > 0, loss when actual <= 0
         raw_pnl = np.where(upside_trade_signals, actual, raw_pnl)
         
         # Handle downside trades (negative thresholds)
         downside_mask = thresholds < 0
-        downside_trade_signals = (predicted <= thresholds) & downside_mask
+        downside_trade_signals = (predicted < thresholds) & downside_mask
         trade_signals |= downside_trade_signals
-        # Gain when actual < 0 (take absolute value), loss when actual >= 0
-        raw_pnl = np.where(downside_trade_signals,
-                          np.where(actual < 0, -actual, actual),
-                          raw_pnl)
+        # For short positions: P&L = -actual (profit when actual < 0, loss when actual >= 0)
+        raw_pnl = np.where(downside_trade_signals, -actual, raw_pnl)
+        
+        # Note: threshold == 0 results in no trades (trade_signals and raw_pnl remain zeros)
         
         # Apply transaction fees to trades
         pnl_after_fees = np.where(trade_signals, raw_pnl - self.transaction_fee, 0)
         
-        # Calculate statistics
+        # Calculate statistics - Fixed bug: ensure counts are consistent
         num_trades = np.sum(trade_signals)
-        winning_trades = np.sum((trade_signals) & (raw_pnl > 0))
-        losing_trades = np.sum((trade_signals) & (raw_pnl <= 0))
+        
+        # For trades that actually happened, count wins and losses
+        trade_pnl = raw_pnl[trade_signals]  # Only P&L values where trades occurred
+        winning_trades = np.sum(trade_pnl > 0)
+        losing_trades = np.sum(trade_pnl <= 0)
+        
+        # Verify counts add up correctly
+        assert winning_trades + losing_trades == num_trades, f"Count mismatch: {winning_trades} + {losing_trades} != {num_trades}"
         
         win_rate = winning_trades / num_trades if num_trades > 0 else 0
         
-        # Average gains and losses (before fees)
-        winning_pnl = raw_pnl[(trade_signals) & (raw_pnl > 0)]
-        losing_pnl = raw_pnl[(trade_signals) & (raw_pnl <= 0)]
+        # Average gains and losses (before fees) - only for actual trades
+        winning_pnl = trade_pnl[trade_pnl > 0]
+        losing_pnl = trade_pnl[trade_pnl <= 0]
         
         avg_win = np.mean(winning_pnl) if len(winning_pnl) > 0 else 0
         avg_loss = np.mean(losing_pnl) if len(losing_pnl) > 0 else 0
@@ -241,10 +247,7 @@ class TradingPerformanceAnalyzer:
             'avg_loss': avg_loss,
             'total_pnl_before_fees': np.sum(raw_pnl),
             'total_pnl_after_fees': np.sum(pnl_after_fees),
-            'total_fees': np.sum(trade_signals) * self.transaction_fee,
-            'trade_signals': trade_signals,
-            'raw_pnl': raw_pnl,
-            'pnl_after_fees': pnl_after_fees
+            'total_fees': np.sum(trade_signals) * self.transaction_fee
         }
     
     def calculate_performance_metrics(self, pnl_series, trading_days=None):
@@ -301,10 +304,6 @@ class TradingPerformanceAnalyzer:
         # Maximum drawdown percentage
         max_drawdown_pct = (max_drawdown / np.max(peak)) * 100 if np.max(peak) > 0 else 0
         
-        # Win rate
-        winning_trades = np.sum(non_zero_pnl > 0)
-        win_rate = winning_trades / len(non_zero_pnl) if len(non_zero_pnl) > 0 else 0
-        
         # Profit factor (gross profit / gross loss)
         gross_profit = np.sum(non_zero_pnl[non_zero_pnl > 0])
         gross_loss = abs(np.sum(non_zero_pnl[non_zero_pnl < 0]))
@@ -315,12 +314,10 @@ class TradingPerformanceAnalyzer:
         
         return {
             'total_pnl': total_pnl,
-            'num_trades': num_trades,
             'avg_pnl_per_trade': avg_pnl_per_trade,
             'sharpe_ratio': sharpe_ratio,
             'max_drawdown': max_drawdown,
             'max_drawdown_pct': max_drawdown_pct,
-            'win_rate': win_rate,
             'profit_factor': profit_factor,
             'volatility': volatility,
             'calmar_ratio': calmar_ratio,
@@ -360,11 +357,36 @@ class TradingPerformanceAnalyzer:
         # Calculate trades using per-row thresholds
         trade_stats = self.calculate_trades_with_thresholds(filtered_actual, filtered_predicted, filtered_thresholds)
         
-        # Calculate performance metrics
-        perf_metrics = self.calculate_performance_metrics(
-            trade_stats['pnl_after_fees'], 
-            filtered_days
-        )
+        # Calculate performance metrics from raw data (we'll create the pnl series)
+        # For performance metrics, we need the P&L series, not just totals
+        # We'll regenerate the needed arrays for performance calculation
+        actual_array = np.array(filtered_actual)
+        predicted_array = np.array(filtered_predicted)
+        thresholds_array = np.array(filtered_thresholds)
+        
+        # Recreate trade signals and P&L arrays for performance metrics
+        trade_signals = np.zeros_like(predicted_array, dtype=bool)
+        raw_pnl = np.zeros_like(actual_array)
+        
+        # Handle upside trades
+        upside_mask = thresholds_array > 0
+        upside_trade_signals = (predicted_array > thresholds_array) & upside_mask
+        trade_signals |= upside_trade_signals
+        raw_pnl = np.where(upside_trade_signals, actual_array, raw_pnl)
+        
+        # Handle downside trades  
+        downside_mask = thresholds_array < 0
+        downside_trade_signals = (predicted_array < thresholds_array) & downside_mask
+        trade_signals |= downside_trade_signals
+        raw_pnl = np.where(downside_trade_signals, -actual_array, raw_pnl)
+        
+        # Note: threshold == 0 results in no trades (trade_signals and raw_pnl remain zeros)
+        
+        # Apply transaction fees
+        pnl_after_fees = np.where(trade_signals, raw_pnl - self.transaction_fee, 0)
+        
+        # Calculate performance metrics using the P&L series
+        perf_metrics = self.calculate_performance_metrics(pnl_after_fees, filtered_days)
         
         # Get unique threshold value (assuming all rows have same threshold for now)
         unique_thresholds = np.unique(filtered_thresholds)
@@ -375,13 +397,19 @@ class TradingPerformanceAnalyzer:
             threshold_value = f"mixed ({len(unique_thresholds)} values)"
             trade_type = 'mixed'
         
-        # Combine results
+        # Combine results - ensure performance metrics use correct totals from trade_stats
         result = {
             'threshold': threshold_value,
             'trade_type': trade_type,
             **trade_stats,
             **perf_metrics
         }
+        
+        # Recalculate avg_pnl_per_trade using the correct total_pnl_after_fees
+        if result['num_trades'] > 0:
+            result['avg_pnl_per_trade'] = result['total_pnl_after_fees'] / result['num_trades']
+        else:
+            result['avg_pnl_per_trade'] = 0
         
         print(f"Performance evaluation completed")
         return result

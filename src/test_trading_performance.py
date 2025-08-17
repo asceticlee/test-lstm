@@ -4,7 +4,9 @@ Test Trading Performance Script
 
 This script tests the trading_performance.py module using pre-calculated model predictions
 from the model_predictions directory. It loads prediction data from model_xxxxx_prediction.csv
-files and evaluates trading performance across different thresholds.
+files and evaluates trading performance ac    print(f"\n📂 All files saved to: {output_dir}")
+    
+    return results_dfnt thresholds.
 
 Usage:
     python test_trading_performance.py [model_id]
@@ -171,8 +173,8 @@ def test_model_performance(model_id, prediction_dir, models_dir, output_dir, tra
     upside_thresholds = [0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7]
     downside_thresholds = [-0.3, -0.35, -0.4, -0.45, -0.5, -0.55, -0.6, -0.65, -0.7]
     
-    # Combine all thresholds
-    all_thresholds = sorted(downside_thresholds + [0.0] + upside_thresholds)
+    # Combine all thresholds (removed 0.0)
+    all_thresholds = sorted(downside_thresholds + upside_thresholds)
     
     print(f"\nTesting {len(all_thresholds)} trading-focused thresholds: {all_thresholds}")
     
@@ -194,6 +196,8 @@ def test_model_performance(model_id, prediction_dir, models_dir, output_dir, tra
         
         # Create threshold array (all rows have same threshold)
         threshold_array = np.full(len(pred_df), threshold)
+        
+        # Note: Input data CSV generation removed as no longer needed for verification
         
         # Evaluate performance for this threshold
         result = analyzer.evaluate_performance(
@@ -282,6 +286,18 @@ def test_model_performance(model_id, prediction_dir, models_dir, output_dir, tra
     results_file = os.path.join(output_dir, f'model_{model_id:05d}_trading_performance.csv')
     results_df.to_csv(results_file, index=False)
     print(f"\n✅ Results exported to: {results_file}")
+    
+    # Log summary of all input data files created
+    print(f"\n📁 Input Data Files Created:")
+    print("-" * 60)
+    for result in all_results:
+        if 'input_data_file' in result:
+            threshold = result['threshold']
+            num_trades = result['num_trades']
+            input_file = result['input_data_file']
+            print(f"  Threshold {threshold:7.3f}: {num_trades:5,} trades → {os.path.basename(input_file)}")
+    
+    print(f"\n📂 All files saved to: {output_dir}")
     
     return results_df
 
