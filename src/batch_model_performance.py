@@ -1,25 +1,26 @@
 #!/usr/bin/env python3
 """
-Batch Model Performance Script
+Batch Model Performance Script (Trading Day Based)
 
 This script calculates daily performance metrics for LSTM models by analyzing
 their prediction files and computing threshold-based accuracies and PnL.
 
-For each model, it generates daily performance data including:
+For each trading day, it generates performance data for all specified models including:
 - Upside/downside threshold accuracies (0.0 to 0.8 in 0.1 increments)
 - Numerators and denominators for accuracy calculations
 - Profit and Loss (PnL) for each threshold level
 - Trading day summary statistics
 
-Output files are saved to test-lstm/model_performance/model_daily_performance/ directory
-with naming pattern: model_xxxxx_daily_performance.csv
+Output files are saved to test-lstm/model_performance/daily_performance/ directory
+with naming pattern: trading_day_YYYYMMDD_performance.csv
+Each file contains all models' performance for that specific trading day.
 
 Trading Logic:
 - Upside: If prediction >= threshold, go long. PnL = actual_value if actual >= 0, else actual_value
 - Downside: If prediction <= -threshold, go short. PnL = -actual_value if actual <= 0, else -actual_value
 
-The script supports incremental updates - if a performance file already exists,
-it will only append missing trading days rather than regenerating the entire file.
+The script supports incremental updates - if a trading day file already exists,
+it will only append missing models rather than regenerating the entire file.
 
 Usage:
     python batch_model_performance.py <start_model_id> <end_model_id>
@@ -38,23 +39,23 @@ import numpy as np
 from datetime import datetime
 from collections import defaultdict
 
-def load_existing_performance(performance_file):
+def load_existing_trading_day_performance(performance_file):
     """
-    Load existing performance data and return set of TradingDays already processed
+    Load existing trading day performance data and return set of ModelIDs already processed
     """
-    existing_days = set()
+    existing_models = set()
     if os.path.exists(performance_file):
         try:
             df = pd.read_csv(performance_file)
             for _, row in df.iterrows():
-                existing_days.add(int(row['TradingDay']))
+                existing_models.add(str(row['ModelID']))
         except Exception as e:
             print(f"Warning: Could not read existing file {performance_file}: {e}")
-    return existing_days
+    return existing_models
 
-def append_to_performance_file(performance_file, new_data, thresholds, timeframes):
+def append_to_trading_day_performance_file(performance_file, new_data, thresholds, timeframes):
     """
-    Append new performance data to CSV file
+    Append new performance data to trading day CSV file
     """
     file_exists = os.path.exists(performance_file)
     
@@ -63,7 +64,7 @@ def append_to_performance_file(performance_file, new_data, thresholds, timeframe
         
         # Write header if file doesn't exist
         if not file_exists:
-            header = ['TradingDay']
+            header = ['ModelID', 'TradingDay']
             
             # For each timeframe, add all threshold columns
             for tf_name, tf_spec in timeframes:
@@ -197,12 +198,12 @@ def calculate_timeframe_performance(prediction_df, trading_days, current_day_idx
     
     return results
 
-def calculate_multi_timeframe_performance_optimized(trading_day_array, predicted_array, actual_array, trading_day_to_indices, trading_days, current_day_idx, timeframes, thresholds_array):
+def calculate_multi_timeframe_performance_optimized(trading_day_array, predicted_array, actual_array, trading_day_to_indices, trading_days, current_day_idx, timeframes, thresholds_array, model_id):
     """
     Optimized version using numpy arrays for faster computation
     """
     current_day = trading_days[current_day_idx]
-    results = [current_day]
+    results = [model_id, current_day]
     
     # Calculate performance for each timeframe
     for tf_name, tf_spec in timeframes:
@@ -300,7 +301,7 @@ def calculate_timeframe_performance_optimized(trading_day_array, predicted_array
     
     return results
 
-def calculate_multi_timeframe_performance(prediction_df, trading_days, current_day_idx, timeframes, thresholds):
+def calculate_multi_timeframe_performance(prediction_df, trading_days, current_day_idx, timeframes, thresholds, model_id):
     """
     Calculate performance metrics for multiple timeframes ending on current day
     
@@ -310,12 +311,13 @@ def calculate_multi_timeframe_performance(prediction_df, trading_days, current_d
         current_day_idx: Index of current day in trading_days list
         timeframes: List of (name, timeframe_spec) tuples
         thresholds: List of threshold values
+        model_id: Model ID string
     
     Returns:
-        List starting with trading day followed by all timeframe metrics
+        List starting with model_id, trading day followed by all timeframe metrics
     """
     current_day = trading_days[current_day_idx]
-    results = [current_day]
+    results = [model_id, current_day]
     
     # Calculate performance for each timeframe
     for tf_name, tf_spec in timeframes:
@@ -393,117 +395,109 @@ def calculate_daily_performance(prediction_df, trading_day, thresholds):
     
     return results
 
-def process_model_performance(model_id, prediction_dir, performance_dir):
+def process_trading_day_performance(trading_day, model_range, prediction_dir, performance_dir):
     """
-    Process multi-timeframe performance for a single model
+    Process performance for all models on a single trading day
     """
     try:
-        # File paths
-        prediction_file = os.path.join(prediction_dir, f'model_{model_id}_prediction.csv')
-        performance_file = os.path.join(performance_dir, f'model_{model_id}_daily_performance.csv')
+        print(f"Processing trading day {trading_day}...")
         
-        # Check if prediction file exists
-        if not os.path.exists(prediction_file):
-            print(f"Prediction file not found: {prediction_file}")
-            return False
+        # Trading day performance file
+        performance_file = os.path.join(performance_dir, f'trading_day_{trading_day}_performance.csv')
         
-        print(f"Processing model {model_id}...")
+        # Load existing models to avoid duplication
+        existing_models = load_existing_trading_day_performance(performance_file)
+        print(f"  Found {len(existing_models)} existing models")
         
-        # Load existing performance data to avoid duplication
-        existing_days = load_existing_performance(performance_file)
-        print(f"  Found {len(existing_days)} existing trading days")
-        
-        # Load prediction data
-        try:
-            prediction_df = pd.read_csv(prediction_file)
-        except Exception as e:
-            print(f"  ERROR loading prediction file: {e}")
-            return False
-        
-        if len(prediction_df) == 0:
-            print(f"  No prediction data found for model {model_id}")
-            return False
-        
-        print(f"  Loaded {len(prediction_df):,} prediction records")
-        
-        # Get unique trading days and filter for new days
-        trading_days = sorted(prediction_df['TradingDay'].unique())
-        new_days = [day for day in trading_days if day not in existing_days]
-        
-        if not new_days:
-            print(f"  No new trading days to process for model {model_id}")
-            return True
-        
-        print(f"  Processing {len(new_days)} new trading days")
-        
-        # Define thresholds (0.0 to 0.8 in 0.1 increments)
+        # Define thresholds and timeframes
         thresholds = np.arange(0.0, 0.81, 0.1)
-        
-        # Define timeframes: (name, (type, value))
-        # Type can be 'trading_days', 'calendar_days', or 'from_begin'
         timeframes = [
             ('daily', ('trading_days', 1)),
             ('2day', ('trading_days', 2)),
             ('3day', ('trading_days', 3)),
-            ('1week', ('calendar_days', 7)),     # 7 calendar days
-            ('2week', ('calendar_days', 14)),    # 14 calendar days
-            ('4week', ('calendar_days', 28)),    # 28 calendar days (4 weeks)
-            ('8week', ('calendar_days', 56)),    # 56 calendar days (8 weeks)
-            ('13week', ('calendar_days', 91)),   # 91 calendar days (13 weeks)
-            ('26week', ('calendar_days', 182)),  # 182 calendar days (26 weeks)
-            ('52week', ('calendar_days', 364)),  # 364 calendar days (52 weeks)
-            ('from_begin', ('from_begin', None)) # All available data from beginning
+            ('1week', ('calendar_days', 7)),
+            ('2week', ('calendar_days', 14)),
+            ('4week', ('calendar_days', 28)),
+            ('8week', ('calendar_days', 56)),
+            ('13week', ('calendar_days', 91)),
+            ('26week', ('calendar_days', 182)),
+            ('52week', ('calendar_days', 364)),
+            ('from_begin', ('from_begin', None))
         ]
         
-        # Calculate multi-timeframe performance for new days
+        # Collect performance data for all models on this trading day
         new_performance_data = []
+        processed_models = 0
         
-        # Pre-compute all data to avoid repeated operations
-        print(f"  Pre-computing data structures for optimization...")
-        start_time = time.time()
+        start_model_id, end_model_id = model_range
         
-        # Convert DataFrame to numpy arrays for faster operations
-        trading_day_array = prediction_df['TradingDay'].values
-        predicted_array = prediction_df['Predicted'].values  
-        actual_array = prediction_df['Actual'].values
-        
-        # Create trading day to index mapping for faster lookups
-        trading_day_to_indices = {}
-        for i, day in enumerate(trading_day_array):
-            if day not in trading_day_to_indices:
-                trading_day_to_indices[day] = []
-            trading_day_to_indices[day].append(i)
-        
-        # Pre-compute threshold arrays for vectorized operations
-        thresholds_array = np.array(thresholds)
-        
-        print(f"  Pre-computation completed in {time.time() - start_time:.2f}s")
-        print(f"  Processing {len(new_days)} new trading days with optimized calculations...")
-        
-        for day in new_days:
-            # Find the index of this day in the trading_days list
-            day_idx = trading_days.index(day)
+        for model_num in range(start_model_id, end_model_id + 1):
+            model_id = f"{model_num:05d}"
             
-            # Calculate multi-timeframe performance for this day
-            daily_result = calculate_multi_timeframe_performance_optimized(
-                trading_day_array, predicted_array, actual_array, trading_day_to_indices,
-                trading_days, day_idx, timeframes, thresholds_array
-            )
-            if daily_result is not None:
-                new_performance_data.append(daily_result)
+            # Skip if model already processed
+            if model_id in existing_models:
+                continue
+            
+            # Check if prediction file exists
+            prediction_file = os.path.join(prediction_dir, f'model_{model_id}_prediction.csv')
+            if not os.path.exists(prediction_file):
+                continue
+            
+            try:
+                # Load prediction data
+                prediction_df = pd.read_csv(prediction_file)
+                
+                # Check if this trading day exists in the model's data
+                if trading_day not in prediction_df['TradingDay'].values:
+                    continue
+                
+                # Get sorted trading days for this model
+                trading_days = sorted(prediction_df['TradingDay'].unique())
+                
+                # Find the index of the current trading day
+                if trading_day not in trading_days:
+                    continue
+                
+                current_day_idx = trading_days.index(trading_day)
+                
+                # Pre-compute data structures for optimization
+                trading_day_array = prediction_df['TradingDay'].values
+                predicted_array = prediction_df['Predicted'].values
+                actual_array = prediction_df['Actual'].values
+                
+                # Create trading day to index mapping
+                trading_day_to_indices = {}
+                for i, day in enumerate(trading_day_array):
+                    if day not in trading_day_to_indices:
+                        trading_day_to_indices[day] = []
+                    trading_day_to_indices[day].append(i)
+                
+                # Calculate performance for this model on this trading day
+                daily_result = calculate_multi_timeframe_performance_optimized(
+                    trading_day_array, predicted_array, actual_array, trading_day_to_indices,
+                    trading_days, current_day_idx, timeframes, thresholds, model_id
+                )
+                
+                if daily_result is not None:
+                    new_performance_data.append(daily_result)
+                    processed_models += 1
+                
+            except Exception as e:
+                print(f"    Error processing model {model_id}: {e}")
+                continue
         
-        # Append new data to file
+        # Append new data to trading day file
         if new_performance_data:
-            append_to_performance_file(performance_file, new_performance_data, thresholds, timeframes)
-            print(f"  Successfully saved {len(new_performance_data)} days to {performance_file}")
+            append_to_trading_day_performance_file(performance_file, new_performance_data, thresholds, timeframes)
+            print(f"  Successfully saved {len(new_performance_data)} models to {performance_file}")
         else:
-            print(f"  No valid performance data to add for model {model_id}")
+            print(f"  No new models to add for trading day {trading_day}")
         
-        return True
+        return processed_models
         
     except Exception as e:
-        print(f"ERROR processing model {model_id}: {e}")
-        return False
+        print(f"ERROR processing trading day {trading_day}: {e}")
+        return 0
 
 def generate_models_alltime_performance(start_model_id, end_model_id, performance_dir):
     """
@@ -607,7 +601,7 @@ def main():
     script_dir = os.path.dirname(os.path.abspath(__file__))
     project_root = os.path.dirname(script_dir)
     prediction_dir = os.path.join(project_root, 'model_predictions')
-    performance_dir = os.path.join(project_root, 'model_performance', 'model_daily_performance')
+    performance_dir = os.path.join(project_root, 'model_performance', 'daily_performance')
     
     # Create performance directory if it doesn't exist
     os.makedirs(performance_dir, exist_ok=True)
@@ -618,25 +612,53 @@ def main():
         print("Please run batch_model_prediction.py first to generate prediction files.")
         sys.exit(1)
     
-    # Process each model
-    successful_models = 0
-    failed_models = 0
+    # Get all unique trading days from all model prediction files
+    print("Discovering trading days from prediction files...")
+    all_trading_days = set()
     
-    print(f"\nProcessing models {start_model_id:05d} to {end_model_id:05d}")
+    for model_num in range(start_model_id, end_model_id + 1):
+        model_id = f"{model_num:05d}"
+        prediction_file = os.path.join(prediction_dir, f'model_{model_id}_prediction.csv')
+        
+        if os.path.exists(prediction_file):
+            try:
+                df = pd.read_csv(prediction_file, usecols=['TradingDay'])
+                all_trading_days.update(df['TradingDay'].unique())
+            except Exception as e:
+                print(f"Warning: Could not read {prediction_file}: {e}")
+                continue
+    
+    if not all_trading_days:
+        print("ERROR: No trading days found in prediction files")
+        sys.exit(1)
+    
+    # Sort trading days
+    sorted_trading_days = sorted(list(all_trading_days))
+    print(f"Found {len(sorted_trading_days)} unique trading days from {start_model_id:05d} to {end_model_id:05d}")
+    
+    # Process each trading day
+    successful_days = 0
+    total_models_processed = 0
+    
+    print(f"\nProcessing trading days with models {start_model_id:05d} to {end_model_id:05d}")
     print(f"Prediction directory: {prediction_dir}")
     print(f"Performance output directory: {performance_dir}")
     print(f"Started at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print("=" * 70)
     
-    for model_num in range(start_model_id, end_model_id + 1):
-        model_id = f"{model_num:05d}"
+    start_time = time.time()
+    
+    for i, trading_day in enumerate(sorted_trading_days):
+        print(f"[{i+1}/{len(sorted_trading_days)}] ", end="")
+        models_processed = process_trading_day_performance(
+            trading_day, (start_model_id, end_model_id), prediction_dir, performance_dir
+        )
         
-        if process_model_performance(model_id, prediction_dir, performance_dir):
-            successful_models += 1
-        else:
-            failed_models += 1
+        if models_processed > 0:
+            successful_days += 1
+            total_models_processed += models_processed
         
-        print()  # Add blank line between models
+        print()  # Add blank line between trading days
     
     # Generate models_alltime_performance.csv with all models' from_begin performance
     generate_models_alltime_performance(start_model_id, end_model_id, performance_dir)
@@ -653,15 +675,33 @@ def main():
     except Exception as e:
         print(f"Warning: Could not generate performance index: {e}")
     
+    end_time = time.time()
+    elapsed_time = end_time - start_time
+    
     # Summary
     print("=" * 70)
-    print(f"Batch processing completed at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-    print(f"Successfully processed: {successful_models} models")
-    print(f"Failed to process: {failed_models} models")
-    print(f"Total models attempted: {successful_models + failed_models}")
+    print("Batch processing completed!")
+    print(f"Total time: {elapsed_time:.2f} seconds ({elapsed_time/60:.2f} minutes)")
+    print(f"Successfully processed: {successful_days} trading days")
+    print(f"Total model records processed: {total_models_processed}")
+    print(f"Total trading days attempted: {len(sorted_trading_days)}")
     
-    if failed_models > 0:
-        print(f"\nWARNING: {failed_models} models failed to process. Check the error messages above.")
+    if successful_days < len(sorted_trading_days):
+        failed_days = len(sorted_trading_days) - successful_days
+        print(f"\nWARNING: {failed_days} trading days had no valid model data. Check the error messages above.")
+    
+    print(f"\nPerformance files saved to: {performance_dir}")
+    print(f"Finished at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    
+    # Performance stats
+    if total_models_processed > 0:
+        avg_models_per_day = total_models_processed / successful_days if successful_days > 0 else 0
+        avg_time_per_model = elapsed_time / total_models_processed
+        print(f"\nPerformance Statistics:")
+        print(f"Average models per trading day: {avg_models_per_day:.1f}")
+        print(f"Average time per model record: {avg_time_per_model:.4f} seconds")
+    else:
+        print("\nNo performance statistics available - no model records were processed successfully.")
 
 if __name__ == "__main__":
     main()

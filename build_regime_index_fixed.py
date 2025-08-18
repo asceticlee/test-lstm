@@ -9,7 +9,7 @@ import glob
 from tqdm import tqdm
 
 def build_complete_regime_performance_index():
-    """Build complete regime performance index for all models"""
+    """Build complete regime performance index for all models - grouped by trading day"""
     
     # Define paths
     performance_dir = "model_performance/model_regime_performance"
@@ -39,25 +39,37 @@ def build_complete_regime_performance_index():
         model_id = filename.split('_')[1]
         
         try:
-            # Read file to get regime information
-            df = pd.read_csv(file_path)
+            # Read file to get trading day information
+            df = pd.read_csv(file_path, usecols=['TradingDay'])
             
-            # Check if the expected columns exist
-            if 'Regime' in df.columns:
-                regime_col = 'Regime'
-            elif 'regime' in df.columns:
-                regime_col = 'regime'
-            else:
-                print(f"No regime column found in {file_path}")
-                continue
+            # Group consecutive rows by trading day for batch loading
+            current_trading_day = None
+            start_row = None
             
-            # Add index entries for each row
-            for row_idx, regime in enumerate(df[regime_col]):
+            for row_idx, trading_day in enumerate(df['TradingDay'], start=1):
+                if trading_day != current_trading_day:
+                    # Save previous group if exists
+                    if current_trading_day is not None:
+                        index_entries.append({
+                            'model_id': model_id,
+                            'trading_day': int(current_trading_day),
+                            'file_path': file_path,
+                            'start_row': start_row,
+                            'end_row': row_idx - 1  # End row of previous group
+                        })
+                    
+                    # Start new group
+                    current_trading_day = trading_day
+                    start_row = row_idx
+            
+            # Save final group
+            if current_trading_day is not None:
                 index_entries.append({
                     'model_id': model_id,
-                    'regime': regime,
+                    'trading_day': int(current_trading_day),
                     'file_path': file_path,
-                    'row_number': row_idx + 1  # 1-based indexing (header is row 0)
+                    'start_row': start_row,
+                    'end_row': len(df)  # End row is last row
                 })
                 
         except Exception as e:
@@ -73,7 +85,7 @@ def build_complete_regime_performance_index():
     
     print(f"Created index with {len(index_df)} entries")
     print(f"Models: {index_df['model_id'].nunique()}")
-    print(f"Regimes: {index_df['regime'].nunique()}")
+    print(f"Trading days: {index_df['trading_day'].nunique()}")
     
     # Save index
     os.makedirs(os.path.dirname(index_file), exist_ok=True)
@@ -84,9 +96,9 @@ def build_complete_regime_performance_index():
     # Show sample
     print("\nSample index entries:")
     print(index_df.head(10))
-    print("\nRegime distribution:")
-    regime_counts = index_df['regime'].value_counts()
-    print(regime_counts)
+    print("\nTrading day distribution:")
+    day_counts = index_df['trading_day'].value_counts().head(10)
+    print(day_counts)
     
     return index_df
 

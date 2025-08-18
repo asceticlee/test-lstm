@@ -6,6 +6,9 @@ __pycache__/
 
 # model performance output
 data/*.csv
+model_performance/daily_performance_index.csv
+model_performance/regime_performance_index.csv
+model_performance/*/*.csv
 
 # C extensions
 *.so

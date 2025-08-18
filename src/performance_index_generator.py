@@ -34,7 +34,10 @@ class PerformanceIndexManager:
         
         # In-memory index caches
         self.daily_index = {}  # (model_id, trading_day) -> (file_path, row_number)
-        self.regime_index = {}  # (model_id, trading_day, regime) -> (file_path, row_number)
+        self.regime_index = {}  # (model_id, trading_day) -> (file_path, start_row, end_row)
+        
+        # Cache for regime performance data per trading day
+        self.regime_data_cache = {}  # (model_id, trading_day) -> DataFrame with all regimes
         
     def generate_daily_performance_index(self, start_model_id: int, end_model_id: int):
         """Generate index for daily performance files"""
@@ -79,7 +82,7 @@ class PerformanceIndexManager:
         print(f"  Saved to: {self.daily_index_path}")
         
     def generate_regime_performance_index(self, start_model_id: int, end_model_id: int):
-        """Generate index for regime performance files"""
+        """Generate index for regime performance files - grouped by trading day for efficient batch loading"""
         print(f"\nGenerating regime performance index for models {start_model_id:05d} to {end_model_id:05d}...")
         
         regime_performance_dir = self.model_performance_path / "model_regime_performance"
@@ -93,16 +96,37 @@ class PerformanceIndexManager:
                 continue
                 
             try:
-                # Read just the TradingDay and Regime columns to build index
-                df = pd.read_csv(file_path, usecols=['TradingDay', 'Regime'])
+                # Read file to get trading day information
+                df = pd.read_csv(file_path, usecols=['TradingDay'])
                 
-                for row_num, (trading_day, regime) in enumerate(zip(df['TradingDay'], df['Regime']), start=1):
+                # Group consecutive rows by trading day for batch loading
+                current_trading_day = None
+                start_row = None
+                
+                for row_idx, trading_day in enumerate(df['TradingDay'], start=1):
+                    if trading_day != current_trading_day:
+                        # Save previous group if exists
+                        if current_trading_day is not None:
+                            index_data.append([
+                                model_id,
+                                int(current_trading_day),
+                                str(file_path),
+                                start_row,
+                                row_idx - 1  # End row of previous group
+                            ])
+                        
+                        # Start new group
+                        current_trading_day = trading_day
+                        start_row = row_idx
+                
+                # Save final group
+                if current_trading_day is not None:
                     index_data.append([
                         model_id,
-                        int(trading_day),
-                        int(regime),
+                        int(current_trading_day),
                         str(file_path),
-                        row_num
+                        start_row,
+                        len(df)  # End row is last row
                     ])
                     
                 if model_num % 50 == 0:
@@ -115,7 +139,7 @@ class PerformanceIndexManager:
         # Write index file
         with open(self.regime_index_path, 'w', newline='') as f:
             writer = csv.writer(f)
-            writer.writerow(['model_id', 'trading_day', 'regime', 'file_path', 'row_number'])
+            writer.writerow(['model_id', 'trading_day', 'file_path', 'start_row', 'end_row'])
             writer.writerows(index_data)
             
         print(f"  Generated regime performance index with {len(index_data):,} entries")
@@ -147,8 +171,8 @@ class PerformanceIndexManager:
         try:
             df = pd.read_csv(self.regime_index_path, dtype={'model_id': str})  # Force model_id to be string
             for _, row in df.iterrows():
-                key = (row['model_id'], int(row['trading_day']), int(row['regime']))
-                value = (row['file_path'], int(row['row_number']))
+                key = (row['model_id'], int(row['trading_day']))
+                value = (row['file_path'], int(row['start_row']), int(row['end_row']))
                 self.regime_index[key] = value
             
             logger.info(f"Loaded regime index with {len(self.regime_index):,} entries")
@@ -173,21 +197,45 @@ class PerformanceIndexManager:
             return None
     
     def get_regime_performance_fast(self, model_id: str, trading_day: int, regime: int) -> Optional[pd.Series]:
-        """Fast lookup of regime performance data using index"""
-        key = (model_id, trading_day, regime)
+        """Fast lookup of regime performance data using index and caching"""
+        # First check if we have the trading day data cached
+        cache_key = (model_id, trading_day)
+        
+        if cache_key not in self.regime_data_cache:
+            # Load all regime data for this trading day
+            self._load_regime_data_for_trading_day(model_id, trading_day)
+        
+        # Get the specific regime data from cache
+        if cache_key in self.regime_data_cache:
+            regime_data = self.regime_data_cache[cache_key]
+            regime_rows = regime_data[regime_data['Regime'] == regime]
+            if len(regime_rows) > 0:
+                return regime_rows.iloc[0]
+        
+        return None
+    
+    def _load_regime_data_for_trading_day(self, model_id: str, trading_day: int):
+        """Load all regime performance data for a specific model and trading day"""
+        key = (model_id, trading_day)
         
         if key not in self.regime_index:
-            return None
+            return
             
-        file_path, row_number = self.regime_index[key]
+        file_path, start_row, end_row = self.regime_index[key]
         
         try:
-            # Use sed or pandas to get specific row efficiently
-            df = pd.read_csv(file_path, skiprows=range(1, row_number), nrows=1)
-            return df.iloc[0] if len(df) > 0 else None
+            # Load all regime data for this trading day efficiently
+            df = pd.read_csv(
+                file_path, 
+                skiprows=range(1, start_row),  # Skip rows before start
+                nrows=end_row - start_row + 1  # Read only the needed rows
+            )
+            
+            # Cache the data
+            self.regime_data_cache[key] = df
+            
         except Exception as e:
-            logger.error(f"Error reading regime performance for {model_id}, {trading_day}, {regime}: {e}")
-            return None
+            logger.error(f"Error loading regime data for {model_id}, {trading_day}: {e}")
     
     def get_models_for_trading_day(self, trading_day: int) -> List[str]:
         """Get all models that have data for a specific trading day"""

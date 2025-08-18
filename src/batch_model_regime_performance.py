@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 """
-Batch Model Regime Performance Script
+Batch Daily Regime Performance Script
 
 This script calculates regime-based performance metrics for LSTM models by analyzing
-their prediction files in conjunction with market regime clustering results.
+their prediction files in conjunction with market regime clustering results, but
+organizes the output by trading day instead of by model.
 
-For each model and each trading day, it generates regime-specific performance data 
-including:
+For each trading day, it generates a file containing all models' regime-specific 
+performance data including:
 - Upside/downside threshold accuracies (0.0 to 0.8 in 0.1 increments) 
 - Numerators and denominators for accuracy calculations
 - Profit and Loss (PnL) for each threshold level
@@ -15,19 +16,21 @@ including:
 The lookback periods consider the latest N trading days that were clustered as that 
 specific regime, allowing analysis of model performance during different market regimes.
 
-Output files are saved to test-lstm/model_performance/model_regime_performance/ directory
-with naming pattern: model_xxxxx_regime_performance.csv
+Output files are saved to test-lstm/model_performance/daily_regime_performance/ directory
+with naming pattern: trading_day_YYYYMMDD_regime_performance.csv
+
+Each file contains all models and all regimes for that specific trading day.
 
 Trading Logic:
 - Upside: If prediction >= threshold, go long. PnL = actual_value if actual >= 0, else actual_value
 - Downside: If prediction <= -threshold, go short. PnL = -actual_value if actual <= 0, else -actual_value
 
 Usage:
-    python batch_model_regime_performance.py <start_model_id> <end_model_id>
+    python batch_model_regime_performance_daily_based.py <start_model_id> <end_model_id>
     
 Examples:
-    python batch_model_regime_performance.py 1 10     # Process models 00001 to 00010
-    python batch_model_regime_performance.py 377 377  # Process only model 00377
+    python batch_model_regime_performance_daily_based.py 1 10     # Process models 00001 to 00010
+    python batch_model_regime_performance_daily_based.py 377 377  # Process only model 00377
 """
 
 import sys
@@ -96,55 +99,52 @@ def get_regime_lookback_days(regime_assignments, trading_days, current_day_idx, 
     
     return regime_days
 
-def load_existing_regime_performance(performance_file):
+def load_existing_daily_regime_performance(performance_file):
     """
-    Load existing regime performance data and return set of (TradingDay, Regime) tuples
+    Load existing daily regime performance data and return set of (ModelID, Regime) tuples
     """
     existing_data = set()
     if os.path.exists(performance_file):
         try:
             df = pd.read_csv(performance_file)
             for _, row in df.iterrows():
-                existing_data.add((int(row['TradingDay']), int(row['Regime'])))
+                existing_data.add((str(row['ModelID']), int(row['Regime'])))
         except Exception as e:
             print(f"Warning: Could not read existing file {performance_file}: {e}")
     return existing_data
 
-def append_to_regime_performance_file(performance_file, new_data, thresholds, lookback_periods):
+def save_daily_regime_performance_file(performance_file, data, thresholds, lookback_periods):
     """
-    Append new regime performance data to CSV file
+    Save daily regime performance data to CSV file
     """
-    file_exists = os.path.exists(performance_file)
-    
-    with open(performance_file, 'a', newline='') as f:
+    with open(performance_file, 'w', newline='') as f:
         writer = csv.writer(f)
         
-        # Write header if file doesn't exist
-        if not file_exists:
-            header = ['TradingDay', 'Regime']
+        # Write header
+        header = ['ModelID', 'Regime']
+        
+        # Add columns for each lookback period and threshold
+        for period in lookback_periods:
+            for threshold in thresholds:
+                header.extend([
+                    f'{period}day_up_acc_thr_{threshold:.1f}',
+                    f'{period}day_up_num_thr_{threshold:.1f}', 
+                    f'{period}day_up_den_thr_{threshold:.1f}',
+                    f'{period}day_up_pnl_thr_{threshold:.1f}'
+                ])
             
-            # Add columns for each lookback period and threshold
-            for period in lookback_periods:
-                for threshold in thresholds:
-                    header.extend([
-                        f'{period}day_up_acc_thr_{threshold:.1f}',
-                        f'{period}day_up_num_thr_{threshold:.1f}', 
-                        f'{period}day_up_den_thr_{threshold:.1f}',
-                        f'{period}day_up_pnl_thr_{threshold:.1f}'
-                    ])
-                
-                for threshold in thresholds:
-                    header.extend([
-                        f'{period}day_down_acc_thr_{threshold:.1f}',
-                        f'{period}day_down_num_thr_{threshold:.1f}',
-                        f'{period}day_down_den_thr_{threshold:.1f}', 
-                        f'{period}day_down_pnl_thr_{threshold:.1f}'
-                    ])
-            
-            writer.writerow(header)
+            for threshold in thresholds:
+                header.extend([
+                    f'{period}day_down_acc_thr_{threshold:.1f}',
+                    f'{period}day_down_num_thr_{threshold:.1f}',
+                    f'{period}day_down_den_thr_{threshold:.1f}', 
+                    f'{period}day_down_pnl_thr_{threshold:.1f}'
+                ])
+        
+        writer.writerow(header)
         
         # Write data rows
-        for row in new_data:
+        for row in data:
             writer.writerow(row)
 
 def calculate_regime_performance_optimized(trading_day_array, predicted_array, actual_array, trading_day_to_indices, 
@@ -219,17 +219,17 @@ def calculate_regime_performance_optimized(trading_day_array, predicted_array, a
 
 def calculate_multi_regime_performance_optimized(trading_day_array, predicted_array, actual_array, 
                                                trading_day_to_indices, trading_days, current_day_idx, 
-                                               regime_assignments, current_regime, lookback_periods, 
+                                               regime_assignments, target_regime, lookback_periods, 
                                                thresholds_array):
     """
     Calculate performance metrics for multiple lookback periods for a specific regime
     """
-    results = [trading_days[current_day_idx], current_regime]
+    results = []
     
     # Calculate performance for each lookback period
     for period in lookback_periods:
         regime_days = get_regime_lookback_days(regime_assignments, trading_days, current_day_idx, 
-                                             current_regime, period)
+                                             target_regime, period)
         
         period_results = calculate_regime_performance_optimized(
             trading_day_array, predicted_array, actual_array, trading_day_to_indices,
@@ -239,47 +239,66 @@ def calculate_multi_regime_performance_optimized(trading_day_array, predicted_ar
     
     return results
 
-def process_model_regime_performance(model_id, prediction_dir, regime_performance_dir, regime_assignments, unique_regimes):
+def discover_trading_days_from_predictions(prediction_dir, start_model_id, end_model_id):
     """
-    Process regime-based performance for a single model
+    Discover all unique trading days from prediction files
     """
-    try:
-        # File paths
+    all_trading_days = set()
+    
+    for model_num in range(start_model_id, end_model_id + 1):
+        model_id = f"{model_num:05d}"
         prediction_file = os.path.join(prediction_dir, f'model_{model_id}_prediction.csv')
-        performance_file = os.path.join(regime_performance_dir, f'model_{model_id}_regime_performance.csv')
         
-        # Check if prediction file exists
+        if os.path.exists(prediction_file):
+            try:
+                df = pd.read_csv(prediction_file, usecols=['TradingDay'])
+                all_trading_days.update(df['TradingDay'].unique())
+            except Exception as e:
+                print(f"Warning: Could not read trading days from {prediction_file}: {e}")
+    
+    return sorted(all_trading_days)
+
+def process_single_trading_day_regime_data(current_day, current_day_idx, start_model_id, end_model_id, 
+                                         prediction_dir, regime_performance_dir, regime_assignments, 
+                                         unique_regimes, all_trading_days):
+    """
+    Process regime-based performance for all models for a single trading day
+    """
+    # Define parameters
+    thresholds = np.arange(0.0, 0.81, 0.1)
+    lookback_periods = [1, 2, 3, 4, 5, 10, 20, 30]
+    regimes = unique_regimes  # Use actual regimes from data
+    
+    # Output file for this trading day
+    performance_file = os.path.join(regime_performance_dir, f'trading_day_{current_day}_regime_performance.csv')
+    
+    # Load existing data to avoid duplication
+    existing_data = load_existing_daily_regime_performance(performance_file)
+    print(f"  Found {len(existing_data)} existing (model, regime) combinations")
+    
+    # Collect data for all models and regimes for this trading day
+    day_data = []
+    processed_combinations = 0
+    skipped_combinations = 0
+    
+    for model_num in range(start_model_id, end_model_id + 1):
+        model_id = f"{model_num:05d}"
+        
+        # Load prediction data for this model
+        prediction_file = os.path.join(prediction_dir, f'model_{model_id}_prediction.csv')
+        
         if not os.path.exists(prediction_file):
-            print(f"Prediction file not found: {prediction_file}")
-            return False
+            # If model doesn't exist, skip it
+            continue
         
-        print(f"Processing model {model_id}...")
-        
-        # Load existing performance data to avoid duplication
-        existing_data = load_existing_regime_performance(performance_file)
-        print(f"  Found {len(existing_data)} existing (day, regime) combinations")
-        
-        # Load prediction data
         try:
             prediction_df = pd.read_csv(prediction_file)
         except Exception as e:
-            print(f"  ERROR loading prediction file: {e}")
-            return False
+            print(f"    Warning: Could not load {prediction_file}: {e}")
+            continue
         
         if len(prediction_df) == 0:
-            print(f"  No prediction data found for model {model_id}")
-            return False
-        
-        print(f"  Loaded {len(prediction_df):,} prediction records")
-        
-        # Define parameters
-        thresholds = np.arange(0.0, 0.81, 0.1)
-        lookback_periods = [1, 2, 3, 4, 5, 10, 20, 30]
-        regimes = unique_regimes  # Use actual regimes from data
-        
-        # Get sorted trading days from prediction data
-        trading_days = sorted(prediction_df['TradingDay'].unique())
-        print(f"  Found {len(trading_days)} unique trading days")
+            continue
         
         # Pre-compute data structures for optimization
         trading_day_array = prediction_df['TradingDay'].values
@@ -291,54 +310,39 @@ def process_model_regime_performance(model_id, prediction_dir, regime_performanc
         for idx, day in enumerate(trading_day_array):
             trading_day_to_indices[day].append(idx)
         
-        print(f"  Pre-computed data structures for {len(trading_day_array):,} records")
-        
-        # Process each trading day and regime combination
-        new_data = []
-        processed_combinations = 0
-        skipped_combinations = 0
-        
-        for current_day_idx, current_day in enumerate(trading_days):
-            # Skip if day not in regime assignments
-            if current_day not in regime_assignments:
+        # Process each regime for this model and trading day
+        for regime in regimes:
+            # Check if this combination already exists
+            if (model_id, regime) in existing_data:
+                skipped_combinations += 1
                 continue
             
-            for regime in regimes:
-                # Check if this combination already exists
-                if (current_day, regime) in existing_data:
-                    skipped_combinations += 1
-                    continue
-                
-                # Calculate performance for this day-regime combination
-                regime_results = calculate_multi_regime_performance_optimized(
-                    trading_day_array, predicted_array, actual_array,
-                    trading_day_to_indices, trading_days, current_day_idx,
-                    regime_assignments, regime, lookback_periods, thresholds
-                )
-                
-                new_data.append(regime_results)
-                processed_combinations += 1
-        
-        print(f"  Processed {processed_combinations} new (day, regime) combinations")
-        print(f"  Skipped {skipped_combinations} existing combinations")
-        
-        # Append new data to file
-        if new_data:
-            append_to_regime_performance_file(performance_file, new_data, thresholds, lookback_periods)
-            print(f"  Successfully saved to {performance_file}")
-        else:
-            print(f"  No new data to add for model {model_id}")
-        
+            # Calculate performance for this model-regime combination
+            regime_results = calculate_multi_regime_performance_optimized(
+                trading_day_array, predicted_array, actual_array,
+                trading_day_to_indices, all_trading_days, current_day_idx,
+                regime_assignments, regime, lookback_periods, thresholds
+            )
+            
+            # Create row: [ModelID, Regime, performance_metrics...]
+            row = [model_id, regime] + regime_results
+            day_data.append(row)
+            processed_combinations += 1
+    
+    print(f"  Saved {processed_combinations} regime performance records for {len(set(row[0] for row in day_data))} models")
+    
+    # Save all data for this trading day to file
+    if day_data:
+        save_daily_regime_performance_file(performance_file, day_data, thresholds, lookback_periods)
         return True
-        
-    except Exception as e:
-        print(f"ERROR processing model {model_id}: {e}")
+    else:
+        print(f"  No new data to save for trading day {current_day}")
         return False
 
-def generate_models_alltime_regime_performance(start_model_id, end_model_id, regime_performance_dir, regime_assignments, unique_regimes):
+def generate_models_alltime_regime_performance(start_model_id, end_model_id, regime_performance_dir, unique_regimes):
     """
     Generate models_alltime_regime_performance.csv with all models' from_begin regime performance
-    This file is overwritten each time the script runs
+    This reads from the daily regime performance files and extracts the latest cumulative performance
     """
     print("\n" + "=" * 70)
     print("GENERATING MODELS ALL-TIME REGIME PERFORMANCE SUMMARY")
@@ -349,34 +353,42 @@ def generate_models_alltime_regime_performance(start_model_id, end_model_id, reg
     lookback_periods = [1, 2, 3, 4, 5, 10, 20, 30]
     regimes = unique_regimes  # Use actual regimes from data
     
-    # Prepare the output file
+    # Prepare the output file (same location as model-based script)
     output_file = os.path.join(os.path.dirname(regime_performance_dir), 'models_alltime_regime_performance.csv')
     
-    # Collect all models' regime performance
+    # Collect all models' latest regime performance data
     all_models_data = []
     processed_models = 0
     
-    for model_num in range(start_model_id, end_model_id + 1):
-        model_id = f"{model_num:05d}"
+    # Get all daily regime performance files
+    daily_files = []
+    if os.path.exists(regime_performance_dir):
+        daily_files = [f for f in os.listdir(regime_performance_dir) 
+                      if f.startswith('trading_day_') and f.endswith('_regime_performance.csv')]
+        daily_files.sort()  # Sort by date
+    
+    if not daily_files:
+        print("  No daily regime performance files found")
+        return
+    
+    # Use the latest trading day file to get the cumulative performance
+    latest_file = os.path.join(regime_performance_dir, daily_files[-1])
+    print(f"  Using latest daily file: {daily_files[-1]}")
+    
+    try:
+        latest_df = pd.read_csv(latest_file)
         
-        # Path to model's regime performance file
-        model_file = os.path.join(regime_performance_dir, f'model_{model_id}_regime_performance.csv')
+        # Get unique model IDs that actually exist in the data
+        existing_model_ids = latest_df['ModelID'].unique()
+        print(f"  Found {len(existing_model_ids)} models in latest daily file")
         
-        if not os.path.exists(model_file):
-            print(f"  Skipping model {model_id} - regime performance file not found")
-            continue
-        
-        try:
-            # Load model's regime performance data
-            model_df = pd.read_csv(model_file)
+        for model_id in existing_model_ids:
+            # Get this model's data from the latest daily file
+            model_data = latest_df[latest_df['ModelID'] == model_id]
             
-            if len(model_df) == 0:
-                print(f"  Skipping model {model_id} - no regime performance data")
-                continue
-            
-            # For each regime, calculate alltime performance (from_begin equivalent)
+            # Process each regime for this model
             for regime in regimes:
-                regime_data = model_df[model_df['Regime'] == regime]
+                regime_data = model_data[model_data['Regime'] == regime]
                 
                 if len(regime_data) == 0:
                     # If no data for this regime, create row with zeros
@@ -391,26 +403,25 @@ def generate_models_alltime_regime_performance(start_model_id, end_model_id, reg
                     
                     all_models_data.append(row)
                 else:
-                    # Get the latest trading day's performance for this regime
-                    # (represents cumulative performance from beginning)
-                    latest_day_data = regime_data.iloc[-1]
+                    # Use the regime data from the latest trading day
+                    regime_row = regime_data.iloc[0]
                     
                     # Build row with model_id, regime, and all performance metrics
                     row = [model_id, regime]
                     
-                    # Add all performance metrics (excluding TradingDay and Regime columns)
-                    for col in latest_day_data.index[2:]:  # Skip TradingDay and Regime
-                        row.append(latest_day_data[col])
+                    # Add all performance metrics (excluding ModelID and Regime columns)
+                    for col in regime_row.index[2:]:  # Skip ModelID and Regime
+                        row.append(regime_row[col])
                     
                     all_models_data.append(row)
             
             processed_models += 1
             if processed_models % 10 == 0:
                 print(f"  Processed {processed_models} models...")
-                
-        except Exception as e:
-            print(f"  ERROR processing model {model_id}: {e}")
-            continue
+    
+    except Exception as e:
+        print(f"  ERROR processing latest daily file: {e}")
+        return
     
     if len(all_models_data) == 0:
         print("  No regime performance data found for any models")
@@ -443,17 +454,17 @@ def generate_models_alltime_regime_performance(start_model_id, end_model_id, reg
         summary_df.to_csv(output_file, index=False)
         
         print(f"  Generated {output_file}")
-        print(f"  Total rows: {len(summary_df):,} ({processed_models} models × 6 regimes)")
+        print(f"  Total rows: {len(summary_df):,} ({processed_models} models × {len(regimes)} regimes)")
         
     except Exception as e:
         print(f"  ERROR creating summary file: {e}")
 
 def main():
     if len(sys.argv) != 3:
-        print("Usage: python batch_model_regime_performance.py <start_model_id> <end_model_id>")
+        print("Usage: python batch_model_regime_performance_daily_based.py <start_model_id> <end_model_id>")
         print("Examples:")
-        print("  python batch_model_regime_performance.py 1 10     # Process models 00001 to 00010")
-        print("  python batch_model_regime_performance.py 377 377  # Process only model 00377")
+        print("  python batch_model_regime_performance_daily_based.py 1 10     # Process models 00001 to 00010")
+        print("  python batch_model_regime_performance_daily_based.py 377 377  # Process only model 00377")
         sys.exit(1)
     
     try:
@@ -471,7 +482,7 @@ def main():
     script_dir = os.path.dirname(os.path.abspath(__file__))
     project_root = os.path.dirname(script_dir)
     prediction_dir = os.path.join(project_root, 'model_predictions')
-    regime_performance_dir = os.path.join(project_root, 'model_performance', 'model_regime_performance')
+    regime_performance_dir = os.path.join(project_root, 'model_performance', 'daily_regime_performance')
     regime_file = os.path.join(project_root, 'market_regime', 'gmm', 'daily', 'daily_regime_assignments.csv')
     
     # Create regime performance directory if it doesn't exist
@@ -502,11 +513,16 @@ def main():
         print(f"ERROR loading regime assignments: {e}")
         sys.exit(1)
     
-    # Process each model
-    successful_models = 0
-    failed_models = 0
+    # Discover trading days from prediction files
+    print("Discovering trading days from prediction files...")
+    all_trading_days = discover_trading_days_from_predictions(prediction_dir, start_model_id, end_model_id)
+    print(f"Found {len(all_trading_days)} unique trading days from {start_model_id:05d} to {end_model_id:05d}")
     
-    print(f"\nProcessing models {start_model_id:05d} to {end_model_id:05d}")
+    # Process each trading day
+    successful_days = 0
+    failed_days = 0
+    
+    print(f"\nProcessing trading days with models {start_model_id:05d} to {end_model_id:05d}")
     print(f"Prediction directory: {prediction_dir}")
     print(f"Regime performance output directory: {regime_performance_dir}")
     print(f"Started at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
@@ -514,30 +530,24 @@ def main():
     
     start_time = time.time()
     
-    for model_num in range(start_model_id, end_model_id + 1):
-        model_id = f"{model_num:05d}"
+    for current_day_idx, current_day in enumerate(all_trading_days):
+        print(f"[{current_day_idx + 1}/{len(all_trading_days)}] Processing trading day {current_day}...")
         
-        if process_model_regime_performance(model_id, prediction_dir, regime_performance_dir, regime_assignments, unique_regimes):
-            successful_models += 1
-        else:
-            failed_models += 1
+        try:
+            if process_single_trading_day_regime_data(current_day, current_day_idx, start_model_id, end_model_id, 
+                                                    prediction_dir, regime_performance_dir, regime_assignments, 
+                                                    unique_regimes, all_trading_days):
+                successful_days += 1
+            else:
+                failed_days += 1
+        except Exception as e:
+            print(f"  ERROR processing trading day {current_day}: {e}")
+            failed_days += 1
         
-        print()  # Add blank line between models
+        print()  # Add blank line between days
     
-    # Generate models_alltime_regime_performance.csv with all models' regime performance
-    generate_models_alltime_regime_performance(start_model_id, end_model_id, regime_performance_dir, regime_assignments, unique_regimes)
-    
-    # Generate regime performance index for fast lookup
-    try:
-        sys.path.append(script_dir)
-        from performance_index_generator import PerformanceIndexManager
-        
-        print("\nGenerating regime performance data index...")
-        index_manager = PerformanceIndexManager(project_root)
-        index_manager.generate_regime_performance_index(start_model_id, end_model_id)
-        
-    except Exception as e:
-        print(f"Warning: Could not generate regime performance index: {e}")
+    # Generate models_alltime_regime_performance.csv
+    generate_models_alltime_regime_performance(start_model_id, end_model_id, regime_performance_dir, unique_regimes)
     
     # Summary
     end_time = time.time()
@@ -545,17 +555,19 @@ def main():
     
     print("=" * 70)
     print(f"Batch processing completed at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-    print(f"Total execution time: {elapsed_time:.1f} seconds")
-    print(f"Successfully processed: {successful_models} models")
-    print(f"Failed to process: {failed_models} models")
-    print(f"Total models attempted: {successful_models + failed_models}")
+    print(f"Total execution time: {elapsed_time:.1f} seconds ({elapsed_time/60:.1f} minutes)")
+    print(f"Successfully processed: {successful_days} trading days")
+    print(f"Failed to process: {failed_days} trading days")
+    print(f"Total trading days attempted: {successful_days + failed_days}")
     
-    if successful_models > 0:
-        avg_time_per_model = elapsed_time / successful_models
-        print(f"Average time per model: {avg_time_per_model:.1f} seconds")
+    if successful_days > 0:
+        avg_time_per_day = elapsed_time / successful_days
+        print(f"Average time per trading day: {avg_time_per_day:.1f} seconds")
     
-    if failed_models > 0:
-        print(f"\nWARNING: {failed_models} models failed to process. Check the error messages above.")
+    print(f"\nRegime performance files saved to: {regime_performance_dir}")
+    
+    if failed_days > 0:
+        print(f"\nWARNING: {failed_days} trading days failed to process. Check the error messages above.")
 
 if __name__ == "__main__":
     main()

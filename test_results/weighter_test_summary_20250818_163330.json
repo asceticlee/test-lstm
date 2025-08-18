@@ -1,0 +1,25 @@
+{
+  "test_timestamp": "20250818_163330",
+  "total_test_combinations": 7055,
+  "unique_trading_days": 1411,
+  "unique_regimes": 5,
+  "unique_models": 425,
+  "accuracy_emphasized": {
+    "unique_selected_models": 1,
+    "most_selected_model": "ERROR",
+    "most_selected_model_count": "7055",
+    "average_threshold": NaN,
+    "threshold_distribution": {},
+    "average_weighted_score": NaN,
+    "error_count": 7055
+  },
+  "pnl_emphasized": {
+    "unique_selected_models": 1,
+    "most_selected_model": "ERROR",
+    "most_selected_model_count": "7055",
+    "average_threshold": NaN,
+    "threshold_distribution": {},
+    "average_weighted_score": NaN,
+    "error_count": 7055
+  }
+}
