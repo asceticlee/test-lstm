@@ -117,7 +117,7 @@ def load_model_predictions(model_id, prediction_dir):
     except Exception as e:
         raise Exception(f"Error loading prediction file {model_file}: {e}")
 
-def test_model_performance(model_id, prediction_dir, models_dir, output_dir, transaction_fee=0.02):
+def test_model_performance(model_id, prediction_dir, models_dir, output_dir, transaction_fee=0.02, generate_input_files=False):
     """
     Test trading performance for a specific model
     
@@ -127,6 +127,7 @@ def test_model_performance(model_id, prediction_dir, models_dir, output_dir, tra
         models_dir: Directory containing model files and model_log.csv
         output_dir: Directory to save trading performance results
         transaction_fee: Transaction fee per trade in dollars (e.g., 0.02 = $0.02)
+        generate_input_files: Whether to generate detailed input data files for each threshold
         
     Returns:
         pd.DataFrame: Performance results
@@ -184,6 +185,14 @@ def test_model_performance(model_id, prediction_dir, models_dir, output_dir, tra
     print(f"  thresholds to test: {all_thresholds}")
     print(f"  data_points: {len(pred_df):,}")
     print(f"  excluded_training_period: {train_from} to {train_to}" if train_from else "  excluded_training_period: None")
+    print(f"  generate_input_files: {generate_input_files}")
+    
+    # Create input files directory if needed
+    input_files_dir = None
+    if generate_input_files:
+        input_files_dir = os.path.join(output_dir, 'trading_performance_input')
+        os.makedirs(input_files_dir, exist_ok=True)
+        print(f"  input_files_directory: {input_files_dir}")
     
     # Collect all results
     all_results = []
@@ -197,7 +206,24 @@ def test_model_performance(model_id, prediction_dir, models_dir, output_dir, tra
         # Create threshold array (all rows have same threshold)
         threshold_array = np.full(len(pred_df), threshold)
         
-        # Note: Input data CSV generation removed as no longer needed for verification
+        # Generate input data file if requested
+        input_data_file = None
+        if generate_input_files:
+            # Create input data DataFrame
+            input_df = pd.DataFrame({
+                'TradingDay': pred_df['TradingDay'].values,
+                'TradingMsOfDay': pred_df['TradingMsOfDay'].values,
+                'Actual': pred_df['Actual'].values,
+                'Predicted': pred_df['Predicted'].values,
+                'Threshold': threshold_array
+            })
+            
+            # Save input data file
+            threshold_str = f"{threshold:.2f}".replace('-', 'neg').replace('.', 'p')
+            input_filename = f"model_{model_id:05d}_threshold_{threshold_str}_input_data.csv"
+            input_data_file = os.path.join(input_files_dir, input_filename)
+            input_df.to_csv(input_data_file, index=False)
+            print(f"    📄 Generated input file: {os.path.basename(input_data_file)}")
         
         # Evaluate performance for this threshold
         result = analyzer.evaluate_performance(
@@ -209,6 +235,10 @@ def test_model_performance(model_id, prediction_dir, models_dir, output_dir, tra
         )
         
         if result:
+            # Add input data file path to result if generated
+            if input_data_file:
+                result['input_data_file'] = input_data_file
+            
             # Print individual summary
             analyzer.print_performance_summary(result)
             all_results.append(result)
@@ -303,29 +333,34 @@ def test_model_performance(model_id, prediction_dir, models_dir, output_dir, tra
 
 def main():
     # Parse command line arguments
-    if len(sys.argv) > 2:
-        print("Usage: python test_trading_performance.py [model_id]")
+    if len(sys.argv) > 3:
+        print("Usage: python test_trading_performance.py [model_id] [--generate-input-files]")
         print("Examples:")
-        print("  python test_trading_performance.py          # Test model 00001 by default")
-        print("  python test_trading_performance.py 377     # Test model 00377")
+        print("  python test_trading_performance.py                    # Test model 00001 by default")
+        print("  python test_trading_performance.py 377               # Test model 00377")
+        print("  python test_trading_performance.py 377 --generate-input-files  # Test model 00377 and generate input files")
         sys.exit(1)
     
-    # Determine model ID
-    if len(sys.argv) == 2:
-        try:
-            model_id = int(sys.argv[1])
-        except ValueError:
-            print("ERROR: Model ID must be an integer")
-            sys.exit(1)
-    else:
-        model_id = 1  # Default to model 1
+    # Determine model ID and options
+    model_id = 1  # Default to model 1
+    generate_input_files = False
+    
+    for i, arg in enumerate(sys.argv[1:], 1):
+        if arg == '--generate-input-files':
+            generate_input_files = True
+        else:
+            try:
+                model_id = int(arg)
+            except ValueError:
+                print(f"ERROR: Invalid argument '{arg}'. Model ID must be an integer.")
+                sys.exit(1)
     
     # Setup paths
     script_dir = os.path.dirname(os.path.abspath(__file__))
     project_root = os.path.dirname(script_dir)
     prediction_dir = os.path.join(project_root, 'model_predictions')
     models_dir = os.path.join(project_root, 'models')
-    output_dir = os.path.join(project_root, 'model_performance', 'model_trading_performance')
+    output_dir = os.path.join(project_root, 'model_trading', 'model_trading_performance')
     
     # Create output directory if it doesn't exist
     os.makedirs(output_dir, exist_ok=True)
@@ -362,7 +397,8 @@ def main():
     
     # Test the model
     try:
-        results = test_model_performance(model_id, prediction_dir, models_dir, output_dir, transaction_fee=0.02)
+        results = test_model_performance(model_id, prediction_dir, models_dir, output_dir, 
+                                       transaction_fee=0.02, generate_input_files=generate_input_files)
         
         if results is not None:
             print(f"\n🎉 Trading performance test completed successfully!")

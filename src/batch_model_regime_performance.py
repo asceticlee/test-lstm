@@ -527,6 +527,18 @@ def main():
     # Generate models_alltime_regime_performance.csv with all models' regime performance
     generate_models_alltime_regime_performance(start_model_id, end_model_id, regime_performance_dir, regime_assignments, unique_regimes)
     
+    # Generate regime performance index for fast lookup
+    try:
+        sys.path.append(script_dir)
+        from performance_index_generator import PerformanceIndexManager
+        
+        print("\nGenerating regime performance data index...")
+        index_manager = PerformanceIndexManager(project_root)
+        index_manager.generate_regime_performance_index(start_model_id, end_model_id)
+        
+    except Exception as e:
+        print(f"Warning: Could not generate regime performance index: {e}")
+    
     # Summary
     end_time = time.time()
     elapsed_time = end_time - start_time
