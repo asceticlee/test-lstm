@@ -1,0 +1,2404 @@
+Loading regime assignments...
+Loaded regime assignments for 1411 trading days
+Found 5 unique regimes: [np.int64(0), np.int64(1), np.int64(2), np.int64(3), np.int64(4)]
+Regime distribution:
+  Regime 0: 329 days
+  Regime 1: 455 days
+  Regime 2: 95 days
+  Regime 3: 354 days
+  Regime 4: 178 days
+Discovering trading days from prediction files...
+Found 1411 unique trading days from 00001 to 00425
+
+Processing trading days with models 00001 to 00425
+Prediction directory: /home/stephen/projects/Testing/TestPy/test-lstm/model_predictions
+Regime performance output directory: /home/stephen/projects/Testing/TestPy/test-lstm/model_performance/daily_regime_performance
+Started at: 2025-08-18 20:46:22
+======================================================================
+[1/1411] Processing trading day 20200102...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[2/1411] Processing trading day 20200103...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[3/1411] Processing trading day 20200106...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[4/1411] Processing trading day 20200107...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[5/1411] Processing trading day 20200108...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[6/1411] Processing trading day 20200109...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[7/1411] Processing trading day 20200110...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[8/1411] Processing trading day 20200113...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[9/1411] Processing trading day 20200114...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[10/1411] Processing trading day 20200115...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[11/1411] Processing trading day 20200116...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[12/1411] Processing trading day 20200117...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[13/1411] Processing trading day 20200121...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[14/1411] Processing trading day 20200122...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[15/1411] Processing trading day 20200123...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[16/1411] Processing trading day 20200124...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[17/1411] Processing trading day 20200127...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[18/1411] Processing trading day 20200128...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[19/1411] Processing trading day 20200129...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[20/1411] Processing trading day 20200130...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[21/1411] Processing trading day 20200131...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[22/1411] Processing trading day 20200203...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[23/1411] Processing trading day 20200204...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[24/1411] Processing trading day 20200205...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[25/1411] Processing trading day 20200206...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[26/1411] Processing trading day 20200207...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[27/1411] Processing trading day 20200210...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[28/1411] Processing trading day 20200211...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[29/1411] Processing trading day 20200212...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[30/1411] Processing trading day 20200213...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[31/1411] Processing trading day 20200214...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[32/1411] Processing trading day 20200218...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[33/1411] Processing trading day 20200219...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[34/1411] Processing trading day 20200220...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[35/1411] Processing trading day 20200221...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[36/1411] Processing trading day 20200224...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[37/1411] Processing trading day 20200225...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[38/1411] Processing trading day 20200226...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[39/1411] Processing trading day 20200227...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[40/1411] Processing trading day 20200228...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[41/1411] Processing trading day 20200302...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[42/1411] Processing trading day 20200303...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[43/1411] Processing trading day 20200304...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[44/1411] Processing trading day 20200305...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[45/1411] Processing trading day 20200306...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[46/1411] Processing trading day 20200309...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[47/1411] Processing trading day 20200310...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[48/1411] Processing trading day 20200311...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[49/1411] Processing trading day 20200312...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[50/1411] Processing trading day 20200313...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[51/1411] Processing trading day 20200316...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[52/1411] Processing trading day 20200317...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[53/1411] Processing trading day 20200318...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[54/1411] Processing trading day 20200319...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[55/1411] Processing trading day 20200320...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[56/1411] Processing trading day 20200323...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[57/1411] Processing trading day 20200324...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[58/1411] Processing trading day 20200325...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[59/1411] Processing trading day 20200326...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[60/1411] Processing trading day 20200327...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[61/1411] Processing trading day 20200330...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[62/1411] Processing trading day 20200331...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[63/1411] Processing trading day 20200401...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[64/1411] Processing trading day 20200402...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[65/1411] Processing trading day 20200403...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[66/1411] Processing trading day 20200406...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[67/1411] Processing trading day 20200407...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[68/1411] Processing trading day 20200408...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[69/1411] Processing trading day 20200409...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[70/1411] Processing trading day 20200413...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[71/1411] Processing trading day 20200414...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[72/1411] Processing trading day 20200415...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[73/1411] Processing trading day 20200416...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[74/1411] Processing trading day 20200417...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[75/1411] Processing trading day 20200420...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[76/1411] Processing trading day 20200421...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[77/1411] Processing trading day 20200422...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[78/1411] Processing trading day 20200423...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[79/1411] Processing trading day 20200424...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[80/1411] Processing trading day 20200427...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[81/1411] Processing trading day 20200428...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[82/1411] Processing trading day 20200429...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[83/1411] Processing trading day 20200430...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[84/1411] Processing trading day 20200501...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[85/1411] Processing trading day 20200504...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[86/1411] Processing trading day 20200505...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[87/1411] Processing trading day 20200506...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[88/1411] Processing trading day 20200507...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[89/1411] Processing trading day 20200508...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[90/1411] Processing trading day 20200511...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[91/1411] Processing trading day 20200512...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[92/1411] Processing trading day 20200513...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[93/1411] Processing trading day 20200514...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[94/1411] Processing trading day 20200515...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[95/1411] Processing trading day 20200518...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[96/1411] Processing trading day 20200519...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[97/1411] Processing trading day 20200520...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[98/1411] Processing trading day 20200521...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[99/1411] Processing trading day 20200522...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[100/1411] Processing trading day 20200526...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[101/1411] Processing trading day 20200527...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[102/1411] Processing trading day 20200528...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[103/1411] Processing trading day 20200529...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[104/1411] Processing trading day 20200601...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[105/1411] Processing trading day 20200602...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[106/1411] Processing trading day 20200603...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[107/1411] Processing trading day 20200604...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[108/1411] Processing trading day 20200605...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[109/1411] Processing trading day 20200608...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[110/1411] Processing trading day 20200609...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[111/1411] Processing trading day 20200610...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[112/1411] Processing trading day 20200611...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[113/1411] Processing trading day 20200612...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[114/1411] Processing trading day 20200615...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[115/1411] Processing trading day 20200616...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[116/1411] Processing trading day 20200617...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[117/1411] Processing trading day 20200618...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[118/1411] Processing trading day 20200619...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[119/1411] Processing trading day 20200622...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[120/1411] Processing trading day 20200623...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[121/1411] Processing trading day 20200624...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[122/1411] Processing trading day 20200625...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[123/1411] Processing trading day 20200626...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[124/1411] Processing trading day 20200629...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[125/1411] Processing trading day 20200630...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[126/1411] Processing trading day 20200701...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[127/1411] Processing trading day 20200702...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[128/1411] Processing trading day 20200706...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[129/1411] Processing trading day 20200707...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[130/1411] Processing trading day 20200708...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[131/1411] Processing trading day 20200709...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[132/1411] Processing trading day 20200710...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[133/1411] Processing trading day 20200713...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[134/1411] Processing trading day 20200714...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[135/1411] Processing trading day 20200715...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[136/1411] Processing trading day 20200716...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[137/1411] Processing trading day 20200717...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[138/1411] Processing trading day 20200720...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[139/1411] Processing trading day 20200721...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[140/1411] Processing trading day 20200722...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[141/1411] Processing trading day 20200723...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[142/1411] Processing trading day 20200724...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[143/1411] Processing trading day 20200727...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[144/1411] Processing trading day 20200728...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[145/1411] Processing trading day 20200729...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[146/1411] Processing trading day 20200730...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[147/1411] Processing trading day 20200731...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[148/1411] Processing trading day 20200803...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[149/1411] Processing trading day 20200804...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[150/1411] Processing trading day 20200805...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[151/1411] Processing trading day 20200806...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[152/1411] Processing trading day 20200807...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[153/1411] Processing trading day 20200810...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[154/1411] Processing trading day 20200811...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[155/1411] Processing trading day 20200812...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[156/1411] Processing trading day 20200813...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[157/1411] Processing trading day 20200814...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[158/1411] Processing trading day 20200817...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[159/1411] Processing trading day 20200818...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[160/1411] Processing trading day 20200819...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[161/1411] Processing trading day 20200820...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[162/1411] Processing trading day 20200821...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[163/1411] Processing trading day 20200824...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[164/1411] Processing trading day 20200825...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[165/1411] Processing trading day 20200826...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[166/1411] Processing trading day 20200827...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[167/1411] Processing trading day 20200828...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[168/1411] Processing trading day 20200831...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[169/1411] Processing trading day 20200901...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[170/1411] Processing trading day 20200902...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[171/1411] Processing trading day 20200903...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[172/1411] Processing trading day 20200904...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[173/1411] Processing trading day 20200908...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[174/1411] Processing trading day 20200909...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[175/1411] Processing trading day 20200910...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[176/1411] Processing trading day 20200911...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[177/1411] Processing trading day 20200914...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[178/1411] Processing trading day 20200915...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[179/1411] Processing trading day 20200916...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[180/1411] Processing trading day 20200917...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[181/1411] Processing trading day 20200918...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[182/1411] Processing trading day 20200921...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[183/1411] Processing trading day 20200922...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[184/1411] Processing trading day 20200923...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[185/1411] Processing trading day 20200924...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[186/1411] Processing trading day 20200925...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[187/1411] Processing trading day 20200928...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[188/1411] Processing trading day 20200929...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[189/1411] Processing trading day 20200930...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[190/1411] Processing trading day 20201001...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[191/1411] Processing trading day 20201002...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[192/1411] Processing trading day 20201005...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[193/1411] Processing trading day 20201006...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[194/1411] Processing trading day 20201007...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[195/1411] Processing trading day 20201008...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[196/1411] Processing trading day 20201009...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[197/1411] Processing trading day 20201012...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[198/1411] Processing trading day 20201013...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[199/1411] Processing trading day 20201014...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[200/1411] Processing trading day 20201015...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[201/1411] Processing trading day 20201016...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[202/1411] Processing trading day 20201019...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[203/1411] Processing trading day 20201020...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[204/1411] Processing trading day 20201021...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[205/1411] Processing trading day 20201022...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[206/1411] Processing trading day 20201023...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[207/1411] Processing trading day 20201026...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[208/1411] Processing trading day 20201027...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[209/1411] Processing trading day 20201028...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[210/1411] Processing trading day 20201029...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[211/1411] Processing trading day 20201030...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[212/1411] Processing trading day 20201102...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[213/1411] Processing trading day 20201103...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[214/1411] Processing trading day 20201104...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[215/1411] Processing trading day 20201105...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[216/1411] Processing trading day 20201106...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[217/1411] Processing trading day 20201109...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[218/1411] Processing trading day 20201110...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[219/1411] Processing trading day 20201111...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[220/1411] Processing trading day 20201112...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[221/1411] Processing trading day 20201113...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[222/1411] Processing trading day 20201116...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[223/1411] Processing trading day 20201117...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[224/1411] Processing trading day 20201118...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[225/1411] Processing trading day 20201119...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[226/1411] Processing trading day 20201120...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[227/1411] Processing trading day 20201123...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[228/1411] Processing trading day 20201124...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[229/1411] Processing trading day 20201125...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[230/1411] Processing trading day 20201127...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[231/1411] Processing trading day 20201130...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[232/1411] Processing trading day 20201201...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[233/1411] Processing trading day 20201202...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[234/1411] Processing trading day 20201203...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[235/1411] Processing trading day 20201204...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[236/1411] Processing trading day 20201207...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[237/1411] Processing trading day 20201208...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[238/1411] Processing trading day 20201209...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[239/1411] Processing trading day 20201210...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[240/1411] Processing trading day 20201211...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[241/1411] Processing trading day 20201214...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[242/1411] Processing trading day 20201215...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[243/1411] Processing trading day 20201216...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[244/1411] Processing trading day 20201217...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[245/1411] Processing trading day 20201218...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[246/1411] Processing trading day 20201221...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[247/1411] Processing trading day 20201222...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[248/1411] Processing trading day 20201223...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[249/1411] Processing trading day 20201224...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[250/1411] Processing trading day 20201228...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[251/1411] Processing trading day 20201229...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[252/1411] Processing trading day 20201230...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[253/1411] Processing trading day 20201231...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[254/1411] Processing trading day 20210104...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[255/1411] Processing trading day 20210105...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[256/1411] Processing trading day 20210106...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[257/1411] Processing trading day 20210107...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[258/1411] Processing trading day 20210108...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[259/1411] Processing trading day 20210111...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[260/1411] Processing trading day 20210112...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[261/1411] Processing trading day 20210113...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[262/1411] Processing trading day 20210114...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[263/1411] Processing trading day 20210115...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[264/1411] Processing trading day 20210119...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[265/1411] Processing trading day 20210120...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[266/1411] Processing trading day 20210121...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[267/1411] Processing trading day 20210122...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[268/1411] Processing trading day 20210125...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[269/1411] Processing trading day 20210126...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[270/1411] Processing trading day 20210127...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[271/1411] Processing trading day 20210128...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[272/1411] Processing trading day 20210129...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[273/1411] Processing trading day 20210201...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[274/1411] Processing trading day 20210202...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[275/1411] Processing trading day 20210203...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[276/1411] Processing trading day 20210204...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[277/1411] Processing trading day 20210205...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[278/1411] Processing trading day 20210208...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[279/1411] Processing trading day 20210209...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[280/1411] Processing trading day 20210210...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[281/1411] Processing trading day 20210211...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[282/1411] Processing trading day 20210212...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[283/1411] Processing trading day 20210216...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[284/1411] Processing trading day 20210217...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[285/1411] Processing trading day 20210218...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[286/1411] Processing trading day 20210219...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[287/1411] Processing trading day 20210222...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[288/1411] Processing trading day 20210223...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[289/1411] Processing trading day 20210224...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[290/1411] Processing trading day 20210225...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[291/1411] Processing trading day 20210226...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[292/1411] Processing trading day 20210301...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[293/1411] Processing trading day 20210302...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[294/1411] Processing trading day 20210303...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[295/1411] Processing trading day 20210304...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[296/1411] Processing trading day 20210305...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[297/1411] Processing trading day 20210308...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[298/1411] Processing trading day 20210309...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[299/1411] Processing trading day 20210310...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[300/1411] Processing trading day 20210311...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[301/1411] Processing trading day 20210312...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[302/1411] Processing trading day 20210315...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[303/1411] Processing trading day 20210316...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[304/1411] Processing trading day 20210317...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[305/1411] Processing trading day 20210318...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[306/1411] Processing trading day 20210319...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[307/1411] Processing trading day 20210322...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[308/1411] Processing trading day 20210323...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[309/1411] Processing trading day 20210324...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[310/1411] Processing trading day 20210325...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[311/1411] Processing trading day 20210326...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[312/1411] Processing trading day 20210329...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[313/1411] Processing trading day 20210330...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[314/1411] Processing trading day 20210331...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[315/1411] Processing trading day 20210401...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[316/1411] Processing trading day 20210405...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[317/1411] Processing trading day 20210406...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[318/1411] Processing trading day 20210407...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[319/1411] Processing trading day 20210408...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[320/1411] Processing trading day 20210409...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[321/1411] Processing trading day 20210412...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[322/1411] Processing trading day 20210413...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[323/1411] Processing trading day 20210414...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[324/1411] Processing trading day 20210415...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[325/1411] Processing trading day 20210416...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[326/1411] Processing trading day 20210419...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[327/1411] Processing trading day 20210420...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[328/1411] Processing trading day 20210421...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[329/1411] Processing trading day 20210422...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[330/1411] Processing trading day 20210423...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[331/1411] Processing trading day 20210426...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[332/1411] Processing trading day 20210427...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[333/1411] Processing trading day 20210428...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[334/1411] Processing trading day 20210429...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[335/1411] Processing trading day 20210430...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[336/1411] Processing trading day 20210503...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[337/1411] Processing trading day 20210504...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[338/1411] Processing trading day 20210505...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[339/1411] Processing trading day 20210506...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[340/1411] Processing trading day 20210507...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[341/1411] Processing trading day 20210510...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[342/1411] Processing trading day 20210511...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[343/1411] Processing trading day 20210512...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[344/1411] Processing trading day 20210513...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[345/1411] Processing trading day 20210514...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[346/1411] Processing trading day 20210517...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[347/1411] Processing trading day 20210518...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[348/1411] Processing trading day 20210519...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[349/1411] Processing trading day 20210520...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[350/1411] Processing trading day 20210521...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[351/1411] Processing trading day 20210524...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[352/1411] Processing trading day 20210525...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[353/1411] Processing trading day 20210526...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[354/1411] Processing trading day 20210527...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[355/1411] Processing trading day 20210528...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[356/1411] Processing trading day 20210601...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[357/1411] Processing trading day 20210602...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[358/1411] Processing trading day 20210603...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[359/1411] Processing trading day 20210604...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[360/1411] Processing trading day 20210607...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[361/1411] Processing trading day 20210608...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[362/1411] Processing trading day 20210609...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[363/1411] Processing trading day 20210610...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[364/1411] Processing trading day 20210611...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[365/1411] Processing trading day 20210614...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[366/1411] Processing trading day 20210615...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[367/1411] Processing trading day 20210616...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[368/1411] Processing trading day 20210617...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[369/1411] Processing trading day 20210618...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[370/1411] Processing trading day 20210621...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[371/1411] Processing trading day 20210622...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[372/1411] Processing trading day 20210623...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[373/1411] Processing trading day 20210624...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[374/1411] Processing trading day 20210625...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[375/1411] Processing trading day 20210628...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[376/1411] Processing trading day 20210629...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[377/1411] Processing trading day 20210630...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[378/1411] Processing trading day 20210701...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[379/1411] Processing trading day 20210702...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[380/1411] Processing trading day 20210706...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[381/1411] Processing trading day 20210707...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[382/1411] Processing trading day 20210708...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[383/1411] Processing trading day 20210709...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[384/1411] Processing trading day 20210712...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[385/1411] Processing trading day 20210713...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[386/1411] Processing trading day 20210714...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[387/1411] Processing trading day 20210715...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[388/1411] Processing trading day 20210716...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[389/1411] Processing trading day 20210719...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[390/1411] Processing trading day 20210720...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[391/1411] Processing trading day 20210721...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[392/1411] Processing trading day 20210722...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[393/1411] Processing trading day 20210723...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[394/1411] Processing trading day 20210726...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[395/1411] Processing trading day 20210727...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[396/1411] Processing trading day 20210728...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[397/1411] Processing trading day 20210729...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[398/1411] Processing trading day 20210730...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[399/1411] Processing trading day 20210802...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[400/1411] Processing trading day 20210803...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[401/1411] Processing trading day 20210804...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[402/1411] Processing trading day 20210805...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[403/1411] Processing trading day 20210806...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[404/1411] Processing trading day 20210809...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[405/1411] Processing trading day 20210810...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[406/1411] Processing trading day 20210811...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[407/1411] Processing trading day 20210812...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[408/1411] Processing trading day 20210813...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[409/1411] Processing trading day 20210816...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[410/1411] Processing trading day 20210817...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[411/1411] Processing trading day 20210818...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[412/1411] Processing trading day 20210819...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[413/1411] Processing trading day 20210820...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[414/1411] Processing trading day 20210823...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[415/1411] Processing trading day 20210824...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[416/1411] Processing trading day 20210825...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[417/1411] Processing trading day 20210826...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[418/1411] Processing trading day 20210827...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[419/1411] Processing trading day 20210830...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[420/1411] Processing trading day 20210831...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[421/1411] Processing trading day 20210901...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[422/1411] Processing trading day 20210902...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[423/1411] Processing trading day 20210903...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[424/1411] Processing trading day 20210907...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[425/1411] Processing trading day 20210908...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[426/1411] Processing trading day 20210909...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[427/1411] Processing trading day 20210910...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[428/1411] Processing trading day 20210913...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[429/1411] Processing trading day 20210914...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[430/1411] Processing trading day 20210915...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[431/1411] Processing trading day 20210916...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[432/1411] Processing trading day 20210917...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[433/1411] Processing trading day 20210920...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[434/1411] Processing trading day 20210921...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[435/1411] Processing trading day 20210922...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[436/1411] Processing trading day 20210923...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[437/1411] Processing trading day 20210924...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[438/1411] Processing trading day 20210927...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[439/1411] Processing trading day 20210928...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[440/1411] Processing trading day 20210929...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[441/1411] Processing trading day 20210930...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[442/1411] Processing trading day 20211001...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[443/1411] Processing trading day 20211004...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[444/1411] Processing trading day 20211005...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[445/1411] Processing trading day 20211006...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[446/1411] Processing trading day 20211007...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[447/1411] Processing trading day 20211008...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[448/1411] Processing trading day 20211011...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[449/1411] Processing trading day 20211012...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[450/1411] Processing trading day 20211013...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[451/1411] Processing trading day 20211014...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[452/1411] Processing trading day 20211015...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[453/1411] Processing trading day 20211018...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[454/1411] Processing trading day 20211019...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[455/1411] Processing trading day 20211020...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[456/1411] Processing trading day 20211021...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[457/1411] Processing trading day 20211022...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[458/1411] Processing trading day 20211025...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[459/1411] Processing trading day 20211026...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[460/1411] Processing trading day 20211027...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[461/1411] Processing trading day 20211028...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[462/1411] Processing trading day 20211029...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[463/1411] Processing trading day 20211101...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[464/1411] Processing trading day 20211102...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[465/1411] Processing trading day 20211103...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[466/1411] Processing trading day 20211104...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[467/1411] Processing trading day 20211105...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[468/1411] Processing trading day 20211108...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[469/1411] Processing trading day 20211109...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[470/1411] Processing trading day 20211110...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[471/1411] Processing trading day 20211111...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[472/1411] Processing trading day 20211112...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[473/1411] Processing trading day 20211115...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[474/1411] Processing trading day 20211116...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[475/1411] Processing trading day 20211117...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[476/1411] Processing trading day 20211118...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[477/1411] Processing trading day 20211119...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[478/1411] Processing trading day 20211122...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[479/1411] Processing trading day 20211123...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[480/1411] Processing trading day 20211124...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[481/1411] Processing trading day 20211126...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[482/1411] Processing trading day 20211129...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[483/1411] Processing trading day 20211130...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[484/1411] Processing trading day 20211201...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[485/1411] Processing trading day 20211202...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[486/1411] Processing trading day 20211203...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[487/1411] Processing trading day 20211206...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[488/1411] Processing trading day 20211207...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[489/1411] Processing trading day 20211208...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[490/1411] Processing trading day 20211209...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[491/1411] Processing trading day 20211210...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[492/1411] Processing trading day 20211213...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[493/1411] Processing trading day 20211214...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[494/1411] Processing trading day 20211215...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[495/1411] Processing trading day 20211216...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[496/1411] Processing trading day 20211217...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[497/1411] Processing trading day 20211220...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[498/1411] Processing trading day 20211221...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[499/1411] Processing trading day 20211222...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[500/1411] Processing trading day 20211223...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[501/1411] Processing trading day 20211227...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[502/1411] Processing trading day 20211228...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[503/1411] Processing trading day 20211229...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[504/1411] Processing trading day 20211230...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[505/1411] Processing trading day 20211231...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[506/1411] Processing trading day 20220103...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[507/1411] Processing trading day 20220104...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[508/1411] Processing trading day 20220105...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[509/1411] Processing trading day 20220106...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[510/1411] Processing trading day 20220107...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[511/1411] Processing trading day 20220110...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[512/1411] Processing trading day 20220111...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[513/1411] Processing trading day 20220112...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[514/1411] Processing trading day 20220113...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[515/1411] Processing trading day 20220114...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[516/1411] Processing trading day 20220118...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[517/1411] Processing trading day 20220119...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[518/1411] Processing trading day 20220120...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[519/1411] Processing trading day 20220121...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[520/1411] Processing trading day 20220124...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[521/1411] Processing trading day 20220125...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[522/1411] Processing trading day 20220126...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[523/1411] Processing trading day 20220127...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[524/1411] Processing trading day 20220128...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[525/1411] Processing trading day 20220131...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[526/1411] Processing trading day 20220201...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[527/1411] Processing trading day 20220202...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[528/1411] Processing trading day 20220203...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[529/1411] Processing trading day 20220204...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[530/1411] Processing trading day 20220207...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[531/1411] Processing trading day 20220208...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[532/1411] Processing trading day 20220209...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[533/1411] Processing trading day 20220210...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[534/1411] Processing trading day 20220211...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[535/1411] Processing trading day 20220214...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[536/1411] Processing trading day 20220215...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[537/1411] Processing trading day 20220216...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[538/1411] Processing trading day 20220217...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[539/1411] Processing trading day 20220218...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[540/1411] Processing trading day 20220222...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[541/1411] Processing trading day 20220223...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[542/1411] Processing trading day 20220224...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[543/1411] Processing trading day 20220225...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[544/1411] Processing trading day 20220228...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[545/1411] Processing trading day 20220301...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[546/1411] Processing trading day 20220302...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[547/1411] Processing trading day 20220303...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[548/1411] Processing trading day 20220304...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[549/1411] Processing trading day 20220307...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[550/1411] Processing trading day 20220308...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[551/1411] Processing trading day 20220309...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[552/1411] Processing trading day 20220310...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[553/1411] Processing trading day 20220311...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[554/1411] Processing trading day 20220314...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[555/1411] Processing trading day 20220315...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[556/1411] Processing trading day 20220316...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[557/1411] Processing trading day 20220317...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[558/1411] Processing trading day 20220318...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[559/1411] Processing trading day 20220321...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[560/1411] Processing trading day 20220322...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[561/1411] Processing trading day 20220323...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[562/1411] Processing trading day 20220324...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[563/1411] Processing trading day 20220325...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[564/1411] Processing trading day 20220328...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[565/1411] Processing trading day 20220329...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[566/1411] Processing trading day 20220330...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[567/1411] Processing trading day 20220331...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[568/1411] Processing trading day 20220401...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[569/1411] Processing trading day 20220404...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[570/1411] Processing trading day 20220405...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[571/1411] Processing trading day 20220406...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[572/1411] Processing trading day 20220407...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[573/1411] Processing trading day 20220408...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[574/1411] Processing trading day 20220411...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[575/1411] Processing trading day 20220412...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[576/1411] Processing trading day 20220413...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[577/1411] Processing trading day 20220414...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[578/1411] Processing trading day 20220418...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[579/1411] Processing trading day 20220419...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[580/1411] Processing trading day 20220420...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[581/1411] Processing trading day 20220421...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[582/1411] Processing trading day 20220422...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[583/1411] Processing trading day 20220425...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[584/1411] Processing trading day 20220426...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[585/1411] Processing trading day 20220427...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[586/1411] Processing trading day 20220428...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[587/1411] Processing trading day 20220429...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[588/1411] Processing trading day 20220502...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[589/1411] Processing trading day 20220503...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[590/1411] Processing trading day 20220504...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[591/1411] Processing trading day 20220505...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[592/1411] Processing trading day 20220506...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[593/1411] Processing trading day 20220509...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[594/1411] Processing trading day 20220510...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[595/1411] Processing trading day 20220511...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[596/1411] Processing trading day 20220512...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
+
+[597/1411] Processing trading day 20220513...
+  Found 0 existing (model, regime) combinations
+  Saved 2125 regime performance records for 425 models
