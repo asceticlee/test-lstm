@@ -21,14 +21,14 @@ from model_trading.model_trading_weighter import ModelTradingWeighter
 
 
 def generate_random_weights(num_weights: int = 76, 
-                          weight_range: tuple = (-1.0, 1.0),
+                          weight_range: tuple = (0.0, 1.0),
                           seed: int = None) -> np.ndarray:
     """
     Generate random weights for the model evaluation.
     
     Args:
         num_weights: Number of weights to generate (default: 76)
-        weight_range: Tuple of (min_weight, max_weight) (default: (-1.0, 1.0))
+        weight_range: Tuple of (min_weight, max_weight) (default: (0.0, 1.0))
         seed: Random seed for reproducibility (default: None for random)
         
     Returns:
@@ -45,7 +45,7 @@ def generate_random_weights(num_weights: int = 76,
 
 def test_model_weighter(trading_day: str, market_regime: int, 
                        mode: str = 'standard', 
-                       weight_range: tuple = (-1.0, 1.0),
+                       weight_range: tuple = (0.0, 1.0),
                        seed: int = None) -> Dict:
     """
     Test the model weighter with random weights.
@@ -151,9 +151,9 @@ def main():
     
     # Run the test with different configurations
     test_configs = [
-        {'mode': 'standard', 'weight_range': (-1.0, 1.0), 'seed': 42},
-        # {'mode': 'fast', 'weight_range': (-1.0, 1.0), 'seed': 42},
-        # {'mode': 'gpu', 'weight_range': (-1.0, 1.0), 'seed': 42},
+        {'mode': 'standard', 'weight_range': (0.0, 1.0), 'seed': 42},
+        # {'mode': 'fast', 'weight_range': (0.0, 1.0), 'seed': 42},
+        # {'mode': 'gpu', 'weight_range': (0.0, 1.0), 'seed': 42},
     ]
     
     for i, config in enumerate(test_configs):

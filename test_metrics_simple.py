@@ -20,9 +20,9 @@ def test_standard_with_metrics():
     trading_day = "20250707"
     market_regime = 3
     
-    # Generate consistent weights
+    # Generate consistent weights (0 to 1 range)
     np.random.seed(42)
-    weights = np.random.uniform(-1.0, 1.0, 76)
+    weights = np.random.uniform(0.0, 1.0, 76)
     
     print(f"Testing standard method with show_metrics=True")
     print(f"Trading day: {trading_day}, Market regime: {market_regime}")
@@ -42,12 +42,12 @@ def test_standard_with_metrics():
             print(f"   Score verification: {result['metrics_breakdown']['total_score_verification']:.6f}")
             print(f"   Score match: {abs(result['score'] - result['metrics_breakdown']['total_score_verification']) < 1e-6}")
             
-            # Show sample metrics
-            print(f"\nSample metrics (first 5):")
-            for i, metric in enumerate(result['metrics_breakdown']['metrics'][:5]):
+            # Show all metrics
+            print(f"\nAll metrics breakdown:")
+            for i, metric in enumerate(result['metrics_breakdown']['metrics']):
                 print(f"   {metric['index']:2d}. {metric['column_name']:<30} {metric['data_source']:<6} "
                       f"w={metric['weight']:8.4f} v={metric['value']:8.4f} wv={metric['weighted_value']:10.6f}")
-            print(f"   ... and {result['metrics_breakdown']['total_metrics'] - 5} more")
+            print(f"\nTotal metrics shown: {len(result['metrics_breakdown']['metrics'])}")
         else:
             print("❌ No metrics breakdown available")
             
