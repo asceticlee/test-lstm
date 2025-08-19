@@ -635,7 +635,7 @@ class ModelTradingWeighter:
     
     def get_best_trading_model_fast(self, trading_day: str, market_regime: int, 
                                    weighting_array: np.ndarray, use_gpu: bool = False,
-                                   n_workers: int = None) -> Dict:
+                                   n_workers: int = None, show_metrics: bool = False) -> Dict:
         """
         Fast version using vectorized operations and parallel processing.
         
@@ -645,6 +645,7 @@ class ModelTradingWeighter:
             weighting_array: Array of 76 weights for performance metrics
             use_gpu: Whether to use GPU acceleration (requires cupy)
             n_workers: Number of parallel workers (default: CPU count)
+            show_metrics: If True, include detailed metrics breakdown in results
             
         Returns:
             Dict with best model information
@@ -677,15 +678,15 @@ class ModelTradingWeighter:
         
         if use_gpu:
             return self._evaluate_with_gpu(daily_data, regime_data, common_models, 
-                                         thresholds, directions, weighting_array)
+                                         thresholds, directions, weighting_array, show_metrics)
         else:
             return self._evaluate_with_parallel_cpu(daily_data, regime_data, common_models,
-                                                  thresholds, directions, weighting_array, n_workers)
+                                                  thresholds, directions, weighting_array, n_workers, show_metrics)
     
     def _evaluate_with_parallel_cpu(self, daily_data: pd.DataFrame, regime_data: pd.DataFrame,
                                   common_models: List[str], thresholds: List[float], 
                                   directions: List[str], weighting_array: np.ndarray,
-                                  n_workers: int = None) -> Dict:
+                                  n_workers: int = None, show_metrics: bool = False) -> Dict:
         """
         Evaluate combinations using parallel CPU processing.
         """
@@ -740,13 +741,100 @@ class ModelTradingWeighter:
             raise ValueError("No valid combinations found")
         
         model_id, threshold, direction = best_result
-        return {
+        
+        # Prepare result dictionary
+        result = {
             'model_id': model_id,
             'score': best_score,
             'direction': direction,
             'threshold': threshold,
             'details': f"Fast evaluation: best from {len(combinations)} combinations (parallel CPU)"
         }
+        
+        # If metrics breakdown is requested, calculate and include it
+        if show_metrics:
+            try:
+                # Get the best model's detailed metrics using the same logic as standard method
+                daily_row = daily_data[daily_data['ModelID'] == model_id].iloc[0]
+                regime_row = regime_data[regime_data['ModelID'] == model_id].iloc[0]
+                
+                # Get columns for the best combination
+                threshold_dir_combos = self.get_all_threshold_direction_combinations()
+                column_cache = {}
+                for thr, dir in threshold_dir_combos:
+                    column_cache[(thr, dir)] = self._get_threshold_direction_columns_cached(
+                        thr, dir, daily_data, regime_data
+                    )
+                
+                best_columns = column_cache[(threshold, direction)]
+                
+                # Extract detailed metrics
+                metric_details = []
+                
+                for i, (source, col) in enumerate(best_columns):
+                    # Determine data source and get the appropriate row
+                    if source == 'daily':
+                        data_row = daily_row
+                        data_source = "daily"
+                    else:
+                        data_row = regime_row
+                        data_source = "regime"
+                        
+                    if '_ws_acc_' in col:
+                        # Calculate Wilson scored accuracy
+                        acc_col = col.replace('_ws_acc_', '_acc_')
+                        num_col = acc_col.replace('_acc_', '_num_')
+                        den_col = acc_col.replace('_acc_', '_den_')
+                        
+                        k = data_row.get(num_col, 0.0)
+                        n = data_row.get(den_col, 0.0)
+                        if pd.isna(k): k = 0.0
+                        if pd.isna(n): n = 0.0
+                        
+                        value = self.wilson_score_accuracy(k, n)
+                        
+                    elif '_ppt_' in col:
+                        # Calculate PnL per trade
+                        pnl_col = col.replace('_ppt_', '_pnl_')
+                        den_col = pnl_col.replace('_pnl_', '_den_')
+                        
+                        pnl = data_row.get(pnl_col, 0.0)
+                        den = data_row.get(den_col, 0.0)
+                        if pd.isna(pnl): pnl = 0.0
+                        if pd.isna(den): den = 0.0
+                        
+                        value = pnl / den if den > 0 else 0.0
+                        
+                    else:
+                        # Regular metric
+                        value = data_row.get(col, 0.0)
+                        if pd.isna(value): value = 0.0
+                    
+                    # Store metric details
+                    weight = weighting_array[i]
+                    weighted_value = value * weight
+                    
+                    metric_details.append({
+                        'index': i + 1,
+                        'column_name': col,
+                        'data_source': data_source,
+                        'weight': weight,
+                        'value': value,
+                        'weighted_value': weighted_value
+                    })
+                
+                # Add metrics breakdown to result
+                result['metrics_breakdown'] = {
+                    'total_metrics': len(metric_details),
+                    'metrics': metric_details,
+                    'total_score_verification': sum(m['weighted_value'] for m in metric_details)
+                }
+                
+            except Exception as e:
+                print(f"Warning: Could not generate metrics breakdown: {e}")
+                result['metrics_breakdown'] = None
+        
+        return result
     
     def _prepare_model_data_cache(self, daily_data: pd.DataFrame, regime_data: pd.DataFrame,
                                 common_models: List[str]) -> Dict:
@@ -786,23 +874,28 @@ class ModelTradingWeighter:
         
         try:
             # Get cached data
-            daily_data = model_data_cache[model_id]['daily']
-            regime_data = model_data_cache[model_id]['regime']
+            daily_data_dict = model_data_cache[model_id]['daily']
+            regime_data_dict = model_data_cache[model_id]['regime']
             
-            # Get column names for this threshold+direction
-            columns = self.get_threshold_direction_columns(threshold, direction)
+            # Get column names for this threshold+direction - need to create dummy DataFrames for the cached method
+            # This is a bit inefficient but ensures consistency
+            daily_dummy = pd.DataFrame([daily_data_dict])
+            regime_dummy = pd.DataFrame([regime_data_dict])
+            
+            # Get columns with source information
+            columns_with_source = self._get_threshold_direction_columns_cached(threshold, direction, daily_dummy, regime_dummy)
             
             # Extract values vectorized
             values = np.zeros(76, dtype=np.float64)
             
-            for i, (file_type, col_name) in enumerate(columns):
+            for i, (source, col_name) in enumerate(columns_with_source):
                 if i >= 76:  # Safety check
                     break
                     
-                if file_type == 'daily':
-                    data_source = daily_data
+                if source == 'daily':
+                    data_source = daily_data_dict
                 else:  # regime
-                    data_source = regime_data
+                    data_source = regime_data_dict
                 
                 # Handle different metric types
                 if '_ws_acc_' in col_name:
@@ -847,7 +940,7 @@ class ModelTradingWeighter:
     
     def _evaluate_with_gpu(self, daily_data: pd.DataFrame, regime_data: pd.DataFrame,
                           common_models: List[str], thresholds: List[float], 
-                          directions: List[str], weighting_array: np.ndarray) -> Dict:
+                          directions: List[str], weighting_array: np.ndarray, show_metrics: bool = False) -> Dict:
         """
         Evaluate combinations using GPU acceleration (requires cupy).
         """
@@ -956,13 +1049,100 @@ class ModelTradingWeighter:
             raise ValueError("No valid combinations found")
         
         model_id, threshold, direction = best_result
-        return {
+        
+        # Prepare result dictionary
+        result = {
             'model_id': model_id,
             'score': best_score,
             'direction': direction,
             'threshold': threshold,
             'details': f"Fast evaluation: best from {total_combinations} combinations (GPU accelerated)"
         }
+        
+        # If metrics breakdown is requested, calculate and include it
+        if show_metrics:
+            try:
+                # Get the best model's detailed metrics using the same logic as standard method
+                daily_row = daily_data[daily_data['ModelID'] == model_id].iloc[0]
+                regime_row = regime_data[regime_data['ModelID'] == model_id].iloc[0]
+                
+                # Get columns for the best combination
+                threshold_dir_combos = self.get_all_threshold_direction_combinations()
+                column_cache = {}
+                for thr, dir in threshold_dir_combos:
+                    column_cache[(thr, dir)] = self._get_threshold_direction_columns_cached(
+                        thr, dir, daily_data, regime_data
+                    )
+                
+                best_columns = column_cache[(threshold, direction)]
+                
+                # Extract detailed metrics
+                metric_details = []
+                
+                for i, (source, col) in enumerate(best_columns):
+                    # Determine data source and get the appropriate row
+                    if source == 'daily':
+                        data_row = daily_row
+                        data_source = "daily"
+                    else:
+                        data_row = regime_row
+                        data_source = "regime"
+                        
+                    if '_ws_acc_' in col:
+                        # Calculate Wilson scored accuracy
+                        acc_col = col.replace('_ws_acc_', '_acc_')
+                        num_col = acc_col.replace('_acc_', '_num_')
+                        den_col = acc_col.replace('_acc_', '_den_')
+                        
+                        k = data_row.get(num_col, 0.0)
+                        n = data_row.get(den_col, 0.0)
+                        if pd.isna(k): k = 0.0
+                        if pd.isna(n): n = 0.0
+                        
+                        value = self.wilson_score_accuracy(k, n)
+                        
+                    elif '_ppt_' in col:
+                        # Calculate PnL per trade
+                        pnl_col = col.replace('_ppt_', '_pnl_')
+                        den_col = pnl_col.replace('_pnl_', '_den_')
+                        
+                        pnl = data_row.get(pnl_col, 0.0)
+                        den = data_row.get(den_col, 0.0)
+                        if pd.isna(pnl): pnl = 0.0
+                        if pd.isna(den): den = 0.0
+                        
+                        value = pnl / den if den > 0 else 0.0
+                        
+                    else:
+                        # Regular metric
+                        value = data_row.get(col, 0.0)
+                        if pd.isna(value): value = 0.0
+                    
+                    # Store metric details
+                    weight = weighting_array[i]
+                    weighted_value = value * weight
+                    
+                    metric_details.append({
+                        'index': i + 1,
+                        'column_name': col,
+                        'data_source': data_source,
+                        'weight': weight,
+                        'value': value,
+                        'weighted_value': weighted_value
+                    })
+                
+                # Add metrics breakdown to result
+                result['metrics_breakdown'] = {
+                    'total_metrics': len(metric_details),
+                    'metrics': metric_details,
+                    'total_score_verification': sum(m['weighted_value'] for m in metric_details)
+                }
+                
+            except Exception as e:
+                print(f"Warning: Could not generate metrics breakdown: {e}")
+                result['metrics_breakdown'] = None
+        
+        return result
         """
         Find the best trading model based on weighted performance scores.
         
@@ -1048,7 +1228,7 @@ class ModelTradingWeighter:
         }
     
     def get_best_trading_model_gpu(self, trading_day: str, market_regime: int, 
-                                  weighting_array: np.ndarray) -> Dict:
+                                  weighting_array: np.ndarray, show_metrics: bool = False) -> Dict:
         """
         GPU-accelerated version using CuPy for maximum performance.
         
@@ -1104,11 +1284,13 @@ class ModelTradingWeighter:
         for threshold in thresholds:
             for direction in directions:
                 try:
-                    # Get columns for this combination
-                    target_columns = self.get_threshold_direction_columns(threshold, direction)
+                    # Get columns for this combination using the cached method
+                    target_columns_with_source = self._get_threshold_direction_columns_cached(
+                        threshold, direction, daily_data, regime_data
+                    )
                     
                     # Extract metrics for all models at once
-                    model_metrics = np.zeros((num_models, len(target_columns)), dtype=np.float32)
+                    model_metrics = np.zeros((num_models, len(target_columns_with_source)), dtype=np.float32)
                     
                     for model_idx, model_id in enumerate(common_models):
                         daily_row = daily_data[daily_data['ModelID'] == model_id]
@@ -1120,8 +1302,8 @@ class ModelTradingWeighter:
                             
                             # Extract values for all metrics
                             values = []
-                            for col in target_columns:
-                                if col.startswith(('daily_', '2day_', '3day_', '1week_', '2week_', '4week_', '8week_', '13week_', '26week_', '52week_', 'from_begin_')):
+                            for source, col in target_columns_with_source:
+                                if source == 'daily':
                                     # Daily metrics
                                     if '_ws_acc_' in col:
                                         acc_col = col.replace('_ws_acc_', '_acc_')
@@ -1139,7 +1321,7 @@ class ModelTradingWeighter:
                                     else:
                                         values.append(daily_row.get(col, 0.0) or 0.0)
                                 else:
-                                    # Regime metrics
+                                    # Regime metrics  
                                     if '_ws_acc_' in col:
                                         acc_col = col.replace('_ws_acc_', '_acc_')
                                         num_col = acc_col.replace('_acc_', '_num_')
@@ -1174,7 +1356,7 @@ class ModelTradingWeighter:
         
         # Find global maximum on GPU
         max_flat_idx = cp.argmax(scores_gpu)
-        max_score = float(scores_gpu.flat[max_flat_idx])
+        max_score = float(scores_gpu.flatten()[max_flat_idx])
         
         # Convert flat index back to model and combination indices
         max_model_idx = int(max_flat_idx // num_combinations)
@@ -1192,13 +1374,99 @@ class ModelTradingWeighter:
         del scores_gpu, metrics_gpu, weights_gpu
         cp.get_default_memory_pool().free_all_blocks()
         
-        return {
+        # Prepare result dictionary
+        result = {
             'model_id': best_model_id,
             'score': max_score,
             'direction': best_direction,
             'threshold': best_threshold,
             'details': f"🚀 GPU-accelerated best combination: model {best_model_id}, threshold {best_threshold}, {best_direction}side"
         }
+        
+        # If metrics breakdown is requested, calculate and include it
+        if show_metrics:
+            try:
+                # Get the best model's detailed metrics using the same logic as standard method
+                daily_row = daily_data[daily_data['ModelID'] == best_model_id].iloc[0]
+                regime_row = regime_data[regime_data['ModelID'] == best_model_id].iloc[0]
+                
+                # Get columns for the best combination
+                threshold_dir_combos = self.get_all_threshold_direction_combinations()
+                column_cache = {}
+                for thr, dir in threshold_dir_combos:
+                    column_cache[(thr, dir)] = self._get_threshold_direction_columns_cached(
+                        thr, dir, daily_data, regime_data
+                    )
+                
+                best_columns = column_cache[(best_threshold, best_direction)]
+                
+                # Extract detailed metrics
+                metric_details = []
+                
+                for i, (source, col) in enumerate(best_columns):
+                    # Determine data source and get the appropriate row
+                    if source == 'daily':
+                        data_row = daily_row
+                        data_source = "daily"
+                    else:
+                        data_row = regime_row
+                        data_source = "regime"
+                        
+                    if '_ws_acc_' in col:
+                        # Calculate Wilson scored accuracy
+                        acc_col = col.replace('_ws_acc_', '_acc_')
+                        num_col = acc_col.replace('_acc_', '_num_')
+                        den_col = acc_col.replace('_acc_', '_den_')
+                        
+                        k = data_row.get(num_col, 0.0)
+                        n = data_row.get(den_col, 0.0)
+                        if pd.isna(k): k = 0.0
+                        if pd.isna(n): n = 0.0
+                        
+                        value = self.wilson_score_accuracy(k, n)
+                        
+                    elif '_ppt_' in col:
+                        # Calculate PnL per trade
+                        pnl_col = col.replace('_ppt_', '_pnl_')
+                        den_col = pnl_col.replace('_pnl_', '_den_')
+                        
+                        pnl = data_row.get(pnl_col, 0.0)
+                        den = data_row.get(den_col, 0.0)
+                        if pd.isna(pnl): pnl = 0.0
+                        if pd.isna(den): den = 0.0
+                        
+                        value = pnl / den if den > 0 else 0.0
+                        
+                    else:
+                        # Regular metric
+                        value = data_row.get(col, 0.0)
+                        if pd.isna(value): value = 0.0
+                    
+                    # Store metric details
+                    weight = weighting_array[i]
+                    weighted_value = value * weight
+                    
+                    metric_details.append({
+                        'index': i + 1,
+                        'column_name': col,
+                        'data_source': data_source,
+                        'weight': weight,
+                        'value': value,
+                        'weighted_value': weighted_value
+                    })
+                
+                # Add metrics breakdown to result
+                result['metrics_breakdown'] = {
+                    'total_metrics': len(metric_details),
+                    'metrics': metric_details,
+                    'total_score_verification': sum(m['weighted_value'] for m in metric_details)
+                }
+                
+            except Exception as e:
+                print(f"Warning: Could not generate metrics breakdown: {e}")
+                result['metrics_breakdown'] = None
+        
+        return result
 
 
 def get_best_trading_model(trading_day: str, market_regime: int, weighting_array: np.ndarray, 
