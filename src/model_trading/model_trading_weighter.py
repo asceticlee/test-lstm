@@ -257,7 +257,7 @@ class ModelTradingWeighter:
         return combinations
     
     def _get_threshold_direction_columns_cached(self, threshold: float, direction: str,
-                                               daily_data: pd.DataFrame, regime_data: pd.DataFrame) -> List[str]:
+                                               daily_data: pd.DataFrame, regime_data: pd.DataFrame) -> List[Tuple[str, str]]:
         """
         Get columns for threshold+direction combination using cached data (no disk I/O).
         
@@ -268,7 +268,7 @@ class ModelTradingWeighter:
             regime_data: Pre-loaded regime DataFrame
             
         Returns:
-            List of column names for this combination
+            List of (source, column_name) tuples for this combination
         """
         columns = []
         threshold_str = f"_thr_{threshold}"
@@ -278,21 +278,21 @@ class ModelTradingWeighter:
         for col in daily_data.columns:
             if col not in ['ModelID', 'TradingDay'] and threshold_str in col and direction_str in col:
                 if '_acc_' in col:
-                    columns.append(col)  # Original accuracy
-                    columns.append(col.replace('_acc_', '_ws_acc_'))  # Wilson score accuracy
+                    columns.append(('daily', col))  # Original accuracy
+                    columns.append(('daily', col.replace('_acc_', '_ws_acc_')))  # Wilson score accuracy
                 elif '_pnl_' in col:
-                    columns.append(col)  # Original PnL
-                    columns.append(col.replace('_pnl_', '_ppt_'))  # PnL per trade
+                    columns.append(('daily', col))  # Original PnL
+                    columns.append(('daily', col.replace('_pnl_', '_ppt_')))  # PnL per trade
         
         # Get regime columns for this threshold+direction
         for col in regime_data.columns:
             if col not in ['ModelID', 'Regime'] and threshold_str in col and direction_str in col:
                 if '_acc_' in col:
-                    columns.append(col)  # Original accuracy
-                    columns.append(col.replace('_acc_', '_ws_acc_'))  # Wilson score accuracy
+                    columns.append(('regime', col))  # Original accuracy
+                    columns.append(('regime', col.replace('_acc_', '_ws_acc_')))  # Wilson score accuracy
                 elif '_pnl_' in col:
-                    columns.append(col)  # Original PnL
-                    columns.append(col.replace('_pnl_', '_ppt_'))  # PnL per trade
+                    columns.append(('regime', col))  # Original PnL
+                    columns.append(('regime', col.replace('_pnl_', '_ppt_')))  # PnL per trade
                 
         return columns
     
@@ -336,9 +336,8 @@ class ModelTradingWeighter:
         
         # Extract metric values efficiently
         metric_values = []
-        for col in columns:
-            if col.startswith(('daily_', '2day_', '3day_', '1week_', '2week_', '4week_', 
-                              '8week_', '13week_', '26week_', '52week_', 'from_begin_')):
+        for source, col in columns:
+            if source == 'daily':
                 # Daily metric
                 if '_ws_acc_' in col:
                     # Calculate Wilson score accuracy on-the-fly
@@ -469,170 +468,9 @@ class ModelTradingWeighter:
         score = np.dot(metric_values, weighting_array)
         
         return score
-        """
-        Calculate weighted score for a specific model using extended metrics.
-        
-        This method provides:
-        1. Raw accuracy (acc) columns - original accuracy values
-        2. Wilson scored accuracy (ws_acc) columns - statistically adjusted accuracy
-        3. PnL columns - profit/loss values
-        4. PnL per trade (ppt) columns - profit/loss per trade (pnl / den)
-        
-        Args:
-            model_id: Model ID to evaluate
-            daily_data: Daily performance DataFrame
-            regime_data: Regime performance DataFrame  
-            weighting_array: Array of weights for extended metrics (acc + ws_acc + pnl + ppt)
-            
-        Returns:
-            Total weighted score for the model
-        """
-        # Get model rows
-        daily_row = daily_data[daily_data['ModelID'] == model_id]
-        regime_row = regime_data[regime_data['ModelID'] == model_id]
-        
-        if daily_row.empty or regime_row.empty:
-            return float('-inf')  # Model not found
-        
-        daily_row = daily_row.iloc[0]
-        regime_row = regime_row.iloc[0]
-        
-        # Get metric columns info
-        info = self.get_metric_columns_info()
-        
-        # Validate weighting array length
-        if len(weighting_array) != info['total_metrics']:
-            raise ValueError(
-                f"Weighting array length ({len(weighting_array)}) does not match "
-                f"extended metrics ({info['total_metrics']}). Expected {info['daily_metrics']} "
-                f"daily + {info['regime_metrics']} regime metrics (acc + ws_acc + pnl + ppt)."
-            )
-        
-        # Combine all metric values
-        all_values = []
-        
-        # Process daily metrics
-        for col in info['daily_columns']:
-            if '_ws_acc_' in col:
-                # Calculate Wilson scored accuracy
-                # Convert ws_acc column name back to acc to find corresponding num/den
-                acc_col = col.replace('_ws_acc_', '_acc_')
-                num_col = acc_col.replace('_acc_', '_num_')
-                den_col = acc_col.replace('_acc_', '_den_')
-                
-                k = daily_row.get(num_col, 0.0)
-                n = daily_row.get(den_col, 0.0)
-                
-                if pd.isna(k):
-                    k = 0.0
-                if pd.isna(n):
-                    n = 0.0
-                
-                # Use Wilson score adjusted accuracy
-                wilson_acc = self.wilson_score_accuracy(k, n)
-                all_values.append(wilson_acc)
-                
-            elif '_ppt_' in col:
-                # Calculate PnL per trade (pnl / den)
-                # Convert ppt column name back to pnl to find corresponding pnl and den
-                pnl_col = col.replace('_ppt_', '_pnl_')
-                den_col = pnl_col.replace('_pnl_', '_den_')
-                
-                pnl = daily_row.get(pnl_col, 0.0)
-                den = daily_row.get(den_col, 0.0)
-                
-                if pd.isna(pnl):
-                    pnl = 0.0
-                if pd.isna(den):
-                    den = 0.0
-                
-                # Calculate PnL per trade, avoid division by zero
-                if den > 0:
-                    ppt = pnl / den
-                else:
-                    ppt = 0.0
-                
-                all_values.append(ppt)
-                
-            elif '_acc_' in col:
-                # Use raw accuracy as-is
-                value = daily_row.get(col, 0.0)
-                if pd.isna(value):
-                    value = 0.0
-                all_values.append(float(value))
-                
-            elif '_pnl_' in col:
-                # Use PnL values as-is
-                value = daily_row.get(col, 0.0)
-                if pd.isna(value):
-                    value = 0.0
-                all_values.append(float(value))
-        
-        # Process regime metrics
-        for col in info['regime_columns']:
-            if '_ws_acc_' in col:
-                # Calculate Wilson scored accuracy
-                # Convert ws_acc column name back to acc to find corresponding num/den
-                acc_col = col.replace('_ws_acc_', '_acc_')
-                num_col = acc_col.replace('_acc_', '_num_')
-                den_col = acc_col.replace('_acc_', '_den_')
-                
-                k = regime_row.get(num_col, 0.0)
-                n = regime_row.get(den_col, 0.0)
-                
-                if pd.isna(k):
-                    k = 0.0
-                if pd.isna(n):
-                    n = 0.0
-                
-                # Use Wilson score adjusted accuracy
-                wilson_acc = self.wilson_score_accuracy(k, n)
-                all_values.append(wilson_acc)
-                
-            elif '_ppt_' in col:
-                # Calculate PnL per trade (pnl / den)
-                # Convert ppt column name back to pnl to find corresponding pnl and den
-                pnl_col = col.replace('_ppt_', '_pnl_')
-                den_col = pnl_col.replace('_pnl_', '_den_')
-                
-                pnl = regime_row.get(pnl_col, 0.0)
-                den = regime_row.get(den_col, 0.0)
-                
-                if pd.isna(pnl):
-                    pnl = 0.0
-                if pd.isna(den):
-                    den = 0.0
-                
-                # Calculate PnL per trade, avoid division by zero
-                if den > 0:
-                    ppt = pnl / den
-                else:
-                    ppt = 0.0
-                
-                all_values.append(ppt)
-                
-            elif '_acc_' in col:
-                # Use raw accuracy as-is
-                value = regime_row.get(col, 0.0)
-                if pd.isna(value):
-                    value = 0.0
-                all_values.append(float(value))
-                
-            elif '_pnl_' in col:
-                # Use PnL values as-is
-                value = regime_row.get(col, 0.0)
-                if pd.isna(value):
-                    value = 0.0
-                all_values.append(float(value))
-        
-        # Calculate weighted score
-        all_values = np.array(all_values)
-        total_score = np.dot(all_values, weighting_array)
-        
-        return total_score
     
     def get_best_trading_model(self, trading_day: str, market_regime: int, 
-                              weighting_array: np.ndarray) -> Dict:
+                              weighting_array: np.ndarray, show_metrics: bool = False) -> Dict:
         """
         Find the best trading model (optimized single-threaded version).
         
@@ -640,9 +478,11 @@ class ModelTradingWeighter:
             trading_day: The trading day (format: YYYYMMDD)
             market_regime: Market regime identifier (0-3)
             weighting_array: Array of 76 weights for different metrics
+            show_metrics: If True, include detailed metrics breakdown in results
             
         Returns:
             dict: Best model info with model_id, score, direction, threshold
+                  If show_metrics=True, also includes metrics breakdown
         """
         print(f"Standard evaluation: Finding best model for day {trading_day}, regime {market_regime}")
         
@@ -701,7 +541,8 @@ class ModelTradingWeighter:
         
         print(f"Standard evaluation complete: {valid_combinations}/{total_combinations} valid combinations")
         
-        return {
+        # Prepare result dictionary
+        result = {
             'model_id': best_model,
             'score': best_score,
             'direction': best_direction,
@@ -709,6 +550,88 @@ class ModelTradingWeighter:
             'trading_day': trading_day,
             'market_regime': market_regime
         }
+        
+        # If metrics breakdown is requested, calculate and include it
+        if show_metrics:
+            try:
+                # Get the best model's detailed metrics
+                daily_row = daily_data[daily_data['ModelID'] == best_model].iloc[0]
+                regime_row = regime_data[regime_data['ModelID'] == best_model].iloc[0]
+                
+                # Get columns for the best combination
+                best_columns = column_cache[(best_threshold, best_direction)]
+                
+                # Extract detailed metrics
+                metric_details = []
+                metric_values = []
+                
+                for i, (source, col) in enumerate(best_columns):
+                    # Determine data source and get the appropriate row
+                    if source == 'daily':
+                        data_row = daily_row
+                        data_source = "daily"
+                    else:
+                        data_row = regime_row
+                        data_source = "regime"
+                        
+                    if '_ws_acc_' in col:
+                        # Calculate Wilson scored accuracy
+                        acc_col = col.replace('_ws_acc_', '_acc_')
+                        num_col = acc_col.replace('_acc_', '_num_')
+                        den_col = acc_col.replace('_acc_', '_den_')
+                        
+                        k = data_row.get(num_col, 0.0)
+                        n = data_row.get(den_col, 0.0)
+                        if pd.isna(k): k = 0.0
+                        if pd.isna(n): n = 0.0
+                        
+                        value = self.wilson_score_accuracy(k, n)
+                        metric_values.append(value)
+                        
+                    elif '_ppt_' in col:
+                        # Calculate PnL per trade
+                        pnl_col = col.replace('_ppt_', '_pnl_')
+                        den_col = pnl_col.replace('_pnl_', '_den_')
+                        
+                        pnl = data_row.get(pnl_col, 0.0)
+                        den = data_row.get(den_col, 0.0)
+                        if pd.isna(pnl): pnl = 0.0
+                        if pd.isna(den): den = 0.0
+                        
+                        value = pnl / den if den > 0 else 0.0
+                        metric_values.append(value)
+                        
+                    else:
+                        # Regular metric
+                        value = data_row.get(col, 0.0)
+                        if pd.isna(value): value = 0.0
+                        metric_values.append(value)
+                    
+                    # Store metric details
+                    weight = weighting_array[i]
+                    weighted_value = value * weight
+                    
+                    metric_details.append({
+                        'index': i + 1,
+                        'column_name': col,
+                        'data_source': data_source,
+                        'weight': weight,
+                        'value': value,
+                        'weighted_value': weighted_value
+                    })
+                
+                # Add metrics breakdown to result
+                result['metrics_breakdown'] = {
+                    'total_metrics': len(metric_details),
+                    'metrics': metric_details,
+                    'total_score_verification': sum(m['weighted_value'] for m in metric_details)
+                }
+                
+            except Exception as e:
+                print(f"Warning: Could not generate metrics breakdown: {e}")
+                result['metrics_breakdown'] = None
+        
+        return result
     
     def get_best_trading_model_fast(self, trading_day: str, market_regime: int, 
                                    weighting_array: np.ndarray, use_gpu: bool = False,
