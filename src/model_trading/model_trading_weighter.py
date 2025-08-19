@@ -30,6 +30,9 @@ import sys
 import pandas as pd
 import numpy as np
 from typing import Dict, List, Optional, Tuple
+from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
+import multiprocessing as mp
+from functools import partial
 
 class ModelTradingWeighter:
     """
@@ -50,10 +53,42 @@ class ModelTradingWeighter:
         self.data_dir = data_dir
         self.daily_performance_dir = os.path.join(data_dir, "model_performance", "daily_performance")
         self.regime_performance_dir = os.path.join(data_dir, "model_performance", "daily_regime_performance")
+        self.model_predictions_dir = os.path.join(data_dir, "model_predictions")
         
         # Cache for loaded data
         self._daily_cache = {}
         self._regime_cache = {}
+    
+    def wilson_score_accuracy(self, k: float, n: float, z: float = 1.96) -> float:
+        """
+        Calculate Wilson score interval point estimate for adjusted accuracy.
+        
+        This method provides a statistically sound way to compare accuracies with different
+        sample sizes. It penalizes models with high accuracy but very few trades.
+        
+        Args:
+            k: Number of correct trades (numerator)
+            n: Total number of trades (denominator)
+            z: Z-score for confidence interval (1.96 for 95% CI)
+            
+        Returns:
+            Adjusted accuracy using Wilson score interval
+            
+        Formula:
+            hat_p = (k + z²/2) / (n + z²)
+            
+        Example:
+            Model 1: k=1, n=1 (100% raw) → Wilson ≈ 0.603
+            Model 2: k=5, n=7 (71.4% raw) → Wilson ≈ 0.638
+        """
+        if n <= 0:
+            return 0.0
+        
+        z_squared = z * z
+        numerator = k + (z_squared / 2)
+        denominator = n + z_squared
+        
+        return numerator / denominator
     
     def _load_daily_performance(self, trading_day: str) -> Optional[pd.DataFrame]:
         """Load daily performance data for a specific trading day."""
@@ -108,7 +143,7 @@ class ModelTradingWeighter:
         Get information about metric columns structure.
         
         Returns:
-            Dict with daily_metrics, regime_metrics, total_metrics
+            Dict with daily_metrics, regime_metrics, total_metrics, and all column info
         """
         # Try to load a sample file to get actual column structure
         sample_files = [f for f in os.listdir(self.daily_performance_dir) if f.endswith('.csv')]
@@ -117,7 +152,6 @@ class ModelTradingWeighter:
         
         # Load sample daily file
         sample_daily = pd.read_csv(os.path.join(self.daily_performance_dir, sample_files[0]))
-        daily_metrics = len(sample_daily.columns) - 2  # Subtract ModelID and TradingDay
         
         # Load sample regime file
         regime_files = [f for f in os.listdir(self.regime_performance_dir) if f.endswith('.csv')]
@@ -125,26 +159,330 @@ class ModelTradingWeighter:
             raise FileNotFoundError("No regime performance files found")
         
         sample_regime = pd.read_csv(os.path.join(self.regime_performance_dir, regime_files[0]))
-        regime_metrics = len(sample_regime.columns) - 2  # Subtract ModelID and Regime
+        
+        # Get original columns (excluding num/den, keep acc and pnl)
+        daily_original_cols = [col for col in sample_daily.columns 
+                              if col not in ['ModelID', 'TradingDay'] 
+                              and not ('_num_' in col or '_den_' in col)]
+        
+        regime_original_cols = [col for col in sample_regime.columns 
+                               if col not in ['ModelID', 'Regime'] 
+                               and not ('_num_' in col or '_den_' in col)]
+        
+        # Create extended columns: for each acc column, add ws_acc column
+        # For each pnl column, add ppt (pnl per trade) column
+        daily_extended_cols = []
+        for col in daily_original_cols:
+            daily_extended_cols.append(col)  # Original acc or pnl column
+            if '_acc_' in col:
+                # Add Wilson scored version
+                ws_col = col.replace('_acc_', '_ws_acc_')
+                daily_extended_cols.append(ws_col)
+            elif '_pnl_' in col:
+                # Add PnL per trade version (pnl / den)
+                ppt_col = col.replace('_pnl_', '_ppt_')
+                daily_extended_cols.append(ppt_col)
+        
+        regime_extended_cols = []
+        for col in regime_original_cols:
+            regime_extended_cols.append(col)  # Original acc or pnl column
+            if '_acc_' in col:
+                # Add Wilson scored version
+                ws_col = col.replace('_acc_', '_ws_acc_')
+                regime_extended_cols.append(ws_col)
+            elif '_pnl_' in col:
+                # Add PnL per trade version (pnl / den)
+                ppt_col = col.replace('_pnl_', '_ppt_')
+                regime_extended_cols.append(ppt_col)
         
         return {
-            'daily_metrics': daily_metrics,
-            'regime_metrics': regime_metrics,
-            'total_metrics': daily_metrics + regime_metrics,
-            'daily_columns': [col for col in sample_daily.columns if col not in ['ModelID', 'TradingDay']],
-            'regime_columns': [col for col in sample_regime.columns if col not in ['ModelID', 'Regime']]
+            'daily_metrics': len(daily_extended_cols),
+            'regime_metrics': len(regime_extended_cols),
+            'total_metrics': len(daily_extended_cols) + len(regime_extended_cols),
+            'daily_columns': daily_extended_cols,
+            'regime_columns': regime_extended_cols,
+            'original_daily_columns': [col for col in sample_daily.columns if col not in ['ModelID', 'TradingDay']],
+            'original_regime_columns': [col for col in sample_regime.columns if col not in ['ModelID', 'Regime']]
         }
     
-    def calculate_model_score(self, model_id: str, daily_data: pd.DataFrame, 
-                            regime_data: pd.DataFrame, weighting_array: np.ndarray) -> float:
+    def get_threshold_direction_columns(self, threshold: float, direction: str) -> List[str]:
         """
-        Calculate weighted score for a specific model using all available metrics.
+        Get the column names for a specific threshold and direction combination.
+        
+        Args:
+            threshold: Threshold value (e.g., 0.0, 0.3, etc.)
+            direction: Direction ('up' or 'down')
+            
+        Returns:
+            List of column names for this threshold+direction combination
+        """
+        # Load sample files to get column structure
+        sample_files = [f for f in os.listdir(self.daily_performance_dir) if f.endswith('.csv')]
+        sample_daily = pd.read_csv(os.path.join(self.daily_performance_dir, sample_files[0]))
+        
+        regime_files = [f for f in os.listdir(self.regime_performance_dir) if f.endswith('.csv')]
+        sample_regime = pd.read_csv(os.path.join(self.regime_performance_dir, regime_files[0]))
+        
+        columns = []
+        threshold_str = f"_thr_{threshold}"
+        direction_str = f"_{direction}_"
+        
+        # Get daily columns for this threshold+direction
+        for col in sample_daily.columns:
+            if col not in ['ModelID', 'TradingDay'] and direction_str in col and threshold_str in col:
+                columns.append(col)
+        
+        # Get regime columns for this threshold+direction  
+        for col in sample_regime.columns:
+            if col not in ['ModelID', 'Regime'] and direction_str in col and threshold_str in col:
+                columns.append(col)
+                
+        return columns
+    
+    def get_all_threshold_direction_combinations(self) -> List[Tuple[float, str]]:
+        """
+        Get all threshold-direction combinations used in the analysis.
+        
+        Returns:
+            List of (threshold, direction) tuples
+        """
+        thresholds = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]
+        directions = ['up', 'down']
+        
+        combinations = []
+        for threshold in thresholds:
+            for direction in directions:
+                combinations.append((threshold, direction))
+        
+        return combinations
+    
+    def _get_threshold_direction_columns_cached(self, threshold: float, direction: str,
+                                               daily_data: pd.DataFrame, regime_data: pd.DataFrame) -> List[str]:
+        """
+        Get columns for threshold+direction combination using cached data (no disk I/O).
+        
+        Args:
+            threshold: Threshold value
+            direction: Direction ('up' or 'down') 
+            daily_data: Pre-loaded daily DataFrame
+            regime_data: Pre-loaded regime DataFrame
+            
+        Returns:
+            List of column names for this combination
+        """
+        columns = []
+        threshold_str = f"_thr_{threshold}"
+        direction_str = f"_{direction}_"
+        
+        # Get daily columns for this threshold+direction
+        for col in daily_data.columns:
+            if col not in ['ModelID', 'TradingDay'] and threshold_str in col and direction_str in col:
+                if '_acc_' in col:
+                    columns.append(col)  # Original accuracy
+                    columns.append(col.replace('_acc_', '_ws_acc_'))  # Wilson score accuracy
+                elif '_pnl_' in col:
+                    columns.append(col)  # Original PnL
+                    columns.append(col.replace('_pnl_', '_ppt_'))  # PnL per trade
+        
+        # Get regime columns for this threshold+direction
+        for col in regime_data.columns:
+            if col not in ['ModelID', 'Regime'] and threshold_str in col and direction_str in col:
+                if '_acc_' in col:
+                    columns.append(col)  # Original accuracy
+                    columns.append(col.replace('_acc_', '_ws_acc_'))  # Wilson score accuracy
+                elif '_pnl_' in col:
+                    columns.append(col)  # Original PnL
+                    columns.append(col.replace('_pnl_', '_ppt_'))  # PnL per trade
+                
+        return columns
+    
+    def _calculate_combination_score_optimized(self, model_id: int, daily_data: pd.DataFrame, 
+                                             regime_data: pd.DataFrame, threshold: float, 
+                                             direction: str, weighting_array: np.ndarray,
+                                             column_cache: Dict) -> float:
+        """
+        Calculate score using pre-cached column mappings (no disk I/O).
+        
+        Args:
+            model_id: Model ID to evaluate
+            daily_data: Pre-loaded daily DataFrame
+            regime_data: Pre-loaded regime DataFrame
+            threshold: Threshold value
+            direction: Direction ('up' or 'down')
+            weighting_array: 76-element weighting array
+            column_cache: Pre-computed column mappings
+            
+        Returns:
+            Score for this combination
+        """
+        # Get model rows
+        daily_row = daily_data[daily_data['ModelID'] == model_id]
+        regime_row = regime_data[regime_data['ModelID'] == model_id]
+        
+        if daily_row.empty or regime_row.empty:
+            return float('-inf')
+            
+        daily_row = daily_row.iloc[0]
+        regime_row = regime_row.iloc[0]
+        
+        # Get pre-cached columns for this threshold+direction combination
+        columns = column_cache[(threshold, direction)]
+        
+        if len(columns) != len(weighting_array):
+            raise ValueError(
+                f"Column count ({len(columns)}) doesn't match weighting array length ({len(weighting_array)}) "
+                f"for threshold {threshold}, direction {direction}"
+            )
+        
+        # Extract metric values efficiently
+        metric_values = []
+        for col in columns:
+            if col.startswith(('daily_', '2day_', '3day_', '1week_', '2week_', '4week_', 
+                              '8week_', '13week_', '26week_', '52week_', 'from_begin_')):
+                # Daily metric
+                if '_ws_acc_' in col:
+                    # Calculate Wilson score accuracy on-the-fly
+                    base_col = col.replace('_ws_acc_', '_acc_')
+                    num_col = col.replace('_ws_acc_', '_num_')
+                    den_col = col.replace('_ws_acc_', '_den_')
+                    
+                    k = daily_row.get(num_col, 0.0)
+                    n = daily_row.get(den_col, 0.0)
+                    if pd.isna(k): k = 0.0
+                    if pd.isna(n): n = 0.0
+                    
+                    wilson_acc = self.wilson_score_accuracy(k, n)
+                    metric_values.append(wilson_acc)
+                    
+                elif '_ppt_' in col:
+                    # Calculate PnL per trade on-the-fly
+                    pnl_col = col.replace('_ppt_', '_pnl_')
+                    den_col = col.replace('_ppt_', '_den_')
+                    
+                    pnl = daily_row.get(pnl_col, 0.0)
+                    den = daily_row.get(den_col, 0.0)
+                    if pd.isna(pnl): pnl = 0.0
+                    if pd.isna(den): den = 0.0
+                    
+                    ppt = pnl / den if den > 0 else 0.0
+                    metric_values.append(ppt)
+                    
+                else:
+                    # Regular daily metric
+                    value = daily_row.get(col, 0.0)
+                    if pd.isna(value): value = 0.0
+                    metric_values.append(value)
+            else:
+                # Regime metric
+                if '_ws_acc_' in col:
+                    # Calculate Wilson score accuracy on-the-fly
+                    base_col = col.replace('_ws_acc_', '_acc_')
+                    num_col = col.replace('_ws_acc_', '_num_')
+                    den_col = col.replace('_ws_acc_', '_den_')
+                    
+                    k = regime_row.get(num_col, 0.0)
+                    n = regime_row.get(den_col, 0.0)
+                    if pd.isna(k): k = 0.0
+                    if pd.isna(n): n = 0.0
+                    
+                    wilson_acc = self.wilson_score_accuracy(k, n)
+                    metric_values.append(wilson_acc)
+                    
+                elif '_ppt_' in col:
+                    # Calculate PnL per trade on-the-fly
+                    pnl_col = col.replace('_ppt_', '_pnl_')
+                    den_col = col.replace('_ppt_', '_den_')
+                    
+                    pnl = regime_row.get(pnl_col, 0.0)
+                    den = regime_row.get(den_col, 0.0)
+                    if pd.isna(pnl): pnl = 0.0
+                    if pd.isna(den): den = 0.0
+                    
+                    ppt = pnl / den if den > 0 else 0.0
+                    metric_values.append(ppt)
+                    
+                else:
+                    # Regular regime metric
+                    value = regime_row.get(col, 0.0)
+                    if pd.isna(value): value = 0.0
+                    metric_values.append(value)
+        
+        # Calculate weighted score
+        metric_values = np.array(metric_values)
+        score = np.dot(metric_values, weighting_array)
+        
+        return score
+    
+    def calculate_combination_score(self, model_id: str, daily_data: pd.DataFrame, 
+                                  regime_data: pd.DataFrame, threshold: float, 
+                                  direction: str, weighting_array: np.ndarray) -> float:
+        """
+        Calculate score for a specific model+threshold+direction combination.
+        
+        Args:
+            model_id: Model ID to evaluate
+            daily_data: Daily performance DataFrame
+            regime_data: Regime performance DataFrame
+            threshold: Threshold value
+            direction: Direction ('up' or 'down')
+            weighting_array: 76-element weighting array
+            
+        Returns:
+            Score for this combination
+        """
+        # Get model rows
+        daily_row = daily_data[daily_data['ModelID'] == model_id]
+        regime_row = regime_data[regime_data['ModelID'] == model_id]
+        
+        if daily_row.empty or regime_row.empty:
+            return float('-inf')
+            
+        daily_row = daily_row.iloc[0]
+        regime_row = regime_row.iloc[0]
+        
+        # Get columns for this threshold+direction combination
+        columns = self.get_threshold_direction_columns(threshold, direction)
+        
+        if len(columns) != len(weighting_array):
+            raise ValueError(
+                f"Column count ({len(columns)}) doesn't match weighting array length ({len(weighting_array)}) "
+                f"for threshold {threshold}, direction {direction}"
+            )
+        
+        # Extract metric values
+        metric_values = []
+        for col in columns:
+            if col.startswith(('daily_', '2day_', '3day_', '1week_', '2week_', '4week_', 
+                              '8week_', '13week_', '26week_', '52week_', 'from_begin_')):
+                # Daily metric
+                value = daily_row.get(col, 0.0)
+            else:
+                # Regime metric  
+                value = regime_row.get(col, 0.0)
+                
+            if pd.isna(value):
+                value = 0.0
+            metric_values.append(float(value))
+        
+        # Calculate weighted score
+        metric_values = np.array(metric_values)
+        score = np.dot(metric_values, weighting_array)
+        
+        return score
+        """
+        Calculate weighted score for a specific model using extended metrics.
+        
+        This method provides:
+        1. Raw accuracy (acc) columns - original accuracy values
+        2. Wilson scored accuracy (ws_acc) columns - statistically adjusted accuracy
+        3. PnL columns - profit/loss values
+        4. PnL per trade (ppt) columns - profit/loss per trade (pnl / den)
         
         Args:
             model_id: Model ID to evaluate
             daily_data: Daily performance DataFrame
             regime_data: Regime performance DataFrame  
-            weighting_array: Array of weights for all metrics
+            weighting_array: Array of weights for extended metrics (acc + ws_acc + pnl + ppt)
             
         Returns:
             Total weighted score for the model
@@ -166,26 +504,126 @@ class ModelTradingWeighter:
         if len(weighting_array) != info['total_metrics']:
             raise ValueError(
                 f"Weighting array length ({len(weighting_array)}) does not match "
-                f"total metrics ({info['total_metrics']}). Expected {info['daily_metrics']} "
-                f"daily + {info['regime_metrics']} regime metrics."
+                f"extended metrics ({info['total_metrics']}). Expected {info['daily_metrics']} "
+                f"daily + {info['regime_metrics']} regime metrics (acc + ws_acc + pnl + ppt)."
             )
         
         # Combine all metric values
         all_values = []
         
-        # Add daily metrics
+        # Process daily metrics
         for col in info['daily_columns']:
-            value = daily_row.get(col, 0.0)
-            if pd.isna(value):
-                value = 0.0
-            all_values.append(float(value))
+            if '_ws_acc_' in col:
+                # Calculate Wilson scored accuracy
+                # Convert ws_acc column name back to acc to find corresponding num/den
+                acc_col = col.replace('_ws_acc_', '_acc_')
+                num_col = acc_col.replace('_acc_', '_num_')
+                den_col = acc_col.replace('_acc_', '_den_')
+                
+                k = daily_row.get(num_col, 0.0)
+                n = daily_row.get(den_col, 0.0)
+                
+                if pd.isna(k):
+                    k = 0.0
+                if pd.isna(n):
+                    n = 0.0
+                
+                # Use Wilson score adjusted accuracy
+                wilson_acc = self.wilson_score_accuracy(k, n)
+                all_values.append(wilson_acc)
+                
+            elif '_ppt_' in col:
+                # Calculate PnL per trade (pnl / den)
+                # Convert ppt column name back to pnl to find corresponding pnl and den
+                pnl_col = col.replace('_ppt_', '_pnl_')
+                den_col = pnl_col.replace('_pnl_', '_den_')
+                
+                pnl = daily_row.get(pnl_col, 0.0)
+                den = daily_row.get(den_col, 0.0)
+                
+                if pd.isna(pnl):
+                    pnl = 0.0
+                if pd.isna(den):
+                    den = 0.0
+                
+                # Calculate PnL per trade, avoid division by zero
+                if den > 0:
+                    ppt = pnl / den
+                else:
+                    ppt = 0.0
+                
+                all_values.append(ppt)
+                
+            elif '_acc_' in col:
+                # Use raw accuracy as-is
+                value = daily_row.get(col, 0.0)
+                if pd.isna(value):
+                    value = 0.0
+                all_values.append(float(value))
+                
+            elif '_pnl_' in col:
+                # Use PnL values as-is
+                value = daily_row.get(col, 0.0)
+                if pd.isna(value):
+                    value = 0.0
+                all_values.append(float(value))
         
-        # Add regime metrics
+        # Process regime metrics
         for col in info['regime_columns']:
-            value = regime_row.get(col, 0.0)
-            if pd.isna(value):
-                value = 0.0
-            all_values.append(float(value))
+            if '_ws_acc_' in col:
+                # Calculate Wilson scored accuracy
+                # Convert ws_acc column name back to acc to find corresponding num/den
+                acc_col = col.replace('_ws_acc_', '_acc_')
+                num_col = acc_col.replace('_acc_', '_num_')
+                den_col = acc_col.replace('_acc_', '_den_')
+                
+                k = regime_row.get(num_col, 0.0)
+                n = regime_row.get(den_col, 0.0)
+                
+                if pd.isna(k):
+                    k = 0.0
+                if pd.isna(n):
+                    n = 0.0
+                
+                # Use Wilson score adjusted accuracy
+                wilson_acc = self.wilson_score_accuracy(k, n)
+                all_values.append(wilson_acc)
+                
+            elif '_ppt_' in col:
+                # Calculate PnL per trade (pnl / den)
+                # Convert ppt column name back to pnl to find corresponding pnl and den
+                pnl_col = col.replace('_ppt_', '_pnl_')
+                den_col = pnl_col.replace('_pnl_', '_den_')
+                
+                pnl = regime_row.get(pnl_col, 0.0)
+                den = regime_row.get(den_col, 0.0)
+                
+                if pd.isna(pnl):
+                    pnl = 0.0
+                if pd.isna(den):
+                    den = 0.0
+                
+                # Calculate PnL per trade, avoid division by zero
+                if den > 0:
+                    ppt = pnl / den
+                else:
+                    ppt = 0.0
+                
+                all_values.append(ppt)
+                
+            elif '_acc_' in col:
+                # Use raw accuracy as-is
+                value = regime_row.get(col, 0.0)
+                if pd.isna(value):
+                    value = 0.0
+                all_values.append(float(value))
+                
+            elif '_pnl_' in col:
+                # Use PnL values as-is
+                value = regime_row.get(col, 0.0)
+                if pd.isna(value):
+                    value = 0.0
+                all_values.append(float(value))
         
         # Calculate weighted score
         all_values = np.array(all_values)
@@ -194,18 +632,437 @@ class ModelTradingWeighter:
         return total_score
     
     def get_best_trading_model(self, trading_day: str, market_regime: int, 
-                             weighting_array: np.ndarray) -> Dict:
+                              weighting_array: np.ndarray) -> Dict:
         """
-        Find the best trading model based on weighted performance scores.
+        Find the best trading model (optimized single-threaded version).
+        
+        Args:
+            trading_day: The trading day (format: YYYYMMDD)
+            market_regime: Market regime identifier (0-3)
+            weighting_array: Array of 76 weights for different metrics
+            
+        Returns:
+            dict: Best model info with model_id, score, direction, threshold
+        """
+        print(f"Standard evaluation: Finding best model for day {trading_day}, regime {market_regime}")
+        
+        # Load data once at the beginning
+        daily_data = self._load_daily_performance(trading_day)
+        regime_data = self._load_regime_performance(trading_day, market_regime)
+        
+        if daily_data is None or regime_data is None:
+            raise ValueError(f"Could not load performance data for trading day {trading_day} and regime {market_regime}")
+        
+        # Get model list from daily data (optimization #1: use data instead of file system)
+        available_models = daily_data['ModelID'].unique().tolist()
+        print(f"Found {len(available_models)} models in daily data")
+        
+        # Pre-cache all threshold+direction column mappings (optimization #2: avoid repeated disk I/O)
+        threshold_dir_combos = self.get_all_threshold_direction_combinations()
+        column_cache = {}
+        for threshold, direction in threshold_dir_combos:
+            column_cache[(threshold, direction)] = self._get_threshold_direction_columns_cached(
+                threshold, direction, daily_data, regime_data
+            )
+        
+        best_score = float('-inf')
+        best_model = None
+        best_direction = None 
+        best_threshold = None
+        
+        total_combinations = 0
+        valid_combinations = 0
+        
+        # Iterate through models from data (not file system)
+        for model_id in available_models:
+            # Iterate through all threshold-direction combinations
+            for threshold, direction in threshold_dir_combos:
+                total_combinations += 1
+                
+                try:
+                    score = self._calculate_combination_score_optimized(
+                        model_id, daily_data, regime_data, 
+                        threshold, direction, weighting_array, column_cache
+                    )
+                    
+                    if score is not None and score != float('-inf'):
+                        valid_combinations += 1
+                        if score > best_score:
+                            best_score = score
+                            best_model = model_id
+                            best_direction = direction
+                            best_threshold = threshold
+                            
+                except Exception as e:
+                    continue
+        
+        if best_model is None:
+            raise ValueError(f"No valid combinations found. Checked {total_combinations} combinations, {valid_combinations} were valid.")
+        
+        print(f"Standard evaluation complete: {valid_combinations}/{total_combinations} valid combinations")
+        
+        return {
+            'model_id': best_model,
+            'score': best_score,
+            'direction': best_direction,
+            'threshold': best_threshold,
+            'trading_day': trading_day,
+            'market_regime': market_regime
+        }
+    
+    def get_best_trading_model_fast(self, trading_day: str, market_regime: int, 
+                                   weighting_array: np.ndarray, use_gpu: bool = False,
+                                   n_workers: int = None) -> Dict:
+        """
+        Fast version using vectorized operations and parallel processing.
         
         Args:
             trading_day: Trading day in format 'YYYYMMDD'
             market_regime: Market regime (0, 1, 2, 3, or 4)
-            weighting_array: Array of weights for all performance metrics (length 1368)
+            weighting_array: Array of 76 weights for performance metrics
+            use_gpu: Whether to use GPU acceleration (requires cupy)
+            n_workers: Number of parallel workers (default: CPU count)
+            
+        Returns:
+            Dict with best model information
+        """
+        # Load performance data
+        daily_data = self._load_daily_performance(trading_day)
+        regime_data = self._load_regime_performance(trading_day, market_regime)
+        
+        if daily_data is None or regime_data is None:
+            raise ValueError(f"Could not load performance data for trading day {trading_day} and regime {market_regime}")
+        
+        # Validate weighting array
+        if len(weighting_array) != 76:
+            raise ValueError(f"Weighting array must have exactly 76 elements, got {len(weighting_array)}")
+        
+        # Find common models
+        daily_models = set(daily_data['ModelID'].unique())
+        regime_models = set(regime_data['ModelID'].unique())
+        common_models = list(daily_models.intersection(regime_models))
+        
+        if not common_models:
+            raise ValueError("No common models found between daily and regime data")
+        
+        # Define combinations to evaluate
+        thresholds = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]
+        directions = ['up', 'down']
+        
+        total_combinations = len(common_models) * len(thresholds) * len(directions)
+        print(f"Fast evaluation: {len(common_models)} models × {len(thresholds)} thresholds × {len(directions)} directions = {total_combinations} combinations")
+        
+        if use_gpu:
+            return self._evaluate_with_gpu(daily_data, regime_data, common_models, 
+                                         thresholds, directions, weighting_array)
+        else:
+            return self._evaluate_with_parallel_cpu(daily_data, regime_data, common_models,
+                                                  thresholds, directions, weighting_array, n_workers)
+    
+    def _evaluate_with_parallel_cpu(self, daily_data: pd.DataFrame, regime_data: pd.DataFrame,
+                                  common_models: List[str], thresholds: List[float], 
+                                  directions: List[str], weighting_array: np.ndarray,
+                                  n_workers: int = None) -> Dict:
+        """
+        Evaluate combinations using parallel CPU processing.
+        """
+        if n_workers is None:
+            n_workers = min(mp.cpu_count(), 8)  # Cap at 8 to avoid overwhelming system
+        
+        print(f"Using {n_workers} parallel workers")
+        
+        # Pre-extract all needed data into numpy arrays for faster access
+        model_data_cache = self._prepare_model_data_cache(daily_data, regime_data, common_models)
+        
+        # Create all combinations
+        combinations = [
+            (model_id, threshold, direction)
+            for model_id in common_models
+            for threshold in thresholds
+            for direction in directions
+        ]
+        
+        # Create partial function with cached data
+        eval_func = partial(
+            self._evaluate_single_combination_vectorized,
+            model_data_cache=model_data_cache,
+            weighting_array=weighting_array
+        )
+        
+        # Evaluate in parallel
+        best_score = float('-inf')
+        best_result = None
+        
+        with ThreadPoolExecutor(max_workers=n_workers) as executor:
+            # Submit all combinations
+            futures = [executor.submit(eval_func, combo) for combo in combinations]
+            
+            # Collect results as they complete
+            for i, future in enumerate(futures):
+                try:
+                    score, model_id, threshold, direction = future.result()
+                    if score > best_score:
+                        best_score = score
+                        best_result = (model_id, threshold, direction)
+                        
+                    # Progress reporting
+                    if (i + 1) % 100 == 0:
+                        print(f"Evaluated {i + 1}/{len(combinations)} combinations...")
+                        
+                except Exception as e:
+                    print(f"Error in combination {combinations[i]}: {e}")
+                    continue
+        
+        if best_result is None:
+            raise ValueError("No valid combinations found")
+        
+        model_id, threshold, direction = best_result
+        return {
+            'model_id': model_id,
+            'score': best_score,
+            'direction': direction,
+            'threshold': threshold,
+            'details': f"Fast evaluation: best from {len(combinations)} combinations (parallel CPU)"
+        }
+    
+    def _prepare_model_data_cache(self, daily_data: pd.DataFrame, regime_data: pd.DataFrame,
+                                common_models: List[str]) -> Dict:
+        """
+        Pre-extract and cache all model data as numpy arrays for faster access.
+        """
+        cache = {}
+        
+        for model_id in common_models:
+            daily_row = daily_data[daily_data['ModelID'] == model_id]
+            regime_row = regime_data[regime_data['ModelID'] == model_id]
+            
+            if daily_row.empty or regime_row.empty:
+                continue
+                
+            daily_row = daily_row.iloc[0]
+            regime_row = regime_row.iloc[0]
+            
+            # Extract all relevant columns as numpy arrays
+            cache[model_id] = {
+                'daily': daily_row.to_dict(),
+                'regime': regime_row.to_dict()
+            }
+        
+        return cache
+    
+    def _evaluate_single_combination_vectorized(self, combination: Tuple[str, float, str],
+                                              model_data_cache: Dict,
+                                              weighting_array: np.ndarray) -> Tuple[float, str, float, str]:
+        """
+        Vectorized evaluation of a single model+threshold+direction combination.
+        """
+        model_id, threshold, direction = combination
+        
+        if model_id not in model_data_cache:
+            return float('-inf'), model_id, threshold, direction
+        
+        try:
+            # Get cached data
+            daily_data = model_data_cache[model_id]['daily']
+            regime_data = model_data_cache[model_id]['regime']
+            
+            # Get column names for this threshold+direction
+            columns = self.get_threshold_direction_columns(threshold, direction)
+            
+            # Extract values vectorized
+            values = np.zeros(76, dtype=np.float64)
+            
+            for i, (file_type, col_name) in enumerate(columns):
+                if i >= 76:  # Safety check
+                    break
+                    
+                if file_type == 'daily':
+                    data_source = daily_data
+                else:  # regime
+                    data_source = regime_data
+                
+                # Handle different metric types
+                if '_ws_acc_' in col_name:
+                    # Wilson scored accuracy
+                    acc_col = col_name.replace('_ws_acc_', '_acc_')
+                    num_col = acc_col.replace('_acc_', '_num_')
+                    den_col = acc_col.replace('_acc_', '_den_')
+                    
+                    k = data_source.get(num_col, 0.0)
+                    n = data_source.get(den_col, 0.0)
+                    
+                    if pd.isna(k): k = 0.0
+                    if pd.isna(n): n = 0.0
+                    
+                    values[i] = self.wilson_score_accuracy(k, n)
+                    
+                elif '_ppt_' in col_name:
+                    # PnL per trade
+                    pnl_col = col_name.replace('_ppt_', '_pnl_')
+                    den_col = pnl_col.replace('_pnl_', '_den_')
+                    
+                    pnl = data_source.get(pnl_col, 0.0)
+                    den = data_source.get(den_col, 0.0)
+                    
+                    if pd.isna(pnl): pnl = 0.0
+                    if pd.isna(den): den = 0.0
+                    
+                    values[i] = pnl / den if den > 0 else 0.0
+                    
+                else:
+                    # Direct value (acc or pnl)
+                    value = data_source.get(col_name, 0.0)
+                    if pd.isna(value): value = 0.0
+                    values[i] = float(value)
+            
+            # Vectorized score calculation
+            score = np.dot(values, weighting_array)
+            return score, model_id, threshold, direction
+            
+        except Exception as e:
+            return float('-inf'), model_id, threshold, direction
+    
+    def _evaluate_with_gpu(self, daily_data: pd.DataFrame, regime_data: pd.DataFrame,
+                          common_models: List[str], thresholds: List[float], 
+                          directions: List[str], weighting_array: np.ndarray) -> Dict:
+        """
+        Evaluate combinations using GPU acceleration (requires cupy).
+        """
+        try:
+            import cupy as cp
+            print("Using GPU acceleration with CuPy")
+        except ImportError:
+            print("CuPy not available, falling back to parallel CPU")
+            return self._evaluate_with_parallel_cpu(daily_data, regime_data, common_models,
+                                                  thresholds, directions, weighting_array)
+        
+        # Convert weighting array to GPU
+        gpu_weights = cp.asarray(weighting_array)
+        
+        # Pre-extract all data
+        model_data_cache = self._prepare_model_data_cache(daily_data, regime_data, common_models)
+        
+        # Batch process combinations
+        batch_size = 1000  # Process in batches to manage GPU memory
+        best_score = float('-inf')
+        best_result = None
+        
+        combinations = [
+            (model_id, threshold, direction)
+            for model_id in common_models
+            for threshold in thresholds
+            for direction in directions
+        ]
+        
+        total_combinations = len(combinations)
+        print(f"Processing {total_combinations} combinations in batches of {batch_size}")
+        
+        for batch_start in range(0, total_combinations, batch_size):
+            batch_end = min(batch_start + batch_size, total_combinations)
+            batch_combinations = combinations[batch_start:batch_end]
+            
+            # Prepare batch data
+            batch_values = np.zeros((len(batch_combinations), 76), dtype=np.float64)
+            valid_mask = np.ones(len(batch_combinations), dtype=bool)
+            
+            for i, (model_id, threshold, direction) in enumerate(batch_combinations):
+                try:
+                    if model_id not in model_data_cache:
+                        valid_mask[i] = False
+                        continue
+                    
+                    # Extract values for this combination
+                    daily_data_dict = model_data_cache[model_id]['daily']
+                    regime_data_dict = model_data_cache[model_id]['regime']
+                    columns = self.get_threshold_direction_columns(threshold, direction)
+                    
+                    for j, (file_type, col_name) in enumerate(columns):
+                        if j >= 76:
+                            break
+                            
+                        data_source = daily_data_dict if file_type == 'daily' else regime_data_dict
+                        
+                        if '_ws_acc_' in col_name:
+                            acc_col = col_name.replace('_ws_acc_', '_acc_')
+                            num_col = acc_col.replace('_acc_', '_num_')
+                            den_col = acc_col.replace('_acc_', '_den_')
+                            
+                            k = data_source.get(num_col, 0.0)
+                            n = data_source.get(den_col, 0.0)
+                            if pd.isna(k): k = 0.0
+                            if pd.isna(n): n = 0.0
+                            
+                            batch_values[i, j] = self.wilson_score_accuracy(k, n)
+                            
+                        elif '_ppt_' in col_name:
+                            pnl_col = col_name.replace('_ppt_', '_pnl_')
+                            den_col = pnl_col.replace('_pnl_', '_den_')
+                            
+                            pnl = data_source.get(pnl_col, 0.0)
+                            den = data_source.get(den_col, 0.0)
+                            if pd.isna(pnl): pnl = 0.0
+                            if pd.isna(den): den = 0.0
+                            
+                            batch_values[i, j] = pnl / den if den > 0 else 0.0
+                            
+                        else:
+                            value = data_source.get(col_name, 0.0)
+                            if pd.isna(value): value = 0.0
+                            batch_values[i, j] = float(value)
+                            
+                except Exception as e:
+                    valid_mask[i] = False
+                    continue
+            
+            # GPU computation
+            gpu_batch = cp.asarray(batch_values[valid_mask])
+            if len(gpu_batch) > 0:
+                gpu_scores = cp.dot(gpu_batch, gpu_weights)
+                scores = cp.asnumpy(gpu_scores)
+                
+                # Find best in this batch
+                valid_combinations = [combo for i, combo in enumerate(batch_combinations) if valid_mask[i]]
+                for score, (model_id, threshold, direction) in zip(scores, valid_combinations):
+                    if score > best_score:
+                        best_score = score
+                        best_result = (model_id, threshold, direction)
+            
+            print(f"Processed batch {batch_start//batch_size + 1}/{(total_combinations + batch_size - 1)//batch_size}")
+        
+        if best_result is None:
+            raise ValueError("No valid combinations found")
+        
+        model_id, threshold, direction = best_result
+        return {
+            'model_id': model_id,
+            'score': best_score,
+            'direction': direction,
+            'threshold': threshold,
+            'details': f"Fast evaluation: best from {total_combinations} combinations (GPU accelerated)"
+        }
+        """
+        Find the best trading model based on weighted performance scores.
+        
+        This method evaluates all combinations of:
+        - Models (available in the data)
+        - Thresholds (0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8)
+        - Directions ('up', 'down')
+        
+        For each combination, it uses the 76-element weighting array to calculate
+        a score and returns the best performing combination.
+        
+        Args:
+            trading_day: Trading day in format 'YYYYMMDD'
+            market_regime: Market regime (0, 1, 2, 3, or 4)
+            weighting_array: 76-element array of weights for performance metrics
             
         Returns:
             Dict with keys: model_id, score, direction, threshold, details
         """
+        # Validate weighting array length
+        if len(weighting_array) != 76:
+            raise ValueError(f"Weighting array must have 76 elements, got {len(weighting_array)}")
+        
         # Load performance data
         daily_data = self._load_daily_performance(trading_day)
         regime_data = self._load_regime_performance(trading_day, market_regime)
@@ -221,49 +1078,228 @@ class ModelTradingWeighter:
         if not common_models:
             raise ValueError(f"No common models found between daily and regime data")
         
-        print(f"Evaluating {len(common_models)} models for trading day {trading_day}, market regime {market_regime}")
+        # Define threshold and direction combinations to evaluate
+        thresholds = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]
+        directions = ['up', 'down']
         
-        # Calculate scores for all models
-        model_scores = {}
+        print(f"Evaluating {len(common_models)} models × {len(thresholds)} thresholds × {len(directions)} directions = {len(common_models) * len(thresholds) * len(directions)} combinations")
+        
+        # Find best combination
+        best_score = float('-inf')
+        best_model_id = None
+        best_threshold = None
+        best_direction = None
+        
+        combinations_evaluated = 0
+        
         for model_id in common_models:
-            try:
-                score = self.calculate_model_score(model_id, daily_data, regime_data, weighting_array)
-                model_scores[model_id] = score
-            except Exception as e:
-                print(f"Warning: Error evaluating model {model_id}: {e}")
-                continue
+            for threshold in thresholds:
+                for direction in directions:
+                    try:
+                        score = self.calculate_combination_score(
+                            model_id, daily_data, regime_data, 
+                            threshold, direction, weighting_array
+                        )
+                        
+                        combinations_evaluated += 1
+                        
+                        if score > best_score:
+                            best_score = score
+                            best_model_id = model_id
+                            best_threshold = threshold
+                            best_direction = direction
+                            
+                    except Exception as e:
+                        print(f"Warning: Error evaluating model {model_id}, threshold {threshold}, direction {direction}: {e}")
+                        continue
         
-        if not model_scores:
+        if best_model_id is None:
             raise ValueError("No valid model combinations found")
         
-        # Find best model
-        best_model_id = max(model_scores.keys(), key=lambda x: model_scores[x])
-        best_score = model_scores[best_model_id]
-        
-        # For now, return basic info (direction and threshold logic can be added later)
         return {
             'model_id': best_model_id,
             'score': best_score,
-            'direction': 'up',  # Default - can be enhanced with actual analysis
-            'threshold': 0.5,   # Default - can be enhanced with actual analysis
-            'details': f"Best model from {len(model_scores)} evaluated models"
+            'direction': best_direction,
+            'threshold': best_threshold,
+            'details': f"Best combination from {combinations_evaluated} evaluated (model {best_model_id}, threshold {best_threshold}, {best_direction}side)"
+        }
+    
+    def get_best_trading_model_gpu(self, trading_day: str, market_regime: int, 
+                                  weighting_array: np.ndarray) -> Dict:
+        """
+        GPU-accelerated version using CuPy for maximum performance.
+        
+        This method uses GPU vectorization for massive parallel computation
+        of all model×threshold×direction combinations simultaneously.
+        """
+        try:
+            import cupy as cp
+            print("🚀 Using GPU acceleration with CuPy")
+        except ImportError:
+            print("⚠️  CuPy not available, falling back to CPU vectorized version")
+            return self.get_best_trading_model_fast(trading_day, market_regime, weighting_array)
+        
+        # Load data
+        daily_data = self._load_daily_performance(trading_day)
+        regime_data = self._load_regime_performance(trading_day, market_regime)
+        
+        if daily_data is None or regime_data is None:
+            raise ValueError(f"Could not load performance data for trading day {trading_day} and regime {market_regime}")
+        
+        # Get common models
+        common_models = list(set(daily_data['ModelID'].unique()).intersection(
+                            set(regime_data['ModelID'].unique())))
+        
+        if not common_models:
+            raise ValueError("No common models found")
+        
+        # Define all combinations
+        thresholds = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]
+        directions = ['up', 'down']
+        
+        print(f"🔥 GPU processing {len(common_models)} models × {len(thresholds)} thresholds × {len(directions)} directions = {len(common_models) * len(thresholds) * len(directions)} combinations")
+        
+        # Prepare data matrices on GPU
+        num_models = len(common_models)
+        num_combinations = len(thresholds) * len(directions)
+        
+        # Create massive result matrix: [models, threshold×direction combinations]
+        scores_gpu = cp.full((num_models, num_combinations), -cp.inf, dtype=cp.float32)
+        
+        # Get column structure for one threshold-direction combination to determine size
+        sample_cols = self.get_threshold_direction_columns(thresholds[0], directions[0])
+        num_metrics = len(sample_cols)
+        
+        if len(weighting_array) != num_metrics:
+            raise ValueError(f"Weighting array length ({len(weighting_array)}) doesn't match expected metrics ({num_metrics})")
+        
+        # Transfer weighting array to GPU
+        weights_gpu = cp.array(weighting_array, dtype=cp.float32)
+        
+        # Process each threshold-direction combination
+        combo_idx = 0
+        for threshold in thresholds:
+            for direction in directions:
+                try:
+                    # Get columns for this combination
+                    target_columns = self.get_threshold_direction_columns(threshold, direction)
+                    
+                    # Extract metrics for all models at once
+                    model_metrics = np.zeros((num_models, len(target_columns)), dtype=np.float32)
+                    
+                    for model_idx, model_id in enumerate(common_models):
+                        daily_row = daily_data[daily_data['ModelID'] == model_id]
+                        regime_row = regime_data[regime_data['ModelID'] == model_id]
+                        
+                        if not daily_row.empty and not regime_row.empty:
+                            daily_row = daily_row.iloc[0]
+                            regime_row = regime_row.iloc[0]
+                            
+                            # Extract values for all metrics
+                            values = []
+                            for col in target_columns:
+                                if col.startswith(('daily_', '2day_', '3day_', '1week_', '2week_', '4week_', '8week_', '13week_', '26week_', '52week_', 'from_begin_')):
+                                    # Daily metrics
+                                    if '_ws_acc_' in col:
+                                        acc_col = col.replace('_ws_acc_', '_acc_')
+                                        num_col = acc_col.replace('_acc_', '_num_')
+                                        den_col = acc_col.replace('_acc_', '_den_')
+                                        k = daily_row.get(num_col, 0.0) or 0.0
+                                        n = daily_row.get(den_col, 0.0) or 0.0
+                                        values.append(self.wilson_score_accuracy(k, n))
+                                    elif '_ppt_' in col:
+                                        pnl_col = col.replace('_ppt_', '_pnl_')
+                                        den_col = pnl_col.replace('_pnl_', '_den_')
+                                        pnl = daily_row.get(pnl_col, 0.0) or 0.0
+                                        den = daily_row.get(den_col, 0.0) or 0.0
+                                        values.append(pnl / den if den > 0 else 0.0)
+                                    else:
+                                        values.append(daily_row.get(col, 0.0) or 0.0)
+                                else:
+                                    # Regime metrics
+                                    if '_ws_acc_' in col:
+                                        acc_col = col.replace('_ws_acc_', '_acc_')
+                                        num_col = acc_col.replace('_acc_', '_num_')
+                                        den_col = acc_col.replace('_acc_', '_den_')
+                                        k = regime_row.get(num_col, 0.0) or 0.0
+                                        n = regime_row.get(den_col, 0.0) or 0.0
+                                        values.append(self.wilson_score_accuracy(k, n))
+                                    elif '_ppt_' in col:
+                                        pnl_col = col.replace('_ppt_', '_pnl_')
+                                        den_col = pnl_col.replace('_pnl_', '_den_')
+                                        pnl = regime_row.get(pnl_col, 0.0) or 0.0
+                                        den = regime_row.get(den_col, 0.0) or 0.0
+                                        values.append(pnl / den if den > 0 else 0.0)
+                                    else:
+                                        values.append(regime_row.get(col, 0.0) or 0.0)
+                            
+                            model_metrics[model_idx] = values
+                    
+                    # Transfer to GPU and compute scores vectorized
+                    metrics_gpu = cp.array(model_metrics, dtype=cp.float32)
+                    
+                    # Vectorized dot product: [models, metrics] × [metrics] = [models]
+                    combo_scores = cp.dot(metrics_gpu, weights_gpu)
+                    
+                    # Store results
+                    scores_gpu[:, combo_idx] = combo_scores
+                    
+                except Exception as e:
+                    print(f"Error processing threshold {threshold}, direction {direction}: {e}")
+                
+                combo_idx += 1
+        
+        # Find global maximum on GPU
+        max_flat_idx = cp.argmax(scores_gpu)
+        max_score = float(scores_gpu.flat[max_flat_idx])
+        
+        # Convert flat index back to model and combination indices
+        max_model_idx = int(max_flat_idx // num_combinations)
+        max_combo_idx = int(max_flat_idx % num_combinations)
+        
+        # Decode combination
+        max_threshold_idx = max_combo_idx // len(directions)
+        max_direction_idx = max_combo_idx % len(directions)
+        
+        best_model_id = common_models[max_model_idx]
+        best_threshold = thresholds[max_threshold_idx]
+        best_direction = directions[max_direction_idx]
+        
+        # Free GPU memory
+        del scores_gpu, metrics_gpu, weights_gpu
+        cp.get_default_memory_pool().free_all_blocks()
+        
+        return {
+            'model_id': best_model_id,
+            'score': max_score,
+            'direction': best_direction,
+            'threshold': best_threshold,
+            'details': f"🚀 GPU-accelerated best combination: model {best_model_id}, threshold {best_threshold}, {best_direction}side"
         }
 
 
-def get_best_trading_model(trading_day: str, market_regime: int, weighting_array: np.ndarray) -> Dict:
+def get_best_trading_model(trading_day: str, market_regime: int, weighting_array: np.ndarray, 
+                          mode: str = 'gpu') -> Dict:
     """
     Convenience function to get the best trading model.
     
     Args:
         trading_day: Trading day in format 'YYYYMMDD'
         market_regime: Market regime (0, 1, 2, 3, or 4)
-        weighting_array: Array of weights for all performance metrics
+        weighting_array: Array of weights for 76 performance metrics
+        mode: 'gpu' for GPU acceleration, 'fast' for CPU parallel, 'standard' for single-threaded
         
     Returns:
         Dict with best model information
     """
     weighter = ModelTradingWeighter()
-    return weighter.get_best_trading_model(trading_day, market_regime, weighting_array)
+    
+    if mode == 'gpu':
+        return weighter.get_best_trading_model_gpu(trading_day, market_regime, weighting_array)
+    elif mode == 'fast':
+        return weighter.get_best_trading_model_fast(trading_day, market_regime, weighting_array)
+    else:
+        return weighter.get_best_trading_model(trading_day, market_regime, weighting_array)
 
 
 if __name__ == "__main__":
