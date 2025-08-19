@@ -663,18 +663,6 @@ def main():
     # Generate models_alltime_performance.csv with all models' from_begin performance
     generate_models_alltime_performance(start_model_id, end_model_id, performance_dir)
     
-    # Generate performance index for fast lookup
-    try:
-        sys.path.append(script_dir)
-        from performance_index_generator import PerformanceIndexManager
-        
-        print("\nGenerating daily performance data index...")
-        index_manager = PerformanceIndexManager(project_root)
-        index_manager.generate_daily_performance_index(start_model_id, end_model_id)
-        
-    except Exception as e:
-        print(f"Warning: Could not generate performance index: {e}")
-    
     end_time = time.time()
     elapsed_time = end_time - start_time
     
