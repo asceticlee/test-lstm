@@ -210,36 +210,45 @@ class TradingModelRegimeWeightOptimizer:
         except Exception as e:
             raise Exception(f"Error loading model predictions for {model_id}: {e}")
     
-    def extract_predictions_for_regime_times(self, model_predictions: pd.DataFrame, 
-                                           regime_rows: pd.DataFrame) -> Dict[int, Tuple[float, float]]:
+    def get_comprehensive_trading_timestamps(self, trading_day: str, model_predictions: pd.DataFrame, 
+                                           current_day_regime_rows: pd.DataFrame) -> List[int]:
         """
-        Extract actual and predicted values for specific regime times.
+        Get comprehensive list of trading timestamps by combining model predictions and regime data.
         
         Args:
+            trading_day: Trading day (YYYYMMDD)
             model_predictions: DataFrame with model prediction data
-            regime_rows: DataFrame with regime forecast rows
+            current_day_regime_rows: DataFrame with regime forecast rows
             
         Returns:
-            Dictionary mapping ms_of_day to (actual, predicted) tuples
+            Sorted list of all trading timestamps (within trading hours)
         """
-        predictions_map = {}
+        trading_day_int = int(trading_day)
         
-        for _, regime_row in regime_rows.iterrows():
-            trading_day = regime_row['trading_day']
-            ms_of_day = regime_row['ms_of_day']
-            
-            # Find matching prediction row
-            matching_pred = model_predictions[
-                (model_predictions['TradingDay'] == trading_day) & 
-                (model_predictions['TradingMsOfDay'] == ms_of_day)
-            ]
-            
-            if len(matching_pred) > 0:
-                actual = matching_pred.iloc[0]['Actual']
-                predicted = matching_pred.iloc[0]['Predicted']
-                predictions_map[ms_of_day] = (actual, predicted)
+        # Define trading hours based on model prediction availability
+        trading_start = 38100000  # 10:35 AM (first model prediction)
+        trading_end = 43200000    # 12:00 PM (last model prediction)
         
-        return predictions_map
+        # Get timestamps from model predictions for this trading day
+        model_timestamps = set()
+        model_day_data = model_predictions[model_predictions['TradingDay'] == trading_day_int]
+        for _, row in model_day_data.iterrows():
+            ms_of_day = row['TradingMsOfDay']
+            if trading_start <= ms_of_day <= trading_end:
+                model_timestamps.add(ms_of_day)
+        
+        # Get timestamps from regime data for this trading day
+        regime_timestamps = set()
+        for _, row in current_day_regime_rows.iterrows():
+            ms_of_day = row['ms_of_day']
+            if trading_start <= ms_of_day <= trading_end:
+                regime_timestamps.add(ms_of_day)
+        
+        # Combine all timestamps and sort
+        all_timestamps = sorted(list(model_timestamps.union(regime_timestamps)))
+        
+        print(f"    Model timestamps: {len(model_timestamps)}, Regime timestamps: {len(regime_timestamps)}, Combined: {len(all_timestamps)}")
+        return all_timestamps
     
     def optimize_weights_for_regime(self, from_trading_day: str, to_trading_day: str, 
                                    market_regime: int, candidate_count: int) -> None:
@@ -318,31 +327,70 @@ class TradingModelRegimeWeightOptimizer:
                     # Load model predictions
                     model_predictions = self.load_model_predictions(model_id)
                     
-                    # Extract predictions for regime times
-                    predictions_map = self.extract_predictions_for_regime_times(
-                        model_predictions, current_day_regime_rows
-                    )
+                    # Get ALL model prediction timestamps for this day (complete dataset)
+                    trading_day_int = int(current_day)
+                    trading_start = 38100000  # 10:35 AM (first model prediction)
+                    trading_end = 43200000    # 12:00 PM (last model prediction)
                     
-                    # Only create result rows for times that have predictions
-                    for _, row in current_day_regime_rows.iterrows():
-                        trading_day = row['trading_day']
-                        ms_of_day = row['ms_of_day']
+                    # Get all model timestamps for this trading day
+                    model_day_data = model_predictions[model_predictions['TradingDay'] == trading_day_int]
+                    all_model_timestamps = []
+                    for _, row in model_day_data.iterrows():
+                        ms_of_day = row['TradingMsOfDay']
+                        if trading_start <= ms_of_day <= trading_end:
+                            all_model_timestamps.append(ms_of_day)
+                    
+                    all_model_timestamps = sorted(all_model_timestamps)
+                    
+                    # Create result rows for ALL model timestamps (complete dataset for accurate metrics)
+                    regime_rows_added = 0
+                    predictions_found = 0
+                    zeros_added = 0
+                    
+                    for ms_of_day in all_model_timestamps:
+                        # Check if this timestamp is in target regime
+                        regime_match = current_day_regime_rows[
+                            current_day_regime_rows['ms_of_day'] == ms_of_day
+                        ]
                         
-                        # Only add row if we have predictions for this time
-                        if ms_of_day in predictions_map:
-                            actual, predicted = predictions_map[ms_of_day]
-                            
-                            result_row = {
-                                'TradingDay': trading_day,
-                                'TradingMsOfDay': ms_of_day,
-                                'Actual': actual,
-                                'Predicted': predicted,
-                                'Threshold': threshold,
-                                'ModelID': int(model_id)
-                            }
-                            result_data.append(result_row)
+                        if len(regime_match) > 0:
+                            # This timestamp IS in target regime - use actual model data
+                            model_match = model_predictions[
+                                (model_predictions['TradingDay'] == trading_day_int) & 
+                                (model_predictions['TradingMsOfDay'] == ms_of_day)
+                            ]
+                            actual = model_match.iloc[0]['Actual']
+                            predicted = model_match.iloc[0]['Predicted']
+                            # Make threshold negative for downside strategies
+                            if direction == "down":
+                                actual_threshold = -threshold if threshold != 0.0 else -0.0
+                            else:
+                                actual_threshold = threshold
+                            actual_model_id = int(model_id)
+                            actual_side = direction  # Use direction from weighter ("up" or "down")
+                            predictions_found += 1
+                        else:
+                            # This timestamp is NOT in target regime - use zeros
+                            actual = 0.0
+                            predicted = 0.0
+                            actual_threshold = 0.0
+                            actual_model_id = 0
+                            actual_side = "up"  # Default to "up" for zero rows
+                            zeros_added += 1
+                        
+                        result_row = {
+                            'TradingDay': trading_day_int,
+                            'TradingMsOfDay': ms_of_day,
+                            'Actual': actual,
+                            'Predicted': predicted,
+                            'Threshold': actual_threshold,
+                            'Side': actual_side,
+                            'ModelID': actual_model_id
+                        }
+                        result_data.append(result_row)
+                        regime_rows_added += 1
                     
-                    print(f"    Added {len(predictions_map)} predictions for {current_day}")
+                    print(f"    Added {regime_rows_added} rows for {current_day} ({predictions_found} regime matches, {zeros_added} zeros for non-regime)")
                     
                 except Exception as e:
                     print(f"    Error processing {current_day}: {e}")
@@ -373,7 +421,7 @@ class TradingModelRegimeWeightOptimizer:
             result_data: List of result dictionaries
         """
         # Generate filename
-        filename = f"{from_trading_day}_{to_trading_day}_{market_regime}_{candidate_count}_{set_number}.csv"
+        filename = f"{from_trading_day}_{to_trading_day}_regime{market_regime}_weight{set_number:02d}_{candidate_count}candidate.csv"
         filepath = os.path.join(self.output_dir, filename)
         
         try:
