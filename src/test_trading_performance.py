@@ -341,11 +341,25 @@ def test_model_performance(model_id, prediction_dir, models_dir, output_dir, tra
             print(f"  Best downside Sharpe: {best_downside['sharpe_ratio']:.4f}")
             print(f"  Best downside Win Rate: {best_downside['win_rate']:.1%}")
     
+    # Overall best strategy by composite score
+    print(f"\nOverall Best Strategy (Composite Score):")
+    print("-" * 60)
+    best_overall = results_df.loc[results_df['composite_score'].idxmax()]
+    print(f"  Threshold: {best_overall['threshold']:.3f}")
+    print(f"  Trade Type: {best_overall['trade_type']}")
+    print(f"  Composite Score: {best_overall['composite_score']:.2f}/100")
+    print(f"  Total P&L: ${best_overall['total_pnl_after_fees']:.4f}")
+    print(f"  Sharpe Ratio: {best_overall['sharpe_ratio']:.4f}")
+    print(f"  Win Rate: {best_overall['win_rate']:.1%}")
+    print(f"  Number of Trades: {best_overall['num_trades']:,}")
+    print(f"  Profit Factor: {best_overall['profit_factor']:.4f}")
+    
     # Show top performers in each category
     print(f"\nTop 5 Performers by Category:")
     print("-" * 80)
     
     categories = [
+        ('composite_score', 'Composite Score', 'highest'),
         ('total_pnl_after_fees', 'Total P&L', 'highest'),
         ('sharpe_ratio', 'Sharpe Ratio', 'highest'),
         ('win_rate', 'Win Rate', 'highest'),
@@ -357,11 +371,18 @@ def test_model_performance(model_id, prediction_dir, models_dir, output_dir, tra
         top_5 = results_df.nlargest(5, metric) if order == 'highest' else results_df.nsmallest(5, metric)
         
         for i, (_, row) in enumerate(top_5.iterrows(), 1):
-            print(f"  {i}. Threshold: {row['threshold']:7.3f} | "
-                  f"Type: {row['trade_type']:8s} | "
-                  f"{name}: {row[metric]:8.4f} | "
-                  f"Trades: {row['num_trades']:5.0f} | "
-                  f"Win%: {row['win_rate']:6.1%}")
+            if metric == 'composite_score':
+                print(f"  {i}. Threshold: {row['threshold']:7.3f} | "
+                      f"Type: {row['trade_type']:8s} | "
+                      f"{name}: {row[metric]:6.2f}/100 | "
+                      f"P&L: ${row['total_pnl_after_fees']:8.2f} | "
+                      f"Trades: {row['num_trades']:5.0f}")
+            else:
+                print(f"  {i}. Threshold: {row['threshold']:7.3f} | "
+                      f"Type: {row['trade_type']:8s} | "
+                      f"{name}: {row[metric]:8.4f} | "
+                      f"Trades: {row['num_trades']:5.0f} | "
+                      f"Win%: {row['win_rate']:6.1%}")
     
     # Export results to CSV in the specified output directory
     os.makedirs(output_dir, exist_ok=True)

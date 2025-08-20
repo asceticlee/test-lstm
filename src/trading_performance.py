@@ -481,8 +481,118 @@ class TradingPerformanceAnalyzer:
         else:
             result['avg_pnl_per_trade'] = 0
         
+        # Add composite score
+        result['composite_score'] = self.calculate_composite_score(result)
+        
         print(f"Performance evaluation completed")
         return result
+    
+    def calculate_composite_score(self, result, weights=None):
+        """
+        Calculate a composite performance score from multiple metrics
+        
+        This function combines key performance metrics into a single score for easy comparison.
+        The score is normalized and weighted to balance profitability, risk, and consistency.
+        
+        Args:
+            result: Dictionary result from evaluate_performance
+            weights: Dictionary of weights for each metric. If None, uses default weights.
+                    Keys: 'profitability', 'risk_adjusted', 'consistency', 'efficiency'
+                    
+        Returns:
+            float: Composite score (higher is better, typically 0-100 scale)
+        """
+        if not result or result['num_trades'] == 0:
+            return 0.0
+        
+        # Default weights - can be customized based on trading strategy preferences
+        if weights is None:
+            weights = {
+                'profitability': 0.35,  # Total P&L and profit factor
+                'risk_adjusted': 0.30,  # Sharpe ratio and max drawdown
+                'consistency': 0.25,    # Win rate and volatility
+                'efficiency': 0.10      # Calmar ratio and trade frequency
+            }
+        
+        # Ensure weights sum to 1.0
+        total_weight = sum(weights.values())
+        if total_weight != 1.0:
+            for key in weights:
+                weights[key] /= total_weight
+        
+        # Extract key metrics
+        total_pnl = result['total_pnl_after_fees']
+        sharpe_ratio = result['sharpe_ratio']
+        max_drawdown = result['max_drawdown']
+        win_rate = result['win_rate']
+        profit_factor = result['profit_factor']
+        volatility = result['volatility']
+        calmar_ratio = result['calmar_ratio']
+        num_trades = result['num_trades']
+        
+        # Component 1: Profitability (0-100 scale)
+        # Positive P&L gets higher score, scaled by magnitude
+        pnl_score = max(0, min(100, 50 + total_pnl * 10))  # Center at 50, +/- based on P&L
+        
+        # Profit factor contribution (>1.0 is good, 2.0+ is excellent)
+        pf_score = min(100, max(0, (profit_factor - 0.5) * 50))
+        profitability_score = (pnl_score * 0.7) + (pf_score * 0.3)
+        
+        # Component 2: Risk-Adjusted Returns (0-100 scale)
+        # Sharpe ratio contribution (>0.5 is good, >1.0 is excellent)
+        sharpe_score = min(100, max(0, (sharpe_ratio + 0.5) * 50))
+        
+        # Max drawdown penalty (lower drawdown is better)
+        if max_drawdown > 0:
+            # Penalize based on drawdown as percentage of total P&L
+            if total_pnl > 0:
+                drawdown_ratio = max_drawdown / max(total_pnl, max_drawdown)
+            else:
+                drawdown_ratio = 1.0
+            drawdown_score = max(0, 100 - drawdown_ratio * 100)
+        else:
+            drawdown_score = 100
+        
+        risk_adjusted_score = (sharpe_score * 0.6) + (drawdown_score * 0.4)
+        
+        # Component 3: Consistency (0-100 scale)
+        # Win rate contribution (50% is neutral, 60%+ is good)
+        win_rate_score = max(0, min(100, win_rate * 100))
+        
+        # Volatility penalty (lower volatility is better for consistency)
+        volatility_score = max(0, min(100, 100 - volatility * 50))
+        consistency_score = (win_rate_score * 0.7) + (volatility_score * 0.3)
+        
+        # Component 4: Efficiency (0-100 scale)
+        # Calmar ratio contribution
+        calmar_score = min(100, max(0, (calmar_ratio + 1) * 25))
+        
+        # Trade frequency consideration (too few trades may not be statistically significant)
+        if num_trades >= 100:
+            frequency_score = 100
+        elif num_trades >= 50:
+            frequency_score = 80
+        elif num_trades >= 20:
+            frequency_score = 60
+        elif num_trades >= 10:
+            frequency_score = 40
+        else:
+            frequency_score = 20
+        
+        efficiency_score = (calmar_score * 0.7) + (frequency_score * 0.3)
+        
+        # Calculate weighted composite score
+        composite_score = (
+            profitability_score * weights['profitability'] +
+            risk_adjusted_score * weights['risk_adjusted'] +
+            consistency_score * weights['consistency'] +
+            efficiency_score * weights['efficiency']
+        )
+        
+        # Ensure score is within 0-100 range
+        composite_score = max(0, min(100, composite_score))
+        
+        return round(composite_score, 2)
     
     def print_performance_summary(self, result):
         """
@@ -501,11 +611,15 @@ class TradingPerformanceAnalyzer:
         print(f"Transaction fee: ${self.transaction_fee:.4f} per trade")
         print(f"Trading hours: {self.ms_to_time(self.trading_start_ms)} to {self.ms_to_time(self.trading_end_ms)}")
         
+        # Calculate composite score
+        composite_score = self.calculate_composite_score(result)
+        
         # Performance summary
         print(f"\nPerformance Results:")
         print("-" * 60)
         print(f"  Threshold: {result['threshold']}")
         print(f"  Trade Type: {result['trade_type']}")
+        print(f"  Composite Score: {composite_score:.2f}/100")
         print(f"  Number of Trades: {result['num_trades']:,}")
         print(f"  Win Rate: {result['win_rate']:.1%}")
         print(f"  Total P&L (After Fees): ${result['total_pnl_after_fees']:.4f}")
