@@ -28,6 +28,7 @@ from typing import List, Dict, Tuple, Optional
 # Add current directory to path to import model_trading_weighter
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from model_trading.model_trading_weighter import ModelTradingWeighter
+from trading_performance import TradingPerformanceAnalyzer
 
 
 class TradingModelRegimeWeightOptimizer:
@@ -57,6 +58,9 @@ class TradingModelRegimeWeightOptimizer:
         
         # Initialize model trading weighter
         self.weighter = ModelTradingWeighter(project_root)
+        
+        # Initialize trading performance analyzer
+        self.performance_analyzer = TradingPerformanceAnalyzer(transaction_fee=0.02)
         
         # Cache for regime forecast data
         self._regime_forecast_cache = None
@@ -283,6 +287,8 @@ class TradingModelRegimeWeightOptimizer:
             return
         
         # Process each weight candidate
+        all_weight_performances = []  # Store performance results for all weight candidates
+        
         for set_number, weights in enumerate(weight_candidates, 1):
             print(f"\nProcessing weight candidate {set_number}/{candidate_count}")
             
@@ -396,12 +402,50 @@ class TradingModelRegimeWeightOptimizer:
                     print(f"    Error processing {current_day}: {e}")
                     continue
             
-            # Save results for this weight candidate
+            # Evaluate performance using trading performance analyzer
             if result_data:
+                print(f"  Evaluating performance for weight candidate {set_number}")
+                
+                # Extract data arrays (excluding ModelID column)
+                trading_days_array = [row['TradingDay'] for row in result_data]
+                trading_ms_array = [row['TradingMsOfDay'] for row in result_data]
+                actual_array = [row['Actual'] for row in result_data]
+                predicted_array = [row['Predicted'] for row in result_data]
+                threshold_array = [row['Threshold'] for row in result_data]
+                side_array = [row['Side'] for row in result_data]
+                
+                # Evaluate performance using trading performance analyzer
+                try:
+                    performance_result = self.performance_analyzer.evaluate_performance(
+                        trading_days=trading_days_array,
+                        trading_ms=trading_ms_array,
+                        actual=actual_array,
+                        predicted=predicted_array,
+                        thresholds=threshold_array,
+                        sides=side_array
+                    )
+                    
+                    if performance_result:
+                        # Add weight candidate information
+                        performance_result['weight_candidate'] = set_number
+                        performance_result['weights'] = weights.tolist()
+                        all_weight_performances.append(performance_result)
+                        
+                        print(f"    Performance metrics collected - Composite Score: {performance_result['composite_score']:.2f}")
+                    
+                except Exception as e:
+                    print(f"    Error evaluating performance for weight candidate {set_number}: {e}")
+                
+                # Still save the detailed results as before
                 self.save_results(from_trading_day, to_trading_day, market_regime, 
                                 candidate_count, set_number, weights, result_data)
             else:
                 print(f"  No data to save for weight candidate {set_number}")
+        
+        # After processing all weight candidates, create ranking
+        if all_weight_performances:
+            self.save_optimized_ranking(from_trading_day, to_trading_day, market_regime, 
+                                      candidate_count, all_weight_performances)
         
         print(f"\nOptimization complete! Results saved to {self.output_dir}")
     
@@ -444,6 +488,118 @@ class TradingModelRegimeWeightOptimizer:
             
         except Exception as e:
             print(f"  Error saving results to {filename}: {e}")
+    
+    def save_optimized_ranking(self, from_trading_day: str, to_trading_day: str, market_regime: int,
+                              candidate_count: int, all_performances: List[Dict]) -> None:
+        """
+        Save optimized weight ranking sorted by composite score.
+        
+        Args:
+            from_trading_day: Start trading day
+            to_trading_day: End trading day
+            market_regime: Market regime
+            candidate_count: Total number of candidates
+            all_performances: List of performance result dictionaries
+        """
+        print(f"\nGenerating optimized weight ranking...")
+        
+        # Sort by composite_score in descending order
+        sorted_performances = sorted(all_performances, key=lambda x: x['composite_score'], reverse=True)
+        
+        # Get metric column information by using show_metrics=True approach
+        try:
+            # Use a sample call to get metrics breakdown with actual column names
+            import numpy as np
+            np.random.seed(42)
+            sample_weights = np.random.uniform(0.0, 1.0, 76)
+            
+            # Get trading days for sample call
+            trading_days = self.get_trading_days_in_range(from_trading_day, to_trading_day)
+            if trading_days:
+                sample_day = self.get_previous_trading_day(trading_days[0])
+                if sample_day:
+                    sample_result = self.weighter.get_best_trading_model(
+                        trading_day=sample_day,
+                        market_regime=market_regime,
+                        weighting_array=sample_weights,
+                        show_metrics=True
+                    )
+                    
+                    if 'metrics_breakdown' in sample_result and sample_result['metrics_breakdown']:
+                        # Extract column names using the correct format from metrics breakdown
+                        weight_column_names = []
+                        for metric in sample_result['metrics_breakdown']['metrics']:
+                            column_name = metric['column_name']
+                            data_source = metric['data_source']
+                            weight_column_names.append(f"{data_source}:{column_name}")
+                        
+                        print(f"  Using {len(weight_column_names)} metric column names from model trading weighter")
+                        daily_count = sum(1 for name in weight_column_names if name.startswith('daily:'))
+                        regime_count = sum(1 for name in weight_column_names if name.startswith('regime:'))
+                        print(f"    Daily columns: {daily_count}, Regime columns: {regime_count}")
+                    else:
+                        raise Exception("No metrics breakdown available from sample call")
+                else:
+                    raise Exception("No previous trading day found for sample call")
+            else:
+                raise Exception("No trading days found for sample call")
+            
+        except Exception as e:
+            print(f"  Warning: Could not get metric column names: {e}")
+            print(f"  Falling back to generic weight column names")
+            # Fallback to generic names if we can't get the actual column names
+            weight_column_names = [f"weight_{i+1:02d}" for i in range(76)]
+        
+        # Create DataFrame for easier manipulation
+        ranking_data = []
+        for rank, perf in enumerate(sorted_performances, 1):
+            row = {
+                'rank': rank,
+                'weight_candidate': perf['weight_candidate'],
+                'composite_score': perf['composite_score'],
+                'total_pnl_after_fees': perf['total_pnl_after_fees'],
+                'sharpe_ratio': perf['sharpe_ratio'],
+                'max_drawdown': perf['max_drawdown'],
+                'win_rate': perf['win_rate'],
+                'num_trades': perf['num_trades'],
+                'profit_factor': perf['profit_factor'],
+                'avg_pnl_per_trade': perf['avg_pnl_per_trade'],
+                'volatility': perf['volatility'],
+                'calmar_ratio': perf['calmar_ratio'],
+                'from_trading_day': from_trading_day,
+                'to_trading_day': to_trading_day,
+                'market_regime': market_regime,
+                'candidate_count': candidate_count
+            }
+            
+            # Add weight values using actual metric column names
+            weights = perf['weights']
+            for i, weight in enumerate(weights):
+                if i < len(weight_column_names):
+                    row[weight_column_names[i]] = weight
+                else:
+                    # Fallback for any extra weights
+                    row[f'weight_{i+1:02d}'] = weight
+            
+            ranking_data.append(row)
+        
+        # Save to CSV
+        ranking_filename = "optimized_weight_ranking.csv"
+        ranking_filepath = os.path.join(self.output_dir, ranking_filename)
+        
+        try:
+            ranking_df = pd.DataFrame(ranking_data)
+            ranking_df.to_csv(ranking_filepath, index=False)
+            
+            print(f"  Saved optimized ranking to {ranking_filename}")
+            print(f"  Top 3 performers by composite score:")
+            for i in range(min(3, len(sorted_performances))):
+                perf = sorted_performances[i]
+                print(f"    {i+1}. Weight {perf['weight_candidate']:02d}: Score {perf['composite_score']:.2f}, "
+                      f"P&L ${perf['total_pnl_after_fees']:.4f}, Sharpe {perf['sharpe_ratio']:.4f}")
+            
+        except Exception as e:
+            print(f"  Error saving ranking to {ranking_filename}: {e}")
 
 
 def main():
