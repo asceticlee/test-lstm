@@ -273,9 +273,9 @@ def test_model_performance(model_id, prediction_dir, models_dir, output_dir, tra
                     'Side': side
                 })
                 
-                # Save input data file
+                # Save input data file with side included in filename
                 threshold_str = f"{threshold:.2f}".replace('-', 'neg').replace('.', 'p')
-                input_filename = f"model_{model_id:05d}_threshold_{threshold_str}_input_data.csv"
+                input_filename = f"model_{model_id:05d}_threshold_{threshold_str}_{side}_input_data.csv"
                 input_data_file = os.path.join(input_files_dir, input_filename)
                 input_df.to_csv(input_data_file, index=False)
                 print(f"    📄 Generated input file: {os.path.basename(input_data_file)}")
