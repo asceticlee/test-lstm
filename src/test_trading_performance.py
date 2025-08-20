@@ -192,38 +192,46 @@ def test_model_performance(model_id, prediction_dir, models_dir, output_dir, tra
     
     # Test each threshold individually
     for threshold in all_thresholds:
-        print(f"\n" + "="*60)
-        print(f"Testing threshold: {threshold}")
-        print(f"="*60)
-
         threshold_array = np.full(len(pred_df), threshold)
 
         # For threshold == 0.0, test both sides explicitly
         if abs(threshold) < 1e-8:
-            for side in ['up', 'down']:
-                print(f"Testing threshold: {threshold} with side: {side}")
+            # Test downside first (to maintain proper order: -0.1, -0.0, +0.0, 0.1)
+            for side in ['down', 'up']:
+                # Print header for each side of zero threshold
+                print(f"\n" + "="*60)
+                if side == 'down':
+                    print(f"Testing threshold: -0.0 (downside)")
+                    display_threshold = "-0.0"
+                else:
+                    print(f"Testing threshold: +0.0 (upside)")
+                    display_threshold = "+0.0"
+                print(f"="*60)
+                
+                print(f"Testing threshold: {display_threshold} with side: {side}")
                 
                 # Generate input data file if requested
                 input_data_file = None
                 if generate_input_files:
+                    # Set correct threshold value for CSV display
+                    if side == 'up':
+                        threshold_str = "0p00"
+                        csv_threshold = 0.0  # Positive zero for upside
+                    else:
+                        threshold_str = "neg0p00"  
+                        csv_threshold = -0.0  # Negative zero for downside
+                    
                     # Create input data DataFrame with side column
                     input_df = pd.DataFrame({
                         'TradingDay': pred_df['TradingDay'].values,
                         'TradingMsOfDay': pred_df['TradingMsOfDay'].values,
                         'Actual': pred_df['Actual'].values,
                         'Predicted': pred_df['Predicted'].values,
-                        'Threshold': threshold_array,
+                        'Threshold': np.full(len(pred_df), csv_threshold),
                         'Side': side
                     })
                     
-                    # Save input data file with explicit threshold value
-                    if side == 'up':
-                        threshold_str = "0p00"
-                        display_threshold = 0.0
-                    else:
-                        threshold_str = "neg0p00"  
-                        display_threshold = -0.0
-                    
+                    # Save input data file
                     input_filename = f"model_{model_id:05d}_threshold_{threshold_str}_{side}_input_data.csv"
                     input_data_file = os.path.join(input_files_dir, input_filename)
                     input_df.to_csv(input_data_file, index=False)
@@ -238,11 +246,13 @@ def test_model_performance(model_id, prediction_dir, models_dir, output_dir, tra
                     sides=np.full(len(pred_df), side)
                 )
                 if result:
-                    # Override threshold to show proper +0.0 vs -0.0
+                    # For zero threshold, set display values and adjust threshold for CSV clarity
                     if side == 'up':
-                        result['threshold'] = 0.0
-                    else:
-                        result['threshold'] = -0.0
+                        result['threshold'] = 0.0  # Use positive zero for upside
+                        result['threshold_display'] = '+0.0'
+                    else:  # side == 'down'
+                        result['threshold'] = -0.0  # Keep negative zero for downside
+                        result['threshold_display'] = '-0.0'
                     
                     # Add input data file path to result if generated
                     if input_data_file:
@@ -253,6 +263,10 @@ def test_model_performance(model_id, prediction_dir, models_dir, output_dir, tra
                     all_results.append(result)
         else:
             # For non-zero thresholds, determine side based on threshold sign
+            print(f"\n" + "="*60)
+            print(f"Testing threshold: {threshold}")
+            print(f"="*60)
+            
             if threshold > 0:
                 side = 'up'
             else:

@@ -448,6 +448,8 @@ class TradingPerformanceAnalyzer:
         unique_thresholds = np.unique(filtered_thresholds)
         if len(unique_thresholds) == 1:
             threshold_value = unique_thresholds[0]
+            threshold_display = None  # Will be set for zero thresholds
+            
             # Determine trade type based on threshold and sides parameter
             if threshold_value > 0:
                 trade_type = 'upside'
@@ -458,7 +460,10 @@ class TradingPerformanceAnalyzer:
                     # For zero threshold, use the sides parameter
                     unique_sides = np.unique(filtered_sides)
                     if len(unique_sides) == 1:
-                        trade_type = 'upside' if unique_sides[0] == 'up' else 'downside'
+                        side = unique_sides[0]
+                        trade_type = 'upside' if side == 'up' else 'downside'
+                        # Set display value for zero threshold to distinguish up/down
+                        threshold_display = '+0.0' if side == 'up' else '-0.0'
                     else:
                         trade_type = 'mixed'
                 else:
@@ -466,6 +471,7 @@ class TradingPerformanceAnalyzer:
         else:
             threshold_value = f"mixed ({len(unique_thresholds)} values)"
             trade_type = 'mixed'
+            threshold_display = None
         
         # Combine results - ensure performance metrics use correct totals from trade_stats
         result = {
@@ -474,6 +480,10 @@ class TradingPerformanceAnalyzer:
             **trade_stats,
             **perf_metrics
         }
+        
+        # Add threshold_display if it was set
+        if threshold_display is not None:
+            result['threshold_display'] = threshold_display
         
         # Recalculate avg_pnl_per_trade using the correct total_pnl_after_fees
         if result['num_trades'] > 0:
@@ -617,7 +627,9 @@ class TradingPerformanceAnalyzer:
         # Performance summary
         print(f"\nPerformance Results:")
         print("-" * 60)
-        print(f"  Threshold: {result['threshold']}")
+        # Show threshold display if available, otherwise show threshold
+        threshold_display = result.get('threshold_display', result['threshold'])
+        print(f"  Threshold: {threshold_display}")
         print(f"  Trade Type: {result['trade_type']}")
         print(f"  Composite Score: {composite_score:.2f}/100")
         print(f"  Number of Trades: {result['num_trades']:,}")
