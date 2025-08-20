@@ -291,21 +291,8 @@ class TradingModelRegimeWeightOptimizer:
                     print(f"    No regime {market_regime} data for {current_day}, skipping")
                     continue
                 
-                # Initialize/append to result data structure
-                for _, row in current_day_rows.iterrows():
-                    trading_day = row['trading_day']
-                    ms_of_day = row['ms_of_day']
-                    
-                    # Initialize row with zeros for Actual, Predicted, Threshold, ModelID
-                    result_row = {
-                        'TradingDay': trading_day,
-                        'TradingMsOfDay': ms_of_day,
-                        'Actual': 0.0,
-                        'Predicted': 0.0,
-                        'Threshold': 0.0,
-                        'ModelID': 0
-                    }
-                    result_data.append(result_row)
+                # Store current day rows for later processing
+                current_day_regime_rows = current_day_rows
                 
                 # Get previous trading day for model weighter
                 previous_day = self.get_previous_trading_day(current_day)
@@ -333,23 +320,29 @@ class TradingModelRegimeWeightOptimizer:
                     
                     # Extract predictions for regime times
                     predictions_map = self.extract_predictions_for_regime_times(
-                        model_predictions, current_day_rows
+                        model_predictions, current_day_regime_rows
                     )
                     
-                    # Update result data with actual predictions
-                    for i, result_row in enumerate(result_data):
-                        if (result_row['TradingDay'] == int(current_day) and 
-                            result_row['TradingMsOfDay'] in predictions_map):
-                            
-                            ms_of_day = result_row['TradingMsOfDay']
+                    # Only create result rows for times that have predictions
+                    for _, row in current_day_regime_rows.iterrows():
+                        trading_day = row['trading_day']
+                        ms_of_day = row['ms_of_day']
+                        
+                        # Only add row if we have predictions for this time
+                        if ms_of_day in predictions_map:
                             actual, predicted = predictions_map[ms_of_day]
                             
-                            result_row['Actual'] = actual
-                            result_row['Predicted'] = predicted
-                            result_row['Threshold'] = threshold
-                            result_row['ModelID'] = int(model_id)
+                            result_row = {
+                                'TradingDay': trading_day,
+                                'TradingMsOfDay': ms_of_day,
+                                'Actual': actual,
+                                'Predicted': predicted,
+                                'Threshold': threshold,
+                                'ModelID': int(model_id)
+                            }
+                            result_data.append(result_row)
                     
-                    print(f"    Updated {len(predictions_map)} predictions for {current_day}")
+                    print(f"    Added {len(predictions_map)} predictions for {current_day}")
                     
                 except Exception as e:
                     print(f"    Error processing {current_day}: {e}")
