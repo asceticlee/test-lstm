@@ -170,14 +170,10 @@ def test_model_performance(model_id, prediction_dir, models_dir, output_dir, tra
     # Initialize performance analyzer
     analyzer = TradingPerformanceAnalyzer(transaction_fee=transaction_fee)
     
-    # Define trading-focused threshold ranges (0.3 to 0.7 for upside, -0.3 to -0.7 for downside)
-    upside_thresholds = [0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7]
-    downside_thresholds = [-0.3, -0.35, -0.4, -0.45, -0.5, -0.55, -0.6, -0.65, -0.7]
+    # Define threshold range from -0.8 to 0.8 (step 0.1, include 0.0, skip 0.05)
+    all_thresholds = [round(x, 2) for x in np.arange(-0.8, 0.81, 0.1) if abs(round(x, 2) - 0.05) > 1e-8]
     
-    # Combine all thresholds (removed 0.0)
-    all_thresholds = sorted(downside_thresholds + upside_thresholds)
-    
-    print(f"\nTesting {len(all_thresholds)} trading-focused thresholds: {all_thresholds}")
+    print(f"\nTesting {len(all_thresholds)} thresholds: {all_thresholds}")
     
     # Log parameters being passed to trading_performance.py
     print(f"\nParameters passed to TradingPerformanceAnalyzer:")
@@ -185,65 +181,121 @@ def test_model_performance(model_id, prediction_dir, models_dir, output_dir, tra
     print(f"  thresholds to test: {all_thresholds}")
     print(f"  data_points: {len(pred_df):,}")
     print(f"  excluded_training_period: {train_from} to {train_to}" if train_from else "  excluded_training_period: None")
-    print(f"  generate_input_files: {generate_input_files}")
-    
-    # Create input files directory if needed
-    input_files_dir = None
-    if generate_input_files:
-        input_files_dir = os.path.join(output_dir, 'trading_performance_input')
-        os.makedirs(input_files_dir, exist_ok=True)
-        print(f"  input_files_directory: {input_files_dir}")
     
     # Collect all results
     all_results = []
     
-    # Test each threshold individually  
+    # Create input files directory if needed
+    input_files_dir = os.path.join(output_dir, 'trading_performance_input')
+    if generate_input_files:
+        os.makedirs(input_files_dir, exist_ok=True)
+    
+    # Test each threshold individually
     for threshold in all_thresholds:
         print(f"\n" + "="*60)
         print(f"Testing threshold: {threshold}")
         print(f"="*60)
-        
-        # Create threshold array (all rows have same threshold)
+
         threshold_array = np.full(len(pred_df), threshold)
-        
-        # Generate input data file if requested
-        input_data_file = None
-        if generate_input_files:
-            # Create input data DataFrame
-            input_df = pd.DataFrame({
-                'TradingDay': pred_df['TradingDay'].values,
-                'TradingMsOfDay': pred_df['TradingMsOfDay'].values,
-                'Actual': pred_df['Actual'].values,
-                'Predicted': pred_df['Predicted'].values,
-                'Threshold': threshold_array
-            })
-            
-            # Save input data file
-            threshold_str = f"{threshold:.2f}".replace('-', 'neg').replace('.', 'p')
-            input_filename = f"model_{model_id:05d}_threshold_{threshold_str}_input_data.csv"
-            input_data_file = os.path.join(input_files_dir, input_filename)
-            input_df.to_csv(input_data_file, index=False)
-            print(f"    📄 Generated input file: {os.path.basename(input_data_file)}")
-        
-        # Evaluate performance for this threshold
-        result = analyzer.evaluate_performance(
-            pred_df['TradingDay'].values,
-            pred_df['TradingMsOfDay'].values,
-            pred_df['Actual'].values,
-            pred_df['Predicted'].values,
-            threshold_array
-        )
-        
-        if result:
-            # Add input data file path to result if generated
-            if input_data_file:
-                result['input_data_file'] = input_data_file
-            
-            # Print individual summary
-            analyzer.print_performance_summary(result)
-            all_results.append(result)
+
+        # For threshold == 0.0, test both sides explicitly
+        if abs(threshold) < 1e-8:
+            for side in ['up', 'down']:
+                print(f"Testing threshold: {threshold} with side: {side}")
+                
+                # Generate input data file if requested
+                input_data_file = None
+                if generate_input_files:
+                    # Create input data DataFrame with side column
+                    input_df = pd.DataFrame({
+                        'TradingDay': pred_df['TradingDay'].values,
+                        'TradingMsOfDay': pred_df['TradingMsOfDay'].values,
+                        'Actual': pred_df['Actual'].values,
+                        'Predicted': pred_df['Predicted'].values,
+                        'Threshold': threshold_array,
+                        'Side': side
+                    })
+                    
+                    # Save input data file with explicit threshold value
+                    if side == 'up':
+                        threshold_str = "0p00"
+                        display_threshold = 0.0
+                    else:
+                        threshold_str = "neg0p00"  
+                        display_threshold = -0.0
+                    
+                    input_filename = f"model_{model_id:05d}_threshold_{threshold_str}_{side}_input_data.csv"
+                    input_data_file = os.path.join(input_files_dir, input_filename)
+                    input_df.to_csv(input_data_file, index=False)
+                    print(f"    📄 Generated input file: {os.path.basename(input_data_file)}")
+                
+                result = analyzer.evaluate_performance(
+                    pred_df['TradingDay'].values,
+                    pred_df['TradingMsOfDay'].values,
+                    pred_df['Actual'].values,
+                    pred_df['Predicted'].values,
+                    threshold_array,
+                    sides=np.full(len(pred_df), side)
+                )
+                if result:
+                    # Override threshold to show proper +0.0 vs -0.0
+                    if side == 'up':
+                        result['threshold'] = 0.0
+                    else:
+                        result['threshold'] = -0.0
+                    
+                    # Add input data file path to result if generated
+                    if input_data_file:
+                        result['input_data_file'] = input_data_file
+                    
+                    # Print individual summary
+                    analyzer.print_performance_summary(result)
+                    all_results.append(result)
         else:
-            print("No results generated for this threshold")
+            # For non-zero thresholds, determine side based on threshold sign
+            if threshold > 0:
+                side = 'up'
+            else:
+                side = 'down'
+            
+            print(f"Testing threshold: {threshold} with side: {side}")
+            
+            # Generate input data file if requested
+            input_data_file = None
+            if generate_input_files:
+                # Create input data DataFrame with side column
+                input_df = pd.DataFrame({
+                    'TradingDay': pred_df['TradingDay'].values,
+                    'TradingMsOfDay': pred_df['TradingMsOfDay'].values,
+                    'Actual': pred_df['Actual'].values,
+                    'Predicted': pred_df['Predicted'].values,
+                    'Threshold': threshold_array,
+                    'Side': side
+                })
+                
+                # Save input data file
+                threshold_str = f"{threshold:.2f}".replace('-', 'neg').replace('.', 'p')
+                input_filename = f"model_{model_id:05d}_threshold_{threshold_str}_input_data.csv"
+                input_data_file = os.path.join(input_files_dir, input_filename)
+                input_df.to_csv(input_data_file, index=False)
+                print(f"    📄 Generated input file: {os.path.basename(input_data_file)}")
+            
+            result = analyzer.evaluate_performance(
+                pred_df['TradingDay'].values,
+                pred_df['TradingMsOfDay'].values,
+                pred_df['Actual'].values,
+                pred_df['Predicted'].values,
+                threshold_array,
+                sides=np.full(len(pred_df), side)
+            )
+            if result:
+                # Add input data file path to result if generated
+                if input_data_file:
+                    result['input_data_file'] = input_data_file
+                
+                # Print individual summary
+                analyzer.print_performance_summary(result)
+                all_results.append(result)
     
     if len(all_results) == 0:
         print("No results generated for any threshold")

@@ -9,6 +9,7 @@ data/*.csv
 model_performance/daily_performance_index.csv
 model_performance/regime_performance_index.csv
 model_performance/*/*.csv
+model_trading/model_trading_performance/trading_performance_input/*.csv
 
 # C extensions
 *.so

@@ -195,7 +195,7 @@ class TradingPerformanceAnalyzer:
             'pnl_after_fees': pnl_after_fees
         }
     
-    def calculate_trades_with_thresholds(self, actual, predicted, thresholds, sides=None):
+    def calculate_trades_with_thresholds(self, actual, predicted, thresholds, sides):
         """
         Calculate trades based on per-row thresholds and return P&L
         
@@ -203,9 +203,8 @@ class TradingPerformanceAnalyzer:
             actual: Array of actual values
             predicted: Array of predicted values
             thresholds: Array of threshold values (one per row)
-            sides: Array of trade directions ('up' or 'down') or None.
-                   If None, inferred from threshold signs.
-                   Required for rows where threshold=0 to resolve ambiguity
+            sides: Array of trade directions ('up' or 'down').
+                   Required - specifies trade direction for each row
             
         Returns:
             dict: Trade statistics including P&L, trade signals, etc.
@@ -214,11 +213,13 @@ class TradingPerformanceAnalyzer:
         predicted = np.array(predicted)
         thresholds = np.array(thresholds)
         
-        # Handle sides parameter
-        if sides is not None:
-            sides = np.array(sides)
-            if len(sides) != len(thresholds):
-                raise ValueError("sides array must have same length as thresholds array")
+        # Validate sides parameter
+        if sides is None:
+            raise ValueError("The 'sides' parameter is required. Must be an array of 'up' or 'down' values.")
+            
+        sides = np.array(sides)
+        if len(sides) != len(thresholds):
+            raise ValueError("sides array must have same length as thresholds array")
         
         # Initialize arrays
         trade_signals = np.zeros_like(predicted, dtype=bool)
@@ -228,20 +229,10 @@ class TradingPerformanceAnalyzer:
         for i in range(len(thresholds)):
             threshold = thresholds[i]
             
-            # Determine trade direction for this row
-            if sides is not None and sides[i] is not None:
-                trade_direction = sides[i].lower()
-                if trade_direction not in ['up', 'down']:
-                    raise ValueError(f"sides[{i}] must be 'up' or 'down', got '{sides[i]}'")
-            else:
-                # Infer from threshold sign
-                if threshold > 0:
-                    trade_direction = 'up'
-                elif threshold < 0:
-                    trade_direction = 'down'
-                else:
-                    # threshold == 0 and no side specified - skip this row (no trade)
-                    continue
+            # Use the specified side directly
+            trade_direction = sides[i].lower()
+            if trade_direction not in ['up', 'down']:
+                raise ValueError(f"sides[{i}] must be 'up' or 'down', got '{sides[i]}'")
             
             # Calculate trade signal for this row
             if trade_direction == 'up':
@@ -365,7 +356,7 @@ class TradingPerformanceAnalyzer:
             'gross_loss': gross_loss
         }
     
-    def evaluate_performance(self, trading_days, trading_ms, actual, predicted, thresholds, sides=None):
+    def evaluate_performance(self, trading_days, trading_ms, actual, predicted, thresholds, sides):
         """
         Evaluate trading performance using per-row thresholds
         
@@ -375,29 +366,26 @@ class TradingPerformanceAnalyzer:
             actual: Array of actual values
             predicted: Array of predicted values
             thresholds: Array of threshold values (one per row)
-            sides: Array of trade directions ('up' or 'down') or None.
-                   If None, inferred from threshold signs.
-                   Required for rows where threshold=0 to resolve ambiguity
+            sides: Array of trade directions ('up' or 'down'). 
+                   Required - specifies trade direction for each row
             
         Returns:
             dict: Performance results for the given threshold strategy
         """
         print(f"Evaluating performance with per-row thresholds...")
         
+        # Validate sides parameter
+        if sides is None:
+            raise ValueError("The 'sides' parameter is required. Must be an array of 'up' or 'down' values.")
+        
         # Filter for trading hours
-        if sides is not None:
-            filtered_days, filtered_ms, filtered_actual, filtered_predicted, filtered_thresholds = self.filter_trading_hours_with_thresholds(
-                trading_days, trading_ms, actual, predicted, thresholds
-            )
-            # Also filter sides array to match
-            sides_array = np.array(sides)
-            mask = (np.array(trading_ms) >= self.trading_start_ms) & (np.array(trading_ms) <= self.trading_end_ms)
-            filtered_sides = sides_array[mask]
-        else:
-            filtered_days, filtered_ms, filtered_actual, filtered_predicted, filtered_thresholds = self.filter_trading_hours_with_thresholds(
-                trading_days, trading_ms, actual, predicted, thresholds
-            )
-            filtered_sides = None
+        filtered_days, filtered_ms, filtered_actual, filtered_predicted, filtered_thresholds = self.filter_trading_hours_with_thresholds(
+            trading_days, trading_ms, actual, predicted, thresholds
+        )
+        # Also filter sides array to match
+        sides_array = np.array(sides)
+        mask = (np.array(trading_ms) >= self.trading_start_ms) & (np.array(trading_ms) <= self.trading_end_ms)
+        filtered_sides = sides_array[mask]
         
         original_count = len(trading_days)
         filtered_count = len(filtered_days)
@@ -460,7 +448,21 @@ class TradingPerformanceAnalyzer:
         unique_thresholds = np.unique(filtered_thresholds)
         if len(unique_thresholds) == 1:
             threshold_value = unique_thresholds[0]
-            trade_type = 'upside' if threshold_value > 0 else 'downside' if threshold_value < 0 else 'none'
+            # Determine trade type based on threshold and sides parameter
+            if threshold_value > 0:
+                trade_type = 'upside'
+            elif threshold_value < 0:
+                trade_type = 'downside'
+            else:  # threshold_value == 0
+                if filtered_sides is not None:
+                    # For zero threshold, use the sides parameter
+                    unique_sides = np.unique(filtered_sides)
+                    if len(unique_sides) == 1:
+                        trade_type = 'upside' if unique_sides[0] == 'up' else 'downside'
+                    else:
+                        trade_type = 'mixed'
+                else:
+                    trade_type = 'none'
         else:
             threshold_value = f"mixed ({len(unique_thresholds)} values)"
             trade_type = 'mixed'
