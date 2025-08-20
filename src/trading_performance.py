@@ -112,14 +112,17 @@ class TradingPerformanceAnalyzer:
             thresholds[mask]
         )
     
-    def calculate_trades(self, threshold, actual, predicted):
+    def calculate_trades(self, threshold, actual, predicted, side=None):
         """
         Calculate trades based on threshold and return P&L
         
         Args:
-            threshold: Trading threshold (positive for upside, negative for downside)
+            threshold: Trading threshold value
             actual: Array of actual values
             predicted: Array of predicted values
+            side: Trade direction ('up' for upside, 'down' for downside). 
+                  If None, inferred from threshold sign (positive=up, negative=down)
+                  Required when threshold=0 to resolve ambiguity
             
         Returns:
             dict: Trade statistics including P&L, trade signals, etc.
@@ -127,24 +130,37 @@ class TradingPerformanceAnalyzer:
         actual = np.array(actual)
         predicted = np.array(predicted)
         
-        if threshold > 0:
+        # Determine trade direction
+        if side is not None:
+            # Explicit side specified
+            trade_direction = side.lower()
+            if trade_direction not in ['up', 'down']:
+                raise ValueError("side must be 'up' or 'down'")
+        else:
+            # Infer from threshold sign
+            if threshold > 0:
+                trade_direction = 'up'
+            elif threshold < 0:
+                trade_direction = 'down'
+            else:
+                # threshold == 0 and no side specified - ambiguous
+                raise ValueError("When threshold=0, 'side' parameter must be specified ('up' or 'down')")
+        
+        # Calculate trade signals based on direction
+        if trade_direction == 'up':
             # Upside trading: trade when predicted > threshold (exclusive)
             trade_signals = predicted > threshold
             # Gain when actual > 0, loss when actual <= 0
             raw_pnl = np.where(trade_signals, 
                               np.where(actual > 0, actual, actual),  # actual value (positive gain, negative loss)
                               0)  # No trade
-        elif threshold < 0:
+        else:  # trade_direction == 'down'
             # Downside trading: trade when predicted < threshold (exclusive)
             trade_signals = predicted < threshold
             # Gain when actual < 0 (take absolute value), loss when actual >= 0
             raw_pnl = np.where(trade_signals,
                               np.where(actual < 0, -actual, actual),  # -actual for gain, actual for loss
                               0)  # No trade
-        else:
-            # threshold == 0, no trading
-            trade_signals = np.zeros_like(predicted, dtype=bool)
-            raw_pnl = np.zeros_like(actual)
         
         # Apply transaction fees to trades
         pnl_after_fees = np.where(trade_signals, raw_pnl - self.transaction_fee, 0)
@@ -179,7 +195,7 @@ class TradingPerformanceAnalyzer:
             'pnl_after_fees': pnl_after_fees
         }
     
-    def calculate_trades_with_thresholds(self, actual, predicted, thresholds):
+    def calculate_trades_with_thresholds(self, actual, predicted, thresholds, sides=None):
         """
         Calculate trades based on per-row thresholds and return P&L
         
@@ -187,6 +203,9 @@ class TradingPerformanceAnalyzer:
             actual: Array of actual values
             predicted: Array of predicted values
             thresholds: Array of threshold values (one per row)
+            sides: Array of trade directions ('up' or 'down') or None.
+                   If None, inferred from threshold signs.
+                   Required for rows where threshold=0 to resolve ambiguity
             
         Returns:
             dict: Trade statistics including P&L, trade signals, etc.
@@ -195,25 +214,46 @@ class TradingPerformanceAnalyzer:
         predicted = np.array(predicted)
         thresholds = np.array(thresholds)
         
+        # Handle sides parameter
+        if sides is not None:
+            sides = np.array(sides)
+            if len(sides) != len(thresholds):
+                raise ValueError("sides array must have same length as thresholds array")
+        
         # Initialize arrays
         trade_signals = np.zeros_like(predicted, dtype=bool)
         raw_pnl = np.zeros_like(actual)
         
-        # Handle upside trades (positive thresholds)
-        upside_mask = thresholds > 0
-        upside_trade_signals = (predicted > thresholds) & upside_mask
-        trade_signals |= upside_trade_signals
-        # Gain when actual > 0, loss when actual <= 0
-        raw_pnl = np.where(upside_trade_signals, actual, raw_pnl)
-        
-        # Handle downside trades (negative thresholds)
-        downside_mask = thresholds < 0
-        downside_trade_signals = (predicted < thresholds) & downside_mask
-        trade_signals |= downside_trade_signals
-        # For short positions: P&L = -actual (profit when actual < 0, loss when actual >= 0)
-        raw_pnl = np.where(downside_trade_signals, -actual, raw_pnl)
-        
-        # Note: threshold == 0 results in no trades (trade_signals and raw_pnl remain zeros)
+        # Process each row
+        for i in range(len(thresholds)):
+            threshold = thresholds[i]
+            
+            # Determine trade direction for this row
+            if sides is not None and sides[i] is not None:
+                trade_direction = sides[i].lower()
+                if trade_direction not in ['up', 'down']:
+                    raise ValueError(f"sides[{i}] must be 'up' or 'down', got '{sides[i]}'")
+            else:
+                # Infer from threshold sign
+                if threshold > 0:
+                    trade_direction = 'up'
+                elif threshold < 0:
+                    trade_direction = 'down'
+                else:
+                    # threshold == 0 and no side specified - skip this row (no trade)
+                    continue
+            
+            # Calculate trade signal for this row
+            if trade_direction == 'up':
+                # Upside trading: trade when predicted > threshold
+                if predicted[i] > threshold:
+                    trade_signals[i] = True
+                    raw_pnl[i] = actual[i]  # P&L = actual value
+            else:  # trade_direction == 'down'
+                # Downside trading: trade when predicted < threshold  
+                if predicted[i] < threshold:
+                    trade_signals[i] = True
+                    raw_pnl[i] = -actual[i]  # P&L = -actual (profit when actual < 0)
         
         # Apply transaction fees to trades
         pnl_after_fees = np.where(trade_signals, raw_pnl - self.transaction_fee, 0)
@@ -325,7 +365,7 @@ class TradingPerformanceAnalyzer:
             'gross_loss': gross_loss
         }
     
-    def evaluate_performance(self, trading_days, trading_ms, actual, predicted, thresholds):
+    def evaluate_performance(self, trading_days, trading_ms, actual, predicted, thresholds, sides=None):
         """
         Evaluate trading performance using per-row thresholds
         
@@ -335,6 +375,9 @@ class TradingPerformanceAnalyzer:
             actual: Array of actual values
             predicted: Array of predicted values
             thresholds: Array of threshold values (one per row)
+            sides: Array of trade directions ('up' or 'down') or None.
+                   If None, inferred from threshold signs.
+                   Required for rows where threshold=0 to resolve ambiguity
             
         Returns:
             dict: Performance results for the given threshold strategy
@@ -342,9 +385,19 @@ class TradingPerformanceAnalyzer:
         print(f"Evaluating performance with per-row thresholds...")
         
         # Filter for trading hours
-        filtered_days, filtered_ms, filtered_actual, filtered_predicted, filtered_thresholds = self.filter_trading_hours_with_thresholds(
-            trading_days, trading_ms, actual, predicted, thresholds
-        )
+        if sides is not None:
+            filtered_days, filtered_ms, filtered_actual, filtered_predicted, filtered_thresholds = self.filter_trading_hours_with_thresholds(
+                trading_days, trading_ms, actual, predicted, thresholds
+            )
+            # Also filter sides array to match
+            sides_array = np.array(sides)
+            mask = (np.array(trading_ms) >= self.trading_start_ms) & (np.array(trading_ms) <= self.trading_end_ms)
+            filtered_sides = sides_array[mask]
+        else:
+            filtered_days, filtered_ms, filtered_actual, filtered_predicted, filtered_thresholds = self.filter_trading_hours_with_thresholds(
+                trading_days, trading_ms, actual, predicted, thresholds
+            )
+            filtered_sides = None
         
         original_count = len(trading_days)
         filtered_count = len(filtered_days)
@@ -355,7 +408,7 @@ class TradingPerformanceAnalyzer:
             return {}
         
         # Calculate trades using per-row thresholds
-        trade_stats = self.calculate_trades_with_thresholds(filtered_actual, filtered_predicted, filtered_thresholds)
+        trade_stats = self.calculate_trades_with_thresholds(filtered_actual, filtered_predicted, filtered_thresholds, filtered_sides)
         
         # Calculate performance metrics from raw data (we'll create the pnl series)
         # For performance metrics, we need the P&L series, not just totals
@@ -368,19 +421,34 @@ class TradingPerformanceAnalyzer:
         trade_signals = np.zeros_like(predicted_array, dtype=bool)
         raw_pnl = np.zeros_like(actual_array)
         
-        # Handle upside trades
-        upside_mask = thresholds_array > 0
-        upside_trade_signals = (predicted_array > thresholds_array) & upside_mask
-        trade_signals |= upside_trade_signals
-        raw_pnl = np.where(upside_trade_signals, actual_array, raw_pnl)
-        
-        # Handle downside trades  
-        downside_mask = thresholds_array < 0
-        downside_trade_signals = (predicted_array < thresholds_array) & downside_mask
-        trade_signals |= downside_trade_signals
-        raw_pnl = np.where(downside_trade_signals, -actual_array, raw_pnl)
-        
-        # Note: threshold == 0 results in no trades (trade_signals and raw_pnl remain zeros)
+        # Process each row individually to handle sides correctly
+        for i in range(len(thresholds_array)):
+            threshold = thresholds_array[i]
+            
+            # Determine trade direction for this row
+            if filtered_sides is not None and filtered_sides[i] is not None:
+                trade_direction = filtered_sides[i].lower()
+            else:
+                # Infer from threshold sign
+                if threshold > 0:
+                    trade_direction = 'up'
+                elif threshold < 0:
+                    trade_direction = 'down'
+                else:
+                    # threshold == 0 and no side specified - skip this row (no trade)
+                    continue
+            
+            # Calculate trade signal for this row
+            if trade_direction == 'up':
+                # Upside trading: trade when predicted > threshold
+                if predicted_array[i] > threshold:
+                    trade_signals[i] = True
+                    raw_pnl[i] = actual_array[i]  # P&L = actual value
+            else:  # trade_direction == 'down'
+                # Downside trading: trade when predicted < threshold  
+                if predicted_array[i] < threshold:
+                    trade_signals[i] = True
+                    raw_pnl[i] = -actual_array[i]  # P&L = -actual (profit when actual < 0)
         
         # Apply transaction fees
         pnl_after_fees = np.where(trade_signals, raw_pnl - self.transaction_fee, 0)
