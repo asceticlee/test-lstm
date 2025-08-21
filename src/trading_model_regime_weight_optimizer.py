@@ -24,6 +24,8 @@ import pandas as pd
 import numpy as np
 from datetime import datetime
 from typing import List, Dict, Tuple, Optional
+from concurrent.futures import ThreadPoolExecutor, as_completed
+import threading
 
 # Add current directory to path to import model_trading_weighter
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -254,6 +256,116 @@ class TradingModelRegimeWeightOptimizer:
         print(f"    Model timestamps: {len(model_timestamps)}, Regime timestamps: {len(regime_timestamps)}, Combined: {len(all_timestamps)}")
         return all_timestamps
     
+    def process_weight_candidate_for_day(self, set_number: int, weights: np.ndarray, 
+                                       current_day: str, current_day_regime_rows: pd.DataFrame,
+                                       previous_day: str, market_regime: int,
+                                       model_predictions_cache: Dict, cache_lock: threading.Lock) -> Tuple[int, List[Dict]]:
+        """
+        Process a single weight candidate for a specific trading day.
+        
+        Args:
+            set_number: Weight candidate number
+            weights: Weight array
+            current_day: Current trading day
+            current_day_regime_rows: Regime rows for current day
+            previous_day: Previous trading day for model selection
+            market_regime: Market regime
+            model_predictions_cache: Shared cache for model predictions
+            cache_lock: Thread lock for cache access
+            
+        Returns:
+            Tuple of (set_number, list of result rows)
+        """
+        result_rows = []
+        
+        try:
+            # Find best model using model trading weighter
+            best_model_result = self.weighter.get_best_trading_model(
+                trading_day=previous_day,
+                market_regime=market_regime,
+                weighting_array=weights
+            )
+            
+            model_id = best_model_result['model_id']
+            direction = best_model_result['direction']
+            threshold = best_model_result['threshold']
+            
+            # Thread-safe cache access for model predictions
+            with cache_lock:
+                if model_id not in model_predictions_cache:
+                    model_predictions_cache[model_id] = self.load_model_predictions(model_id)
+                    print(f"    [Thread] Cached predictions for model {model_id}")
+                model_predictions = model_predictions_cache[model_id]
+            
+            # Get ALL model prediction timestamps for this day (complete dataset)
+            trading_day_int = int(current_day)
+            trading_start = 38100000  # 10:35 AM (first model prediction)
+            trading_end = 43200000    # 12:00 PM (last model prediction)
+            
+            # Get all model timestamps for this trading day
+            model_day_data = model_predictions[model_predictions['TradingDay'] == trading_day_int]
+            all_model_timestamps = []
+            for _, row in model_day_data.iterrows():
+                ms_of_day = row['TradingMsOfDay']
+                if trading_start <= ms_of_day <= trading_end:
+                    all_model_timestamps.append(ms_of_day)
+            
+            all_model_timestamps = sorted(all_model_timestamps)
+            
+            # Create result rows for ALL model timestamps (complete dataset for accurate metrics)
+            predictions_found = 0
+            zeros_added = 0
+            
+            for ms_of_day in all_model_timestamps:
+                # Check if this timestamp is in target regime
+                regime_match = current_day_regime_rows[
+                    current_day_regime_rows['ms_of_day'] == ms_of_day
+                ]
+                
+                if len(regime_match) > 0:
+                    # This timestamp IS in target regime - use actual model data
+                    model_match = model_predictions[
+                        (model_predictions['TradingDay'] == trading_day_int) & 
+                        (model_predictions['TradingMsOfDay'] == ms_of_day)
+                    ]
+                    actual = model_match.iloc[0]['Actual']
+                    predicted = model_match.iloc[0]['Predicted']
+                    # Make threshold negative for downside strategies
+                    if direction == "down":
+                        actual_threshold = -threshold if threshold != 0.0 else -0.0
+                    else:
+                        actual_threshold = threshold
+                    actual_model_id = int(model_id)
+                    actual_side = direction  # Use direction from weighter ("up" or "down")
+                    predictions_found += 1
+                else:
+                    # This timestamp is NOT in target regime - use zeros
+                    actual = 0.0
+                    predicted = 0.0
+                    actual_threshold = 0.0
+                    actual_model_id = 0
+                    actual_side = "up"  # Default to "up" for zero rows
+                    zeros_added += 1
+                
+                result_row = {
+                    'TradingDay': trading_day_int,
+                    'TradingMsOfDay': ms_of_day,
+                    'Actual': actual,
+                    'Predicted': predicted,
+                    'Threshold': actual_threshold,
+                    'Side': actual_side,
+                    'ModelID': actual_model_id
+                }
+                result_rows.append(result_row)
+            
+            print(f"    [Thread] Weight {set_number}: Model {model_id} ({direction}, {threshold}), "
+                  f"{len(result_rows)} rows ({predictions_found} regime, {zeros_added} zeros)")
+            
+        except Exception as e:
+            print(f"    [Thread] Error processing weight candidate {set_number} for {current_day}: {e}")
+        
+        return set_number, result_rows
+    
     def optimize_weights_for_regime(self, from_trading_day: str, to_trading_day: str, 
                                    market_regime: int, candidate_count: int) -> None:
         """
@@ -286,125 +398,73 @@ class TradingModelRegimeWeightOptimizer:
             print("No trading days found in the specified range")
             return
         
-        # Process each weight candidate
+        # Process each trading day (outer loop for efficiency)
         all_weight_performances = []  # Store performance results for all weight candidates
         
-        for set_number, weights in enumerate(weight_candidates, 1):
-            print(f"\nProcessing weight candidate {set_number}/{candidate_count}")
+        # Initialize result storage for each weight candidate
+        weight_results = {i+1: [] for i in range(candidate_count)}
+        
+        # Process each trading day first (to minimize disk I/O)
+        for current_day in trading_days:
+            print(f"\nProcessing trading day {current_day}")
             
-            # Initialize 2D array for collecting results
-            result_data = []
+            # Get current day regime rows (read once per day)
+            current_day_rows = self.get_regime_rows_for_day(current_day, market_regime)
             
-            # Process each trading day
-            for current_day in trading_days:
-                print(f"  Processing trading day {current_day}")
-                
-                # Get current day regime rows
-                current_day_rows = self.get_regime_rows_for_day(current_day, market_regime)
-                
-                if len(current_day_rows) == 0:
-                    print(f"    No regime {market_regime} data for {current_day}, skipping")
-                    continue
-                
-                # Store current day rows for later processing
-                current_day_regime_rows = current_day_rows
-                
-                # Get previous trading day for model weighter
-                previous_day = self.get_previous_trading_day(current_day)
-                if previous_day is None:
-                    print(f"    No previous trading day found for {current_day}, skipping model selection")
-                    continue
-                
-                try:
-                    # Find best model using model trading weighter
-                    print(f"    Finding best model for previous day {previous_day}, regime {market_regime}")
-                    best_model_result = self.weighter.get_best_trading_model(
-                        trading_day=previous_day,
-                        market_regime=market_regime,
-                        weighting_array=weights
+            if len(current_day_rows) == 0:
+                print(f"  No regime {market_regime} data for {current_day}, skipping")
+                continue
+            
+            # Store current day rows for later processing
+            current_day_regime_rows = current_day_rows
+            
+            # Get previous trading day for model weighter (read once per day)
+            previous_day = self.get_previous_trading_day(current_day)
+            if previous_day is None:
+                print(f"  No previous trading day found for {current_day}, skipping")
+                continue
+            
+            # Pre-cache model predictions for all potential models (done once per day)
+            model_predictions_cache = {}
+            cache_lock = threading.Lock()
+            
+            # Process weight candidates in parallel for this trading day
+            max_workers = min(candidate_count, os.cpu_count() or 4, 8)  # Limit to reasonable thread count
+            print(f"  Processing {candidate_count} weight candidates in parallel (max {max_workers} threads)...")
+            start_time = datetime.now()
+            
+            with ThreadPoolExecutor(max_workers=max_workers) as executor:
+                # Submit all weight candidate tasks
+                future_to_candidate = {}
+                for set_number, weights in enumerate(weight_candidates, 1):
+                    future = executor.submit(
+                        self.process_weight_candidate_for_day,
+                        set_number, weights, current_day, current_day_regime_rows,
+                        previous_day, market_regime, model_predictions_cache, cache_lock
                     )
-                    
-                    model_id = best_model_result['model_id']
-                    direction = best_model_result['direction']
-                    threshold = best_model_result['threshold']
-                    
-                    print(f"    Best model: {model_id}, direction: {direction}, threshold: {threshold}")
-                    
-                    # Load model predictions
-                    model_predictions = self.load_model_predictions(model_id)
-                    
-                    # Get ALL model prediction timestamps for this day (complete dataset)
-                    trading_day_int = int(current_day)
-                    trading_start = 38100000  # 10:35 AM (first model prediction)
-                    trading_end = 43200000    # 12:00 PM (last model prediction)
-                    
-                    # Get all model timestamps for this trading day
-                    model_day_data = model_predictions[model_predictions['TradingDay'] == trading_day_int]
-                    all_model_timestamps = []
-                    for _, row in model_day_data.iterrows():
-                        ms_of_day = row['TradingMsOfDay']
-                        if trading_start <= ms_of_day <= trading_end:
-                            all_model_timestamps.append(ms_of_day)
-                    
-                    all_model_timestamps = sorted(all_model_timestamps)
-                    
-                    # Create result rows for ALL model timestamps (complete dataset for accurate metrics)
-                    regime_rows_added = 0
-                    predictions_found = 0
-                    zeros_added = 0
-                    
-                    for ms_of_day in all_model_timestamps:
-                        # Check if this timestamp is in target regime
-                        regime_match = current_day_regime_rows[
-                            current_day_regime_rows['ms_of_day'] == ms_of_day
-                        ]
-                        
-                        if len(regime_match) > 0:
-                            # This timestamp IS in target regime - use actual model data
-                            model_match = model_predictions[
-                                (model_predictions['TradingDay'] == trading_day_int) & 
-                                (model_predictions['TradingMsOfDay'] == ms_of_day)
-                            ]
-                            actual = model_match.iloc[0]['Actual']
-                            predicted = model_match.iloc[0]['Predicted']
-                            # Make threshold negative for downside strategies
-                            if direction == "down":
-                                actual_threshold = -threshold if threshold != 0.0 else -0.0
-                            else:
-                                actual_threshold = threshold
-                            actual_model_id = int(model_id)
-                            actual_side = direction  # Use direction from weighter ("up" or "down")
-                            predictions_found += 1
-                        else:
-                            # This timestamp is NOT in target regime - use zeros
-                            actual = 0.0
-                            predicted = 0.0
-                            actual_threshold = 0.0
-                            actual_model_id = 0
-                            actual_side = "up"  # Default to "up" for zero rows
-                            zeros_added += 1
-                        
-                        result_row = {
-                            'TradingDay': trading_day_int,
-                            'TradingMsOfDay': ms_of_day,
-                            'Actual': actual,
-                            'Predicted': predicted,
-                            'Threshold': actual_threshold,
-                            'Side': actual_side,
-                            'ModelID': actual_model_id
-                        }
-                        result_data.append(result_row)
-                        regime_rows_added += 1
-                    
-                    print(f"    Added {regime_rows_added} rows for {current_day} ({predictions_found} regime matches, {zeros_added} zeros for non-regime)")
-                    
-                except Exception as e:
-                    print(f"    Error processing {current_day}: {e}")
-                    continue
+                    future_to_candidate[future] = set_number
+                
+                # Collect results as they complete
+                for future in as_completed(future_to_candidate):
+                    set_number = future_to_candidate[future]
+                    try:
+                        returned_set_number, result_rows = future.result()
+                        weight_results[returned_set_number].extend(result_rows)
+                        print(f"  ✓ Completed weight candidate {returned_set_number}")
+                    except Exception as e:
+                        print(f"  ✗ Error in weight candidate {set_number}: {e}")
             
-            # Evaluate performance using trading performance analyzer
+            end_time = datetime.now()
+            elapsed = (end_time - start_time).total_seconds()
+            print(f"  Completed all {candidate_count} weight candidates for {current_day} in {elapsed:.2f}s")
+        
+        # After processing all trading days, evaluate performance for each weight candidate
+        for set_number in range(1, candidate_count + 1):
+            result_data = weight_results[set_number]
+            weights = weight_candidates[set_number - 1]
+            
             if result_data:
-                print(f"  Evaluating performance for weight candidate {set_number}")
+                print(f"\nEvaluating performance for weight candidate {set_number}")
                 
                 # Extract data arrays (excluding ModelID column)
                 trading_days_array = [row['TradingDay'] for row in result_data]
@@ -431,16 +491,16 @@ class TradingModelRegimeWeightOptimizer:
                         performance_result['weights'] = weights.tolist()
                         all_weight_performances.append(performance_result)
                         
-                        print(f"    Performance metrics collected - Composite Score: {performance_result['composite_score']:.2f}")
+                        print(f"  Performance metrics collected - Composite Score: {performance_result['composite_score']:.2f}")
                     
                 except Exception as e:
-                    print(f"    Error evaluating performance for weight candidate {set_number}: {e}")
+                    print(f"  Error evaluating performance for weight candidate {set_number}: {e}")
                 
-                # Still save the detailed results as before
+                # Save the detailed results
                 self.save_results(from_trading_day, to_trading_day, market_regime, 
                                 candidate_count, set_number, weights, result_data)
             else:
-                print(f"  No data to save for weight candidate {set_number}")
+                print(f"\nNo data to save for weight candidate {set_number}")
         
         # After processing all weight candidates, create ranking
         if all_weight_performances:
