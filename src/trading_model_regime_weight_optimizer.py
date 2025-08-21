@@ -74,47 +74,9 @@ class TradingModelRegimeWeightOptimizer:
         self.elite_size = 2  # Keep top 2 performers
         self.tournament_size = 3  # Tournament selection size
         
-        # Fixed weight column names (76 columns total)
-        self.weight_column_names = [
-            "daily:daily_down_acc_thr_0.6", "daily:daily_down_ws_acc_thr_0.6", 
-            "daily:daily_down_pnl_thr_0.6", "daily:daily_down_ppt_thr_0.6",
-            "daily:2day_down_acc_thr_0.6", "daily:2day_down_ws_acc_thr_0.6", 
-            "daily:2day_down_pnl_thr_0.6", "daily:2day_down_ppt_thr_0.6",
-            "daily:3day_down_acc_thr_0.6", "daily:3day_down_ws_acc_thr_0.6", 
-            "daily:3day_down_pnl_thr_0.6", "daily:3day_down_ppt_thr_0.6",
-            "daily:1week_down_acc_thr_0.6", "daily:1week_down_ws_acc_thr_0.6", 
-            "daily:1week_down_pnl_thr_0.6", "daily:1week_down_ppt_thr_0.6",
-            "daily:2week_down_acc_thr_0.6", "daily:2week_down_ws_acc_thr_0.6", 
-            "daily:2week_down_pnl_thr_0.6", "daily:2week_down_ppt_thr_0.6",
-            "daily:4week_down_acc_thr_0.6", "daily:4week_down_ws_acc_thr_0.6", 
-            "daily:4week_down_pnl_thr_0.6", "daily:4week_down_ppt_thr_0.6",
-            "daily:8week_down_acc_thr_0.6", "daily:8week_down_ws_acc_thr_0.6", 
-            "daily:8week_down_pnl_thr_0.6", "daily:8week_down_ppt_thr_0.6",
-            "daily:13week_down_acc_thr_0.6", "daily:13week_down_ws_acc_thr_0.6", 
-            "daily:13week_down_pnl_thr_0.6", "daily:13week_down_ppt_thr_0.6",
-            "daily:26week_down_acc_thr_0.6", "daily:26week_down_ws_acc_thr_0.6", 
-            "daily:26week_down_pnl_thr_0.6", "daily:26week_down_ppt_thr_0.6",
-            "daily:52week_down_acc_thr_0.6", "daily:52week_down_ws_acc_thr_0.6", 
-            "daily:52week_down_pnl_thr_0.6", "daily:52week_down_ppt_thr_0.6",
-            "daily:from_begin_down_acc_thr_0.6", "daily:from_begin_down_ws_acc_thr_0.6", 
-            "daily:from_begin_down_pnl_thr_0.6", "daily:from_begin_down_ppt_thr_0.6",
-            "regime:1day_down_acc_thr_0.6", "regime:1day_down_ws_acc_thr_0.6", 
-            "regime:1day_down_pnl_thr_0.6", "regime:1day_down_ppt_thr_0.6",
-            "regime:2day_down_acc_thr_0.6", "regime:2day_down_ws_acc_thr_0.6", 
-            "regime:2day_down_pnl_thr_0.6", "regime:2day_down_ppt_thr_0.6",
-            "regime:3day_down_acc_thr_0.6", "regime:3day_down_ws_acc_thr_0.6", 
-            "regime:3day_down_pnl_thr_0.6", "regime:3day_down_ppt_thr_0.6",
-            "regime:4day_down_acc_thr_0.6", "regime:4day_down_ws_acc_thr_0.6", 
-            "regime:4day_down_pnl_thr_0.6", "regime:4day_down_ppt_thr_0.6",
-            "regime:5day_down_acc_thr_0.6", "regime:5day_down_ws_acc_thr_0.6", 
-            "regime:5day_down_pnl_thr_0.6", "regime:5day_down_ppt_thr_0.6",
-            "regime:10day_down_acc_thr_0.6", "regime:10day_down_ws_acc_thr_0.6", 
-            "regime:10day_down_pnl_thr_0.6", "regime:10day_down_ppt_thr_0.6",
-            "regime:20day_down_acc_thr_0.6", "regime:20day_down_ws_acc_thr_0.6", 
-            "regime:20day_down_pnl_thr_0.6", "regime:20day_down_ppt_thr_0.6",
-            "regime:30day_down_acc_thr_0.6", "regime:30day_down_ws_acc_thr_0.6", 
-            "regime:30day_down_pnl_thr_0.6", "regime:30day_down_ppt_thr_0.6"
-        ]
+        # Dynamic weight column names - will be populated from weighter
+        self._weight_column_names = None
+        self._first_batch_call = True  # Flag to capture column names on first call
     
     def load_market_regime_forecast(self) -> pd.DataFrame:
         """
@@ -221,11 +183,28 @@ class TradingModelRegimeWeightOptimizer:
             print(f"  Finding best models for all {len(population)} chromosomes using batch operation")
             try:
                 # Use batch method to process all chromosomes at once (maximum efficiency!)
+                # On first call, use show_metrics=True to capture column names
+                use_show_metrics = self._first_batch_call
+                
                 batch_results = self.weighter.get_best_trading_model_batch_vectorized(
                     trading_day=previous_day,
                     market_regime=market_regime,
-                    weighting_arrays=population
+                    weighting_arrays=population,
+                    show_metrics=use_show_metrics
                 )
+                
+                # Capture column names from the first call with data source prefixes
+                if self._first_batch_call and batch_results and len(batch_results) > 0:
+                    if 'metrics_breakdown' in batch_results[0]:
+                        metrics = batch_results[0]['metrics_breakdown']['metrics']
+                        # Create column names with data source prefixes
+                        self._weight_column_names = [f"{metric['data_source']}:{metric['column_name']}" for metric in metrics]
+                        print(f"  Captured {len(self._weight_column_names)} weight column names from first batch call")
+                    else:
+                        print("  Warning: No metrics breakdown in first batch call, using fallback names")
+                        self._weight_column_names = [f"weight_{i+1:02d}" for i in range(len(population[0]))]
+                    
+                    self._first_batch_call = False  # Don't use show_metrics for future calls
                 
                 print(f"  Batch operation complete - got {len(batch_results)} results")
                 
@@ -656,12 +635,19 @@ class TradingModelRegimeWeightOptimizer:
                 'generation': generation
             }
             
-            # Add weight values using the fixed column names
+            # Use cached weight column names (captured from first batch call)
+            if self._weight_column_names is not None:
+                weight_column_names = self._weight_column_names
+            else:
+                # Fallback if somehow column names weren't captured
+                weight_column_names = [f"weight_{i+1:02d}" for i in range(len(chromosome))]
+            
+            # Add weight values using the dynamic column names
             for i, weight in enumerate(chromosome):
-                if i < len(self.weight_column_names):
-                    row[self.weight_column_names[i]] = weight
+                if i < len(weight_column_names):
+                    row[weight_column_names[i]] = weight
                 else:
-                    # Fallback for any extra weights (shouldn't happen with 76 genes)
+                    # Fallback for any extra weights (shouldn't happen with proper sizing)
                     row[f'weight_{i+1:02d}'] = weight
             
             generation_data.append(row)

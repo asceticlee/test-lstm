@@ -935,6 +935,87 @@ class ModelTradingWeighter:
                 'weight_array_index': weight_idx
             }
             
+            # If metrics breakdown is requested, calculate and include it
+            if show_metrics:
+                try:
+                    # Get the best model's detailed metrics
+                    daily_row = daily_data[daily_data['ModelID'] == best_model].iloc[0]
+                    regime_row = regime_data[regime_data['ModelID'] == best_model].iloc[0]
+                    
+                    # Get columns for the best combination
+                    best_columns = self._get_threshold_direction_columns_cached(
+                        best_threshold, best_direction, daily_data, regime_data
+                    )
+                    
+                    # Extract detailed metrics
+                    metric_details = []
+                    metric_values = []
+                    
+                    for i, (source, col) in enumerate(best_columns):
+                        # Determine data source and get the appropriate row
+                        if source == 'daily':
+                            data_row = daily_row
+                            data_source = "daily"
+                        else:
+                            data_row = regime_row
+                            data_source = "regime"
+                            
+                        if '_ws_acc_' in col:
+                            # Calculate Wilson scored accuracy
+                            acc_col = col.replace('_ws_acc_', '_acc_')
+                            num_col = acc_col.replace('_acc_', '_num_')
+                            den_col = acc_col.replace('_acc_', '_den_')
+                            
+                            k = data_row.get(num_col, 0.0)
+                            n = data_row.get(den_col, 0.0)
+                            if pd.isna(k): k = 0.0
+                            if pd.isna(n): n = 0.0
+                            
+                            value = self.wilson_score_accuracy(k, n)
+                            metric_values.append(value)
+                            
+                        elif '_ppt_' in col:
+                            # Calculate PnL per trade
+                            pnl_col = col.replace('_ppt_', '_pnl_')
+                            den_col = pnl_col.replace('_pnl_', '_den_')
+                            
+                            pnl = data_row.get(pnl_col, 0.0)
+                            den = data_row.get(den_col, 0.0)
+                            if pd.isna(pnl): pnl = 0.0
+                            if pd.isna(den): den = 0.0
+                            
+                            value = pnl / den if den > 0 else 0.0
+                            metric_values.append(value)
+                            
+                        else:
+                            # Regular metric
+                            value = data_row.get(col, 0.0)
+                            if pd.isna(value): value = 0.0
+                            metric_values.append(value)
+                        
+                        # Store metric details
+                        weight = weighting_array[i]
+                        weighted_value = value * weight
+                        
+                        metric_details.append({
+                            'index': i + 1,
+                            'column_name': col,
+                            'data_source': data_source,
+                            'weight': weight,
+                            'value': value,
+                            'weighted_value': weighted_value
+                        })
+                    
+                    # Add metrics breakdown to result
+                    result['metrics_breakdown'] = {
+                        'total_metrics': len(metric_details),
+                        'metrics': metric_details,
+                        'total_score_verification': sum(m['weighted_value'] for m in metric_details)
+                    }
+                    
+                except Exception as e:
+                    print(f"Warning: Could not generate metrics breakdown for weight array {weight_idx}: {e}")
+            
             results.append(result)
         
         print(f"Vectorized batch evaluation complete: Processed {len(weighting_arrays)} weight arrays")
