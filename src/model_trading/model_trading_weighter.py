@@ -633,6 +633,182 @@ class ModelTradingWeighter:
         
         return result
     
+    def get_best_trading_model_batch(self, trading_day: str, market_regime: int, 
+                                   weighting_arrays: List[np.ndarray], show_metrics: bool = False) -> List[Dict]:
+        """
+        Find the best trading model for multiple weight arrays in a single batch operation.
+        This method loads the data only once and processes all weight arrays efficiently.
+        
+        Args:
+            trading_day: The trading day (format: YYYYMMDD)
+            market_regime: Market regime identifier (0-3)
+            weighting_arrays: List of weight arrays (each should be 76 elements)
+            show_metrics: If True, include detailed metrics breakdown in results
+            
+        Returns:
+            List of dicts: Best model info for each weight array with model_id, score, direction, threshold
+                          If show_metrics=True, also includes metrics breakdown
+        """
+        print(f"Batch evaluation: Finding best models for day {trading_day}, regime {market_regime}, {len(weighting_arrays)} weight arrays")
+        
+        # Load data once at the beginning (key optimization!)
+        daily_data = self._load_daily_performance(trading_day)
+        regime_data = self._load_regime_performance(trading_day, market_regime)
+        
+        if daily_data is None or regime_data is None:
+            raise ValueError(f"Could not load performance data for trading day {trading_day} and regime {market_regime}")
+        
+        # Get model list from daily data
+        available_models = daily_data['ModelID'].unique().tolist()
+        print(f"Found {len(available_models)} models in daily data")
+        
+        # Pre-cache all threshold+direction column mappings (done once for all weight arrays)
+        threshold_dir_combos = self.get_all_threshold_direction_combinations()
+        column_cache = {}
+        for threshold, direction in threshold_dir_combos:
+            column_cache[(threshold, direction)] = self._get_threshold_direction_columns_cached(
+                threshold, direction, daily_data, regime_data
+            )
+        
+        # Process each weight array
+        results = []
+        for weight_idx, weighting_array in enumerate(weighting_arrays):
+            print(f"  Processing weight array {weight_idx + 1}/{len(weighting_arrays)}")
+            
+            # Validate weight array length
+            if len(weighting_array) != 76:
+                raise ValueError(f"Weight array {weight_idx + 1} has length {len(weighting_array)}, expected 76")
+            
+            best_score = float('-inf')
+            best_model = None
+            best_direction = None 
+            best_threshold = None
+            
+            total_combinations = 0
+            valid_combinations = 0
+            
+            # Iterate through models and combinations (using pre-loaded data)
+            for model_id in available_models:
+                for threshold, direction in threshold_dir_combos:
+                    total_combinations += 1
+                    
+                    try:
+                        score = self._calculate_combination_score_optimized(
+                            model_id, daily_data, regime_data, 
+                            threshold, direction, weighting_array, column_cache
+                        )
+                        
+                        if score is not None and score != float('-inf'):
+                            valid_combinations += 1
+                            if score > best_score:
+                                best_score = score
+                                best_model = model_id
+                                best_direction = direction
+                                best_threshold = threshold
+                                
+                    except Exception as e:
+                        continue
+            
+            if best_model is None:
+                raise ValueError(f"No valid combinations found for weight array {weight_idx + 1}. Checked {total_combinations} combinations, {valid_combinations} were valid.")
+            
+            # Prepare result dictionary for this weight array
+            result = {
+                'model_id': best_model,
+                'score': best_score,
+                'direction': best_direction,
+                'threshold': best_threshold,
+                'trading_day': trading_day,
+                'market_regime': market_regime,
+                'weight_array_index': weight_idx
+            }
+            
+            # If metrics breakdown is requested, calculate and include it
+            if show_metrics:
+                try:
+                    # Get the best model's detailed metrics
+                    daily_row = daily_data[daily_data['ModelID'] == best_model].iloc[0]
+                    regime_row = regime_data[regime_data['ModelID'] == best_model].iloc[0]
+                    
+                    # Get columns for the best combination
+                    best_columns = column_cache[(best_threshold, best_direction)]
+                    
+                    # Extract detailed metrics
+                    metric_details = []
+                    metric_values = []
+                    
+                    for i, (source, col) in enumerate(best_columns):
+                        # Determine data source and get the appropriate row
+                        if source == 'daily':
+                            data_row = daily_row
+                            data_source = "daily"
+                        else:
+                            data_row = regime_row
+                            data_source = "regime"
+                            
+                        if '_ws_acc_' in col:
+                            # Calculate Wilson scored accuracy
+                            acc_col = col.replace('_ws_acc_', '_acc_')
+                            num_col = acc_col.replace('_acc_', '_num_')
+                            den_col = acc_col.replace('_acc_', '_den_')
+                            
+                            k = data_row.get(num_col, 0.0)
+                            n = data_row.get(den_col, 0.0)
+                            if pd.isna(k): k = 0.0
+                            if pd.isna(n): n = 0.0
+                            
+                            value = self.wilson_score_accuracy(k, n)
+                            metric_values.append(value)
+                            
+                        elif '_ppt_' in col:
+                            # Calculate PnL per trade
+                            pnl_col = col.replace('_ppt_', '_pnl_')
+                            den_col = pnl_col.replace('_pnl_', '_den_')
+                            
+                            pnl = data_row.get(pnl_col, 0.0)
+                            den = data_row.get(den_col, 0.0)
+                            if pd.isna(pnl): pnl = 0.0
+                            if pd.isna(den): den = 0.0
+                            
+                            value = pnl / den if den > 0 else 0.0
+                            metric_values.append(value)
+                            
+                        else:
+                            # Regular metric
+                            value = data_row.get(col, 0.0)
+                            if pd.isna(value): value = 0.0
+                            metric_values.append(value)
+                        
+                        # Store metric details
+                        weight = weighting_array[i]
+                        weighted_value = value * weight
+                        
+                        metric_details.append({
+                            'index': i + 1,
+                            'column_name': col,
+                            'data_source': data_source,
+                            'weight': weight,
+                            'value': value,
+                            'weighted_value': weighted_value
+                        })
+                    
+                    # Add metrics breakdown to result
+                    result['metrics_breakdown'] = {
+                        'metrics': metric_details,
+                        'total_score': best_score,
+                        'total_combinations_checked': total_combinations,
+                        'valid_combinations': valid_combinations
+                    }
+                    
+                except Exception as e:
+                    print(f"    Warning: Could not generate metrics breakdown for weight array {weight_idx + 1}: {e}")
+            
+            results.append(result)
+            print(f"    Best model: {best_model}, direction: {best_direction}, threshold: {best_threshold}, score: {best_score:.4f}")
+        
+        print(f"Batch evaluation complete: Processed {len(weighting_arrays)} weight arrays")
+        return results
+    
     def get_best_trading_model_fast(self, trading_day: str, market_regime: int, 
                                    weighting_array: np.ndarray, use_gpu: bool = False,
                                    n_workers: int = None, show_metrics: bool = False) -> Dict:
