@@ -672,6 +672,156 @@ class TradingModelRegimeWeightOptimizer:
         except Exception as e:
             print(f"  Error saving generation {generation} results: {e}")
     
+    def save_best_chromosome_trading_data(self, generation: int, best_chromosome: np.ndarray, 
+                                         from_trading_day: str, to_trading_day: str, 
+                                         market_regime: int) -> None:
+        """
+        Save the best chromosome's trading performance input data to CSV file.
+        Format follows the same structure as trading_model_regime_weight_optimizer_before_ga.py
+        
+        Args:
+            generation: Current generation number
+            best_chromosome: Best performing chromosome (weight array)
+            from_trading_day: Start trading day
+            to_trading_day: End trading day
+            market_regime: Market regime
+        """
+        print(f"  Saving best chromosome trading data for generation {generation}...")
+        
+        try:
+            # Get trading days in range
+            trading_days = self.get_trading_days_in_range(from_trading_day, to_trading_day)
+            
+            if len(trading_days) == 0:
+                print(f"    Warning: No trading days found for range {from_trading_day} to {to_trading_day}")
+                return
+            
+            # Collect trading data using the same logic as fitness evaluation
+            result_data = []
+            
+            for current_day in trading_days:
+                print(f"    Collecting data for trading day {current_day}")
+                
+                # Get previous trading day for model evaluation
+                previous_day = self.get_previous_trading_day(current_day)
+                if previous_day is None:
+                    print(f"      Warning: No previous trading day found for {current_day}")
+                    continue
+                
+                # Get regime rows for current day
+                current_day_rows = self.get_regime_rows_for_day(current_day, market_regime)
+                
+                if len(current_day_rows) == 0:
+                    print(f"      No regime {market_regime} data found for {current_day}")
+                    continue
+                
+                # Get best model for this chromosome
+                try:
+                    best_model_result = self.weighter.get_best_trading_model(
+                        trading_day=previous_day,
+                        market_regime=market_regime,
+                        weighting_array=best_chromosome,
+                        show_metrics=False
+                    )
+                    
+                    model_id = best_model_result['model_id']
+                    threshold = best_model_result['threshold']
+                    direction = best_model_result['direction']
+                    
+                    print(f"      Best model: {model_id}, threshold: {threshold}, direction: {direction}")
+                    
+                except Exception as e:
+                    print(f"      Error getting best model for {current_day}: {e}")
+                    continue
+                
+                # Load model predictions
+                try:
+                    model_predictions = self.load_model_predictions(str(model_id))
+                except Exception as e:
+                    print(f"      Error loading predictions for model {model_id}: {e}")
+                    continue
+                
+                # Get comprehensive trading timestamps
+                all_timestamps = self.get_comprehensive_trading_timestamps(
+                    current_day, model_predictions, current_day_rows
+                )
+                
+                # Process each timestamp
+                trading_day_int = int(current_day)
+                trading_start = 38100000  # 10:35 AM
+                trading_end = 43200000    # 12:00 PM
+                
+                for ms_of_day in all_timestamps:
+                    # Check if this timestamp is in target regime
+                    regime_match = current_day_rows[current_day_rows['ms_of_day'] == ms_of_day]
+                    
+                    if len(regime_match) > 0:
+                        # This timestamp IS in target regime - use actual model data
+                        model_match = model_predictions[
+                            (model_predictions['TradingDay'] == trading_day_int) & 
+                            (model_predictions['TradingMsOfDay'] == ms_of_day)
+                        ]
+                        
+                        if len(model_match) > 0:
+                            actual = model_match.iloc[0]['Actual']
+                            predicted = model_match.iloc[0]['Predicted']
+                            # Make threshold negative for downside strategies
+                            if direction == "down":
+                                actual_threshold = -threshold if threshold != 0.0 else -0.0
+                            else:
+                                actual_threshold = threshold
+                            actual_side = direction  # Use direction from weighter ("up" or "down")
+                            actual_model_id = model_id
+                        else:
+                            # Model prediction not found for this timestamp
+                            actual = 0.0
+                            predicted = 0.0
+                            actual_threshold = 0.0
+                            actual_side = "up"
+                            actual_model_id = 0
+                    else:
+                        # This timestamp is NOT in target regime - use zeros
+                        actual = 0.0
+                        predicted = 0.0
+                        actual_threshold = 0.0
+                        actual_side = "up"
+                        actual_model_id = 0
+                    
+                    # Add row to result data
+                    result_data.append({
+                        'TradingDay': trading_day_int,
+                        'TradingMsOfDay': float(ms_of_day),
+                        'Actual': actual,
+                        'Predicted': predicted,
+                        'Threshold': actual_threshold,
+                        'Side': actual_side,
+                        'ModelID': actual_model_id
+                    })
+            
+            # Save to CSV file using the same format as before_ga version
+            filename = f"{from_trading_day}_{to_trading_day}_regime{market_regime}_generation{generation}_best_chromosome_data.csv"
+            filepath = os.path.join(self.output_dir, filename)
+            
+            with open(filepath, 'w', newline='') as f:
+                writer = csv.writer(f)
+                
+                # First row: weight values (76 cells)
+                writer.writerow(best_chromosome.tolist())
+                
+                # Second row: column names
+                if result_data:
+                    column_names = list(result_data[0].keys())
+                    writer.writerow(column_names)
+                    
+                    # Subsequent rows: result data
+                    for row_data in result_data:
+                        writer.writerow([row_data[col] for col in column_names])
+            
+            print(f"    Saved best chromosome trading data to {filename} ({len(result_data)} rows)")
+            
+        except Exception as e:
+            print(f"    Error saving best chromosome trading data: {e}")
+    
     def optimize_weights_with_genetic_algorithm(self, from_trading_day: str, to_trading_day: str, 
                                                market_regime: int, population_size: int, 
                                                generations: int) -> None:
@@ -714,6 +864,14 @@ class TradingModelRegimeWeightOptimizer:
             # Save generation results
             self.save_generation_results(generation, population, fitness_results, 
                                        from_trading_day, to_trading_day, market_regime)
+            
+            # Save best chromosome's trading data
+            fitness_scores = [result['composite_score'] for result in fitness_results]
+            best_idx = fitness_scores.index(max(fitness_scores))
+            best_chromosome = population[best_idx]
+            
+            self.save_best_chromosome_trading_data(generation, best_chromosome, 
+                                                 from_trading_day, to_trading_day, market_regime)
             
             # Prepare for next generation (skip for last generation)
             if generation < generations:
