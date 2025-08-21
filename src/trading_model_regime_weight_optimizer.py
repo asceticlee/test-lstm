@@ -329,11 +329,11 @@ class TradingModelRegimeWeightOptimizer:
             # Pre-cache model predictions for all potential models (done once per day)
             model_predictions_cache = {}
             
-            # Process all weight candidates for this trading day using batch operation (major optimization!)
-            print(f"  Finding best models for all {candidate_count} weight candidates using batch operation")
+            # Process all weight candidates for this trading day using vectorized batch operation (maximum optimization!)
+            print(f"  Finding best models for all {candidate_count} weight candidates using vectorized batch operation")
             try:
-                # Use the new batch method to process all weights at once
-                batch_results = self.weighter.get_best_trading_model_batch(
+                # Use the new vectorized batch method to process all weights at once
+                batch_results = self.weighter.get_best_trading_model_batch_vectorized(
                     trading_day=previous_day,
                     market_regime=market_regime,
                     weighting_arrays=weight_candidates

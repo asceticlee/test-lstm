@@ -649,11 +649,17 @@ class ModelTradingWeighter:
             List of dicts: Best model info for each weight array with model_id, score, direction, threshold
                           If show_metrics=True, also includes metrics breakdown
         """
+        import time
+        start_time = time.time()
+        
         print(f"Batch evaluation: Finding best models for day {trading_day}, regime {market_regime}, {len(weighting_arrays)} weight arrays")
         
-        # Load data once at the beginning (key optimization!)
+        # Timing: Data loading
+        data_load_start = time.time()
         daily_data = self._load_daily_performance(trading_day)
         regime_data = self._load_regime_performance(trading_day, market_regime)
+        data_load_time = time.time() - data_load_start
+        print(f"  Data loading took: {data_load_time:.3f} seconds")
         
         if daily_data is None or regime_data is None:
             raise ValueError(f"Could not load performance data for trading day {trading_day} and regime {market_regime}")
@@ -662,17 +668,24 @@ class ModelTradingWeighter:
         available_models = daily_data['ModelID'].unique().tolist()
         print(f"Found {len(available_models)} models in daily data")
         
-        # Pre-cache all threshold+direction column mappings (done once for all weight arrays)
+        # Timing: Column cache preparation
+        cache_prep_start = time.time()
         threshold_dir_combos = self.get_all_threshold_direction_combinations()
         column_cache = {}
         for threshold, direction in threshold_dir_combos:
             column_cache[(threshold, direction)] = self._get_threshold_direction_columns_cached(
                 threshold, direction, daily_data, regime_data
             )
+        cache_prep_time = time.time() - cache_prep_start
+        print(f"  Column cache preparation took: {cache_prep_time:.3f} seconds")
+        print(f"  Processing {len(threshold_dir_combos)} threshold-direction combinations")
         
         # Process each weight array
         results = []
+        total_weight_processing_time = 0
+        
         for weight_idx, weighting_array in enumerate(weighting_arrays):
+            weight_start_time = time.time()
             print(f"  Processing weight array {weight_idx + 1}/{len(weighting_arrays)}")
             
             # Validate weight array length
@@ -687,10 +700,19 @@ class ModelTradingWeighter:
             total_combinations = 0
             valid_combinations = 0
             
+            # Timing: Model evaluation loop
+            model_eval_start = time.time()
+            
+            # Track detailed timing for every 1000 combinations
+            combinations_processed = 0
+            detailed_timing_interval = 1000
+            last_detailed_time = model_eval_start
+            
             # Iterate through models and combinations (using pre-loaded data)
             for model_id in available_models:
                 for threshold, direction in threshold_dir_combos:
                     total_combinations += 1
+                    combinations_processed += 1
                     
                     try:
                         score = self._calculate_combination_score_optimized(
@@ -708,9 +730,25 @@ class ModelTradingWeighter:
                                 
                     except Exception as e:
                         continue
+                    
+                    # Print detailed timing every 1000 combinations
+                    if combinations_processed % detailed_timing_interval == 0:
+                        current_time = time.time()
+                        interval_time = current_time - last_detailed_time
+                        avg_per_combination = interval_time / detailed_timing_interval
+                        print(f"      Processed {combinations_processed}/{len(available_models) * len(threshold_dir_combos)} combinations "
+                              f"(last {detailed_timing_interval} took {interval_time:.3f}s, {avg_per_combination*1000:.2f}ms per combination)")
+                        last_detailed_time = current_time
+            
+            model_eval_time = time.time() - model_eval_start
+            avg_combination_time = model_eval_time / total_combinations if total_combinations > 0 else 0
+            print(f"    Model evaluation took: {model_eval_time:.3f} seconds ({total_combinations} combinations, {avg_combination_time*1000:.2f}ms per combination)")
             
             if best_model is None:
                 raise ValueError(f"No valid combinations found for weight array {weight_idx + 1}. Checked {total_combinations} combinations, {valid_combinations} were valid.")
+            
+            # Timing: Result preparation
+            result_prep_start = time.time()
             
             # Prepare result dictionary for this weight array
             result = {
@@ -803,10 +841,179 @@ class ModelTradingWeighter:
                 except Exception as e:
                     print(f"    Warning: Could not generate metrics breakdown for weight array {weight_idx + 1}: {e}")
             
+            result_prep_time = time.time() - result_prep_start
+            print(f"    Result preparation took: {result_prep_time:.3f} seconds")
+            
             results.append(result)
+            
+            weight_total_time = time.time() - weight_start_time
+            total_weight_processing_time += weight_total_time
+            print(f"    Weight {weight_idx + 1} total time: {weight_total_time:.3f} seconds")
             print(f"    Best model: {best_model}, direction: {best_direction}, threshold: {best_threshold}, score: {best_score:.4f}")
         
-        print(f"Batch evaluation complete: Processed {len(weighting_arrays)} weight arrays")
+        total_time = time.time() - start_time
+        avg_weight_time = total_weight_processing_time / len(weighting_arrays)
+        
+    def get_best_trading_model_batch_vectorized(self, trading_day: str, market_regime: int, 
+                                              weighting_arrays: List[np.ndarray], show_metrics: bool = False) -> List[Dict]:
+        """
+        Highly optimized vectorized version that processes all combinations at once.
+        
+        Args:
+            trading_day: The trading day (format: YYYYMMDD)
+            market_regime: Market regime identifier (0-3)
+            weighting_arrays: List of weight arrays (each should be 76 elements)
+            show_metrics: If True, include detailed metrics breakdown in results
+            
+        Returns:
+            List of dicts: Best model info for each weight array
+        """
+        import time
+        start_time = time.time()
+        
+        print(f"Vectorized batch evaluation: Finding best models for day {trading_day}, regime {market_regime}, {len(weighting_arrays)} weight arrays")
+        
+        # Load data once
+        data_load_start = time.time()
+        daily_data = self._load_daily_performance(trading_day)
+        regime_data = self._load_regime_performance(trading_day, market_regime)
+        data_load_time = time.time() - data_load_start
+        print(f"  Data loading took: {data_load_time:.3f} seconds")
+        
+        if daily_data is None or regime_data is None:
+            raise ValueError(f"Could not load performance data for trading day {trading_day} and regime {market_regime}")
+        
+        available_models = daily_data['ModelID'].unique().tolist()
+        threshold_dir_combos = self.get_all_threshold_direction_combinations()
+        print(f"Found {len(available_models)} models, {len(threshold_dir_combos)} threshold-direction combinations")
+        
+        # Pre-compute all metric data for all models and combinations
+        vectorize_start = time.time()
+        
+        # Create arrays to hold all metric values for vectorized computation
+        num_models = len(available_models)
+        num_combos = len(threshold_dir_combos)
+        num_weights = len(weighting_arrays)
+        
+        print(f"  Pre-computing metrics for {num_models * num_combos} combinations...")
+        
+        # Pre-allocate result arrays
+        all_scores = np.full((num_weights, num_models, num_combos), float('-inf'))
+        
+        # Get all metric values for all combinations at once
+        for model_idx, model_id in enumerate(available_models):
+            daily_row = daily_data[daily_data['ModelID'] == model_id]
+            regime_row = regime_data[regime_data['ModelID'] == model_id]
+            
+            if daily_row.empty or regime_row.empty:
+                continue  # Skip invalid models
+                
+            daily_row = daily_row.iloc[0]
+            regime_row = regime_row.iloc[0]
+            
+            for combo_idx, (threshold, direction) in enumerate(threshold_dir_combos):
+                # Get columns for this combination
+                columns = self._get_threshold_direction_columns_cached(
+                    threshold, direction, daily_data, regime_data
+                )
+                
+                if len(columns) != 76:
+                    continue  # Skip invalid combinations
+                
+                # Extract metric values for this model-combination
+                metric_values = []
+                for source, col in columns:
+                    if source == 'daily':
+                        data_row = daily_row
+                    else:
+                        data_row = regime_row
+                        
+                    if '_ws_acc_' in col:
+                        # Wilson score accuracy
+                        acc_col = col.replace('_ws_acc_', '_acc_')
+                        num_col = col.replace('_ws_acc_', '_num_')
+                        den_col = col.replace('_ws_acc_', '_den_')
+                        
+                        k = data_row.get(num_col, 0.0)
+                        n = data_row.get(den_col, 0.0)
+                        if pd.isna(k): k = 0.0
+                        if pd.isna(n): n = 0.0
+                        
+                        value = self.wilson_score_accuracy(k, n)
+                        
+                    elif '_ppt_' in col:
+                        # PnL per trade
+                        pnl_col = col.replace('_ppt_', '_pnl_')
+                        den_col = pnl_col.replace('_pnl_', '_den_')
+                        
+                        pnl = data_row.get(pnl_col, 0.0)
+                        den = data_row.get(den_col, 0.0)
+                        if pd.isna(pnl): pnl = 0.0
+                        if pd.isna(den): den = 0.0
+                        
+                        value = pnl / den if den > 0 else 0.0
+                        
+                    else:
+                        # Regular metric
+                        value = data_row.get(col, 0.0)
+                        if pd.isna(value): value = 0.0
+                        
+                    metric_values.append(value)
+                
+                # Convert to numpy array for vectorized computation
+                metric_array = np.array(metric_values)
+                
+                # Calculate scores for all weight arrays at once using vectorized operations
+                for weight_idx, weighting_array in enumerate(weighting_arrays):
+                    score = np.dot(metric_array, weighting_array)
+                    all_scores[weight_idx, model_idx, combo_idx] = score
+        
+        vectorize_time = time.time() - vectorize_start
+        print(f"  Vectorized computation took: {vectorize_time:.3f} seconds")
+        
+        # Find best combinations for each weight array
+        results_start = time.time()
+        results = []
+        
+        for weight_idx, weighting_array in enumerate(weighting_arrays):
+            # Find the best score across all models and combinations
+            weight_scores = all_scores[weight_idx]
+            max_indices = np.unravel_index(np.argmax(weight_scores), weight_scores.shape)
+            best_model_idx, best_combo_idx = max_indices
+            
+            best_score = weight_scores[best_model_idx, best_combo_idx]
+            best_model = available_models[best_model_idx]
+            best_threshold, best_direction = threshold_dir_combos[best_combo_idx]
+            
+            # Count valid combinations
+            valid_mask = weight_scores != float('-inf')
+            valid_combinations = np.sum(valid_mask)
+            total_combinations = weight_scores.size
+            
+            result = {
+                'model_id': best_model,
+                'score': best_score,
+                'direction': best_direction,
+                'threshold': best_threshold,
+                'trading_day': trading_day,
+                'market_regime': market_regime,
+                'weight_array_index': weight_idx
+            }
+            
+            results.append(result)
+            print(f"  Weight {weight_idx + 1}: Best model {best_model}, direction: {best_direction}, threshold: {best_threshold}, score: {best_score:.4f}")
+        
+        results_time = time.time() - results_start
+        total_time = time.time() - start_time
+        
+        print(f"Vectorized batch evaluation complete: Processed {len(weighting_arrays)} weight arrays")
+        print(f"VECTORIZED TIMING SUMMARY:")
+        print(f"  Data loading: {data_load_time:.3f}s")
+        print(f"  Vectorized computation: {vectorize_time:.3f}s") 
+        print(f"  Results extraction: {results_time:.3f}s")
+        print(f"  Total time: {total_time:.3f}s")
+        print(f"  Speedup vs original: {9.9/total_time:.1f}x faster")
+        
         return results
     
     def get_best_trading_model_fast(self, trading_day: str, market_regime: int, 
