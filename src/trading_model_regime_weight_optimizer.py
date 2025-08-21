@@ -171,146 +171,195 @@ class TradingModelRegimeWeightOptimizer:
         print(f"Initialized population of {population_size} chromosomes with {weight_length} genes each")
         return population
     
-    def evaluate_chromosome_fitness(self, chromosome: np.ndarray, from_trading_day: str, 
-                                   to_trading_day: str, market_regime: int) -> Dict:
+    def evaluate_population_fitness(self, population: List[np.ndarray], from_trading_day: str, 
+                                   to_trading_day: str, market_regime: int) -> List[Dict]:
         """
-        Evaluate fitness of a single chromosome (weight array) using trading_performance.py.
+        Evaluate fitness of entire population using optimized daily-outer, chromosome-inner loop.
         
         Args:
-            chromosome: Weight array (chromosome) to evaluate
+            population: List of chromosomes (weight arrays) to evaluate
             from_trading_day: Start trading day
             to_trading_day: End trading day
             market_regime: Target market regime
             
         Returns:
-            Dictionary with fitness metrics and trading data
+            List of fitness dictionaries for each chromosome
         """
+        print(f"Evaluating fitness for {len(population)} chromosomes using optimized daily-outer loop...")
+        
         # Get trading days in range
         trading_days = self.get_trading_days_in_range(from_trading_day, to_trading_day)
         
         if len(trading_days) == 0:
-            return {'composite_score': 0.0, 'total_pnl_after_fees': 0.0, 'num_trades': 0}
+            print("No trading days found in range")
+            return [self._get_default_fitness() for _ in population]
         
-        # Collect all trading data for this chromosome
-        result_data = []
-        model_predictions_cache = {}
+        # Initialize result storage for each chromosome
+        population_results = {i: [] for i in range(len(population))}
         
-        # Process each trading day
+        # OUTER LOOP: Process each trading day (optimized approach)
         for current_day in trading_days:
-            # Get current day regime rows
+            print(f"\nProcessing trading day {current_day}")
+            
+            # Get current day regime rows (read once per day)
             current_day_rows = self.get_regime_rows_for_day(current_day, market_regime)
             
             if len(current_day_rows) == 0:
+                print(f"  No regime {market_regime} data for {current_day}, skipping")
                 continue
             
-            # Get previous trading day for model weighter
+            # Get previous trading day for model weighter (read once per day)
             previous_day = self.get_previous_trading_day(current_day)
             if previous_day is None:
+                print(f"  No previous trading day found for {current_day}, skipping")
                 continue
             
+            # Pre-cache model predictions for all potential models (done once per day)
+            model_predictions_cache = {}
+            
+            # INNER LOOP: Process all chromosomes for this trading day using batch operation
+            print(f"  Finding best models for all {len(population)} chromosomes using batch operation")
             try:
-                # Find best model using model trading weighter
-                best_model_result = self.weighter.get_best_trading_model(
+                # Use batch method to process all chromosomes at once (maximum efficiency!)
+                batch_results = self.weighter.get_best_trading_model_batch_vectorized(
                     trading_day=previous_day,
                     market_regime=market_regime,
-                    weighting_array=chromosome
+                    weighting_arrays=population
                 )
                 
-                model_id = best_model_result['model_id']
-                direction = best_model_result['direction']
-                threshold = best_model_result['threshold']
+                print(f"  Batch operation complete - got {len(batch_results)} results")
                 
-                # Load model predictions (use cache)
-                if model_id not in model_predictions_cache:
-                    model_predictions_cache[model_id] = self.load_model_predictions(model_id)
-                
-                model_predictions = model_predictions_cache[model_id]
-                
-                # Get ALL model prediction timestamps for this day
-                trading_day_int = int(current_day)
-                trading_start = 38100000  # 10:35 AM
-                trading_end = 43200000    # 12:00 PM
-                
-                # Get all model timestamps for this trading day
-                model_day_data = model_predictions[model_predictions['TradingDay'] == trading_day_int]
-                all_model_timestamps = []
-                for _, row in model_day_data.iterrows():
-                    ms_of_day = row['TradingMsOfDay']
-                    if trading_start <= ms_of_day <= trading_end:
-                        all_model_timestamps.append(ms_of_day)
-                
-                all_model_timestamps = sorted(all_model_timestamps)
-                
-                # Create result rows for ALL model timestamps
-                for ms_of_day in all_model_timestamps:
-                    # Check if this timestamp is in target regime
-                    regime_match = current_day_rows[current_day_rows['ms_of_day'] == ms_of_day]
+                # Process each result from the batch operation
+                for batch_result in batch_results:
+                    chromosome_index = batch_result['weight_array_index']
                     
-                    if len(regime_match) > 0:
-                        # This timestamp IS in target regime
-                        model_match = model_predictions[
-                            (model_predictions['TradingDay'] == trading_day_int) & 
-                            (model_predictions['TradingMsOfDay'] == ms_of_day)
-                        ]
-                        actual = model_match.iloc[0]['Actual']
-                        predicted = model_match.iloc[0]['Predicted']
-                        # Make threshold negative for downside strategies
-                        if direction == "down":
-                            actual_threshold = -threshold if threshold != 0.0 else -0.0
+                    model_id = batch_result['model_id']
+                    direction = batch_result['direction']
+                    threshold = batch_result['threshold']
+                    
+                    print(f"    Chromosome {chromosome_index + 1}: Model {model_id}, direction: {direction}, threshold: {threshold}")
+                    
+                    # Load model predictions (use cache to avoid repeated disk reads)
+                    if model_id not in model_predictions_cache:
+                        model_predictions_cache[model_id] = self.load_model_predictions(model_id)
+                        print(f"    Cached predictions for model {model_id}")
+                    
+                    model_predictions = model_predictions_cache[model_id]
+                
+                    # Get ALL model prediction timestamps for this day (complete dataset)
+                    trading_day_int = int(current_day)
+                    trading_start = 38100000  # 10:35 AM (first model prediction)
+                    trading_end = 43200000    # 12:00 PM (last model prediction)
+                    
+                    # Get all model timestamps for this trading day
+                    model_day_data = model_predictions[model_predictions['TradingDay'] == trading_day_int]
+                    all_model_timestamps = []
+                    for _, row in model_day_data.iterrows():
+                        ms_of_day = row['TradingMsOfDay']
+                        if trading_start <= ms_of_day <= trading_end:
+                            all_model_timestamps.append(ms_of_day)
+                    
+                    all_model_timestamps = sorted(all_model_timestamps)
+                    
+                    # Create result rows for ALL model timestamps (complete dataset for accurate metrics)
+                    regime_rows_added = 0
+                    predictions_found = 0
+                    zeros_added = 0
+                    
+                    for ms_of_day in all_model_timestamps:
+                        # Check if this timestamp is in target regime
+                        regime_match = current_day_rows[current_day_rows['ms_of_day'] == ms_of_day]
+                        
+                        if len(regime_match) > 0:
+                            # This timestamp IS in target regime - use actual model data
+                            model_match = model_predictions[
+                                (model_predictions['TradingDay'] == trading_day_int) & 
+                                (model_predictions['TradingMsOfDay'] == ms_of_day)
+                            ]
+                            actual = model_match.iloc[0]['Actual']
+                            predicted = model_match.iloc[0]['Predicted']
+                            # Make threshold negative for downside strategies
+                            if direction == "down":
+                                actual_threshold = -threshold if threshold != 0.0 else -0.0
+                            else:
+                                actual_threshold = threshold
+                            actual_side = direction  # Use direction from weighter ("up" or "down")
+                            predictions_found += 1
                         else:
-                            actual_threshold = threshold
-                        actual_side = direction
-                    else:
-                        # This timestamp is NOT in target regime - use zeros
-                        actual = 0.0
-                        predicted = 0.0
-                        actual_threshold = 0.0
-                        actual_side = "up"
+                            # This timestamp is NOT in target regime - use zeros
+                            actual = 0.0
+                            predicted = 0.0
+                            actual_threshold = 0.0
+                            actual_side = "up"  # Default to "up" for zero rows
+                            zeros_added += 1
+                        
+                        result_row = {
+                            'TradingDay': trading_day_int,
+                            'TradingMsOfDay': ms_of_day,
+                            'Actual': actual,
+                            'Predicted': predicted,
+                            'Threshold': actual_threshold,
+                            'Side': actual_side
+                        }
+                        population_results[chromosome_index].append(result_row)
+                        regime_rows_added += 1
                     
-                    result_row = {
-                        'TradingDay': trading_day_int,
-                        'TradingMsOfDay': ms_of_day,
-                        'Actual': actual,
-                        'Predicted': predicted,
-                        'Threshold': actual_threshold,
-                        'Side': actual_side
-                    }
-                    result_data.append(result_row)
+                    print(f"    Chromosome {chromosome_index + 1}: Added {regime_rows_added} rows for {current_day} ({predictions_found} regime matches, {zeros_added} zeros for non-regime)")
                 
             except Exception as e:
-                print(f"    Error processing {current_day}: {e}")
+                print(f"  Error in batch processing for {current_day}: {e}")
+                print(f"  Skipping {current_day} - batch processing is required for performance")
                 continue
         
-        # Evaluate performance using trading performance analyzer
-        if result_data:
-            # Extract data arrays
-            trading_days_array = [row['TradingDay'] for row in result_data]
-            trading_ms_array = [row['TradingMsOfDay'] for row in result_data]
-            actual_array = [row['Actual'] for row in result_data]
-            predicted_array = [row['Predicted'] for row in result_data]
-            threshold_array = [row['Threshold'] for row in result_data]
-            side_array = [row['Side'] for row in result_data]
+        # After processing all trading days, evaluate performance for each chromosome
+        fitness_results = []
+        for chromosome_index in range(len(population)):
+            result_data = population_results[chromosome_index]
             
-            try:
-                performance_result = self.performance_analyzer.evaluate_performance(
-                    trading_days=trading_days_array,
-                    trading_ms=trading_ms_array,
-                    actual=actual_array,
-                    predicted=predicted_array,
-                    thresholds=threshold_array,
-                    sides=side_array
-                )
+            if result_data:
+                print(f"\nEvaluating performance for chromosome {chromosome_index + 1}")
                 
-                if performance_result:
-                    return performance_result
+                # Extract data arrays
+                trading_days_array = [row['TradingDay'] for row in result_data]
+                trading_ms_array = [row['TradingMsOfDay'] for row in result_data]
+                actual_array = [row['Actual'] for row in result_data]
+                predicted_array = [row['Predicted'] for row in result_data]
+                threshold_array = [row['Threshold'] for row in result_data]
+                side_array = [row['Side'] for row in result_data]
                 
-            except Exception as e:
-                print(f"    Error in performance evaluation: {e}")
+                # Evaluate performance using trading performance analyzer
+                try:
+                    performance_result = self.performance_analyzer.evaluate_performance(
+                        trading_days=trading_days_array,
+                        trading_ms=trading_ms_array,
+                        actual=actual_array,
+                        predicted=predicted_array,
+                        thresholds=threshold_array,
+                        sides=side_array
+                    )
+                    
+                    if performance_result:
+                        fitness_results.append(performance_result)
+                        print(f"  Composite Score: {performance_result['composite_score']:.2f}")
+                    else:
+                        fitness_results.append(self._get_default_fitness())
+                    
+                except Exception as e:
+                    print(f"  Error evaluating performance for chromosome {chromosome_index + 1}: {e}")
+                    fitness_results.append(self._get_default_fitness())
+            else:
+                print(f"\nNo data for chromosome {chromosome_index + 1}")
+                fitness_results.append(self._get_default_fitness())
         
-        # Return default fitness if evaluation fails
-        return {'composite_score': 0.0, 'total_pnl_after_fees': 0.0, 'num_trades': 0, 
-                'sharpe_ratio': 0.0, 'max_drawdown': 0.0, 'win_rate': 0.0, 
-                'profit_factor': 0.0, 'avg_pnl_per_trade': 0.0, 'volatility': 0.0, 'calmar_ratio': 0.0}
+        return fitness_results
+    
+    def _get_default_fitness(self) -> Dict:
+        """Return default fitness values when evaluation fails."""
+        return {
+            'composite_score': 0.0, 'total_pnl_after_fees': 0.0, 'num_trades': 0, 
+            'sharpe_ratio': 0.0, 'max_drawdown': 0.0, 'win_rate': 0.0, 
+            'profit_factor': 0.0, 'avg_pnl_per_trade': 0.0, 'volatility': 0.0, 'calmar_ratio': 0.0
+        }
     
     def tournament_selection(self, population: List[np.ndarray], fitness_scores: List[float], 
                            tournament_size: int = 3) -> np.ndarray:
@@ -671,17 +720,10 @@ class TradingModelRegimeWeightOptimizer:
             print(f"GENERATION {generation}/{generations}")
             print(f"="*60)
             
-            # Evaluate fitness for each chromosome
-            fitness_results = []
-            print(f"Evaluating fitness for {len(population)} chromosomes...")
-            
-            for i, chromosome in enumerate(population):
-                print(f"  Evaluating chromosome {i+1}/{len(population)}")
-                fitness_result = self.evaluate_chromosome_fitness(
-                    chromosome, from_trading_day, to_trading_day, market_regime
-                )
-                fitness_results.append(fitness_result)
-                print(f"    Composite Score: {fitness_result['composite_score']:.2f}")
+            # Evaluate fitness for entire population using optimized batch method
+            fitness_results = self.evaluate_population_fitness(
+                population, from_trading_day, to_trading_day, market_regime
+            )
             
             # Save generation results
             self.save_generation_results(generation, population, fitness_results, 
