@@ -412,63 +412,6 @@ class ModelTradingWeighter:
         
         return score
     
-    def calculate_combination_score(self, model_id: str, daily_data: pd.DataFrame, 
-                                  regime_data: pd.DataFrame, threshold: float, 
-                                  direction: str, weighting_array: np.ndarray) -> float:
-        """
-        Calculate score for a specific model+threshold+direction combination.
-        
-        Args:
-            model_id: Model ID to evaluate
-            daily_data: Daily performance DataFrame
-            regime_data: Regime performance DataFrame
-            threshold: Threshold value
-            direction: Direction ('up' or 'down')
-            weighting_array: 76-element weighting array
-            
-        Returns:
-            Score for this combination
-        """
-        # Get model rows
-        daily_row = daily_data[daily_data['ModelID'] == model_id]
-        regime_row = regime_data[regime_data['ModelID'] == model_id]
-        
-        if daily_row.empty or regime_row.empty:
-            return float('-inf')
-            
-        daily_row = daily_row.iloc[0]
-        regime_row = regime_row.iloc[0]
-        
-        # Get columns for this threshold+direction combination
-        columns = self.get_threshold_direction_columns(threshold, direction)
-        
-        if len(columns) != len(weighting_array):
-            raise ValueError(
-                f"Column count ({len(columns)}) doesn't match weighting array length ({len(weighting_array)}) "
-                f"for threshold {threshold}, direction {direction}"
-            )
-        
-        # Extract metric values
-        metric_values = []
-        for col in columns:
-            if col.startswith(('daily_', '2day_', '3day_', '1week_', '2week_', '4week_', 
-                              '8week_', '13week_', '26week_', '52week_', 'from_begin_')):
-                # Daily metric
-                value = daily_row.get(col, 0.0)
-            else:
-                # Regime metric  
-                value = regime_row.get(col, 0.0)
-                
-            if pd.isna(value):
-                value = 0.0
-            metric_values.append(float(value))
-        
-        # Calculate weighted score
-        metric_values = np.array(metric_values)
-        score = np.dot(metric_values, weighting_array)
-        
-        return score
-    
     def get_best_trading_model_batch_vectorized(self, trading_day: str, market_regime: int, 
                                               weighting_arrays: List[np.ndarray], show_metrics: bool = False) -> List[Dict]:
         """

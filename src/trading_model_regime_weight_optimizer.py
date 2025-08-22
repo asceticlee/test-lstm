@@ -197,8 +197,13 @@ class TradingModelRegimeWeightOptimizer:
                 if self._first_batch_call and batch_results and len(batch_results) > 0:
                     if 'metrics_breakdown' in batch_results[0]:
                         metrics = batch_results[0]['metrics_breakdown']['metrics']
-                        # Create column names with data source prefixes
-                        self._weight_column_names = [f"{metric['data_source']}:{metric['column_name']}" for metric in metrics]
+                        # Create column names with data source prefixes and clean up direction suffixes
+                        self._weight_column_names = []
+                        for metric in metrics:
+                            column_name = metric['column_name']
+                            # Remove "_up" and "_down" suffixes to make column names more readable
+                            clean_column_name = column_name.replace('_up_', '_').replace('_down_', '_')
+                            self._weight_column_names.append(f"{metric['data_source']}:{clean_column_name}")
                         print(f"  Captured {len(self._weight_column_names)} weight column names from first batch call")
                     else:
                         print("  Warning: No metrics breakdown in first batch call, using fallback names")
