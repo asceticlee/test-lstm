@@ -5,13 +5,15 @@ __pycache__/
 *.pyd
 
 # model performance output
-data/*.csv
-model_performance/daily_performance_index.csv
-model_performance/regime_performance_index.csv
-model_performance/*/*.csv
-model_trading/model_trading_performance/trading_performance_input/*.csv
-model_trading/weight_optimizer/*regime*weight*candidate*.csv
-model_trading/weight_optimizer/*regime*generation*.csv
+data/
+models/
+market_regime/
+model_performance/
+model_predictions/
+model_regime/
+model_trading/
+models/
+nohup.out
 
 # C extensions
 *.so

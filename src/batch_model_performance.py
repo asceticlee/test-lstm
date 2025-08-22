@@ -19,8 +19,8 @@ Trading Logic:
 - Upside: If prediction >= threshold, go long. PnL = actual_value if actual >= 0, else actual_value
 - Downside: If prediction <= -threshold, go short. PnL = -actual_value if actual <= 0, else -actual_value
 
-The script supports incremental updates - if a trading day file already exists,
-it will only append missing models rather than regenerating the entire file.
+The script only creates MISSING trading day files - if a file already exists,
+it skips that trading day entirely to avoid any modifications to existing data.
 
 Usage:
     python batch_model_performance.py <start_model_id> <end_model_id>
@@ -55,36 +55,33 @@ def load_existing_trading_day_performance(performance_file):
 
 def append_to_trading_day_performance_file(performance_file, new_data, thresholds, timeframes):
     """
-    Append new performance data to trading day CSV file
+    Create new trading day CSV file (file should not exist when this is called)
     """
-    file_exists = os.path.exists(performance_file)
-    
-    with open(performance_file, 'a', newline='') as f:
+    with open(performance_file, 'w', newline='') as f:  # 'w' = write mode (create new file)
         writer = csv.writer(f)
         
-        # Write header if file doesn't exist
-        if not file_exists:
-            header = ['ModelID', 'TradingDay']
-            
-            # For each timeframe, add all threshold columns
-            for tf_name, tf_spec in timeframes:
-                # Upside accuracy columns for this timeframe
-                for t in thresholds:
-                    header.extend([
-                        f'{tf_name}_up_acc_thr_{t:.1f}',
-                        f'{tf_name}_up_num_thr_{t:.1f}',
-                        f'{tf_name}_up_den_thr_{t:.1f}',
-                        f'{tf_name}_up_pnl_thr_{t:.1f}'
-                    ])
-                # Downside accuracy columns for this timeframe
-                for t in thresholds:
-                    header.extend([
-                        f'{tf_name}_down_acc_thr_{t:.1f}',
-                        f'{tf_name}_down_num_thr_{t:.1f}',
-                        f'{tf_name}_down_den_thr_{t:.1f}',
-                        f'{tf_name}_down_pnl_thr_{t:.1f}'
-                    ])
-            writer.writerow(header)
+        # Write header
+        header = ['ModelID', 'TradingDay']
+        
+        # For each timeframe, add all threshold columns
+        for tf_name, tf_spec in timeframes:
+            # Upside accuracy columns for this timeframe
+            for t in thresholds:
+                header.extend([
+                    f'{tf_name}_up_acc_thr_{t:.1f}',
+                    f'{tf_name}_up_num_thr_{t:.1f}',
+                    f'{tf_name}_up_den_thr_{t:.1f}',
+                    f'{tf_name}_up_pnl_thr_{t:.1f}'
+                ])
+            # Downside accuracy columns for this timeframe
+            for t in thresholds:
+                header.extend([
+                    f'{tf_name}_down_acc_thr_{t:.1f}',
+                    f'{tf_name}_down_num_thr_{t:.1f}',
+                    f'{tf_name}_down_den_thr_{t:.1f}',
+                    f'{tf_name}_down_pnl_thr_{t:.1f}'
+                ])
+        writer.writerow(header)
         
         # Write data rows
         for row in new_data:
@@ -405,9 +402,13 @@ def process_trading_day_performance(trading_day, model_range, prediction_dir, pe
         # Trading day performance file
         performance_file = os.path.join(performance_dir, f'trading_day_{trading_day}_performance.csv')
         
-        # Load existing models to avoid duplication
-        existing_models = load_existing_trading_day_performance(performance_file)
-        print(f"  Found {len(existing_models)} existing models")
+        # Check if file already exists - if so, skip entirely
+        if os.path.exists(performance_file):
+            print(f"  File already exists: {performance_file}")
+            print(f"  Skipping trading day {trading_day} (file already complete)")
+            return 0
+        
+        print(f"  Creating new file: {performance_file}")
         
         # Define thresholds and timeframes
         thresholds = np.arange(0.0, 0.81, 0.1)
@@ -433,10 +434,6 @@ def process_trading_day_performance(trading_day, model_range, prediction_dir, pe
         
         for model_num in range(start_model_id, end_model_id + 1):
             model_id = f"{model_num:05d}"
-            
-            # Skip if model already processed
-            if model_id in existing_models:
-                continue
             
             # Check if prediction file exists
             prediction_file = os.path.join(prediction_dir, f'model_{model_id}_prediction.csv')
@@ -486,12 +483,12 @@ def process_trading_day_performance(trading_day, model_range, prediction_dir, pe
                 print(f"    Error processing model {model_id}: {e}")
                 continue
         
-        # Append new data to trading day file
+        # Create new trading day file (completely new file)
         if new_performance_data:
             append_to_trading_day_performance_file(performance_file, new_performance_data, thresholds, timeframes)
-            print(f"  Successfully saved {len(new_performance_data)} models to {performance_file}")
+            print(f"  Successfully created {performance_file} with {len(new_performance_data)} models")
         else:
-            print(f"  No new models to add for trading day {trading_day}")
+            print(f"  No valid models found for trading day {trading_day}")
         
         return processed_models
         
@@ -638,6 +635,7 @@ def main():
     
     # Process each trading day
     successful_days = 0
+    skipped_days = 0
     total_models_processed = 0
     
     print(f"\nProcessing trading days with models {start_model_id:05d} to {end_model_id:05d}")
@@ -657,6 +655,11 @@ def main():
         if models_processed > 0:
             successful_days += 1
             total_models_processed += models_processed
+        elif models_processed == 0:
+            # Check if file was skipped (already exists) vs no data found
+            performance_file = os.path.join(performance_dir, f'trading_day_{trading_day}_performance.csv')
+            if os.path.exists(performance_file):
+                skipped_days += 1
         
         print()  # Add blank line between trading days
     
@@ -670,12 +673,13 @@ def main():
     print("=" * 70)
     print("Batch processing completed!")
     print(f"Total time: {elapsed_time:.2f} seconds ({elapsed_time/60:.2f} minutes)")
-    print(f"Successfully processed: {successful_days} trading days")
+    print(f"Successfully created: {successful_days} new trading day files")
+    print(f"Skipped existing files: {skipped_days} trading day files")
     print(f"Total model records processed: {total_models_processed}")
     print(f"Total trading days attempted: {len(sorted_trading_days)}")
     
-    if successful_days < len(sorted_trading_days):
-        failed_days = len(sorted_trading_days) - successful_days
+    if successful_days + skipped_days < len(sorted_trading_days):
+        failed_days = len(sorted_trading_days) - successful_days - skipped_days
         print(f"\nWARNING: {failed_days} trading days had no valid model data. Check the error messages above.")
     
     print(f"\nPerformance files saved to: {performance_dir}")
@@ -686,7 +690,7 @@ def main():
         avg_models_per_day = total_models_processed / successful_days if successful_days > 0 else 0
         avg_time_per_model = elapsed_time / total_models_processed
         print(f"\nPerformance Statistics:")
-        print(f"Average models per trading day: {avg_models_per_day:.1f}")
+        print(f"Average models per new trading day: {avg_models_per_day:.1f}")
         print(f"Average time per model record: {avg_time_per_model:.4f} seconds")
     else:
         print("\nNo performance statistics available - no model records were processed successfully.")

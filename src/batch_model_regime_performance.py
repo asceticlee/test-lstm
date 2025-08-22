@@ -21,6 +21,9 @@ with naming pattern: trading_day_YYYYMMDD_regime_performance.csv
 
 Each file contains all models and all regimes for that specific trading day.
 
+The script only creates MISSING trading day files - if a file already exists,
+it skips that trading day entirely to avoid any modifications to existing data.
+
 Trading Logic:
 - Upside: If prediction >= threshold, go long. PnL = actual_value if actual >= 0, else actual_value
 - Downside: If prediction <= -threshold, go short. PnL = -actual_value if actual <= 0, else -actual_value
@@ -264,22 +267,25 @@ def process_single_trading_day_regime_data(current_day, current_day_idx, start_m
     """
     Process regime-based performance for all models for a single trading day
     """
+    # Output file for this trading day
+    performance_file = os.path.join(regime_performance_dir, f'trading_day_{current_day}_regime_performance.csv')
+    
+    # Check if file already exists - if so, skip entirely
+    if os.path.exists(performance_file):
+        print(f"  File already exists: {performance_file}")
+        print(f"  Skipping trading day {current_day} (file already complete)")
+        return False
+    
+    print(f"  Creating new file: {performance_file}")
+    
     # Define parameters
     thresholds = np.arange(0.0, 0.81, 0.1)
     lookback_periods = [1, 2, 3, 4, 5, 10, 20, 30]
     regimes = unique_regimes  # Use actual regimes from data
     
-    # Output file for this trading day
-    performance_file = os.path.join(regime_performance_dir, f'trading_day_{current_day}_regime_performance.csv')
-    
-    # Load existing data to avoid duplication
-    existing_data = load_existing_daily_regime_performance(performance_file)
-    print(f"  Found {len(existing_data)} existing (model, regime) combinations")
-    
     # Collect data for all models and regimes for this trading day
     day_data = []
     processed_combinations = 0
-    skipped_combinations = 0
     
     for model_num in range(start_model_id, end_model_id + 1):
         model_id = f"{model_num:05d}"
@@ -312,11 +318,6 @@ def process_single_trading_day_regime_data(current_day, current_day_idx, start_m
         
         # Process each regime for this model and trading day
         for regime in regimes:
-            # Check if this combination already exists
-            if (model_id, regime) in existing_data:
-                skipped_combinations += 1
-                continue
-            
             # Calculate performance for this model-regime combination
             regime_results = calculate_multi_regime_performance_optimized(
                 trading_day_array, predicted_array, actual_array,
@@ -329,14 +330,14 @@ def process_single_trading_day_regime_data(current_day, current_day_idx, start_m
             day_data.append(row)
             processed_combinations += 1
     
-    print(f"  Saved {processed_combinations} regime performance records for {len(set(row[0] for row in day_data))} models")
+    print(f"  Created {processed_combinations} regime performance records for {len(set(row[0] for row in day_data))} models")
     
-    # Save all data for this trading day to file
+    # Save all data for this trading day to file (create new file)
     if day_data:
         save_daily_regime_performance_file(performance_file, day_data, thresholds, lookback_periods)
         return True
     else:
-        print(f"  No new data to save for trading day {current_day}")
+        print(f"  No valid data found for trading day {current_day}")
         return False
 
 def generate_models_alltime_regime_performance(start_model_id, end_model_id, regime_performance_dir, unique_regimes):
@@ -520,6 +521,7 @@ def main():
     
     # Process each trading day
     successful_days = 0
+    skipped_days = 0
     failed_days = 0
     
     print(f"\nProcessing trading days with models {start_model_id:05d} to {end_model_id:05d}")
@@ -534,12 +536,18 @@ def main():
         print(f"[{current_day_idx + 1}/{len(all_trading_days)}] Processing trading day {current_day}...")
         
         try:
-            if process_single_trading_day_regime_data(current_day, current_day_idx, start_model_id, end_model_id, 
-                                                    prediction_dir, regime_performance_dir, regime_assignments, 
-                                                    unique_regimes, all_trading_days):
+            result = process_single_trading_day_regime_data(current_day, current_day_idx, start_model_id, end_model_id, 
+                                                          prediction_dir, regime_performance_dir, regime_assignments, 
+                                                          unique_regimes, all_trading_days)
+            if result:
                 successful_days += 1
             else:
-                failed_days += 1
+                # Check if file was skipped (already exists) vs no data found
+                performance_file = os.path.join(regime_performance_dir, f'trading_day_{current_day}_regime_performance.csv')
+                if os.path.exists(performance_file):
+                    skipped_days += 1
+                else:
+                    failed_days += 1
         except Exception as e:
             print(f"  ERROR processing trading day {current_day}: {e}")
             failed_days += 1
@@ -556,13 +564,14 @@ def main():
     print("=" * 70)
     print(f"Batch processing completed at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print(f"Total execution time: {elapsed_time:.1f} seconds ({elapsed_time/60:.1f} minutes)")
-    print(f"Successfully processed: {successful_days} trading days")
+    print(f"Successfully created: {successful_days} new trading day files")
+    print(f"Skipped existing files: {skipped_days} trading day files")
     print(f"Failed to process: {failed_days} trading days")
-    print(f"Total trading days attempted: {successful_days + failed_days}")
+    print(f"Total trading days attempted: {successful_days + skipped_days + failed_days}")
     
     if successful_days > 0:
         avg_time_per_day = elapsed_time / successful_days
-        print(f"Average time per trading day: {avg_time_per_day:.1f} seconds")
+        print(f"Average time per new trading day: {avg_time_per_day:.1f} seconds")
     
     print(f"\nRegime performance files saved to: {regime_performance_dir}")
     
