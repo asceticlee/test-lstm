@@ -182,29 +182,42 @@ class TradingModelRegimeWeightOptimizer:
             # INNER LOOP: Process all chromosomes for this trading day using batch operation
             print(f"  Finding best models for all {len(population)} chromosomes using batch operation")
             try:
-                # Use batch method to process all chromosomes at once (maximum efficiency!)
-                # On first call, use show_metrics=True to capture column names
-                use_show_metrics = self._first_batch_call
+                # Capture proper weight column names on first call using base metric structure
+                if self._first_batch_call:
+                    try:
+                        # Get the 76-element base metric structure by examining a single threshold+direction combination
+                        # Since the weight array represents coefficients for base metrics (not threshold-specific),
+                        # we use one combination as a template and remove threshold specificity
+                        sample_columns = self.weighter.get_threshold_direction_columns(threshold=0.0, direction='up')
+                        
+                        # Remove threshold and direction specificity from column names
+                        self._weight_column_names = []
+                        for col in sample_columns:
+                            if col.startswith('daily_') or col.startswith('from_begin_') or col.endswith('week_up_acc_thr_0.0') or col.endswith('week_up_pnl_thr_0.0') or col.endswith('week_up_num_thr_0.0') or col.endswith('week_up_den_thr_0.0'):
+                                # Daily performance columns - remove threshold and direction specificity
+                                base_name = col.replace('_up_', '_').replace('_thr_0.0', '').replace('daily_', '')
+                                self._weight_column_names.append(f"daily:{base_name}")
+                            else:
+                                # Regime performance columns - remove threshold and direction specificity  
+                                base_name = col.replace('_up_', '_').replace('_thr_0.0', '')
+                                self._weight_column_names.append(f"regime:{base_name}")
+                        
+                        print(f"  Captured {len(self._weight_column_names)} weight column names from base metric structure")
+                        print(f"  Sample: {self._weight_column_names[:5]} ... {self._weight_column_names[-5:]}")
+                        
+                    except Exception as e:
+                        print(f"  Warning: Failed to get base metric structure from weighter: {e}")
+                        self._weight_column_names = [f"weight_{i+1:02d}" for i in range(len(population[0]))]
+                    
+                    self._first_batch_call = False  # Don't capture column names again
                 
+                # Use batch method to process all chromosomes at once (maximum efficiency!)
                 batch_results = self.weighter.get_best_trading_model_batch_vectorized(
                     trading_day=previous_day,
                     market_regime=market_regime,
                     weighting_arrays=population,
-                    show_metrics=use_show_metrics
+                    show_metrics=False  # We don't need metrics breakdown anymore
                 )
-                
-                # Capture column names from the first call with data source prefixes
-                if self._first_batch_call and batch_results and len(batch_results) > 0:
-                    if 'metrics_breakdown' in batch_results[0]:
-                        metrics = batch_results[0]['metrics_breakdown']['metrics']
-                        # Create column names with data source prefixes
-                        self._weight_column_names = [f"{metric['data_source']}:{metric['column_name']}" for metric in metrics]
-                        print(f"  Captured {len(self._weight_column_names)} weight column names from first batch call")
-                    else:
-                        print("  Warning: No metrics breakdown in first batch call, using fallback names")
-                        self._weight_column_names = [f"weight_{i+1:02d}" for i in range(len(population[0]))]
-                    
-                    self._first_batch_call = False  # Don't use show_metrics for future calls
                 
                 print(f"  Batch operation complete - got {len(batch_results)} results")
                 

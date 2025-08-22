@@ -1,5 +1,10 @@
 {
     "terminal.integrated.scrollback": 30000,
     "python.analysis.extraPaths": ["./src"],
-    "python.defaultInterpreterPath": "./venv-test-lstm/bin/python"
+    "python.defaultInterpreterPath": "./venv-test-lstm/bin/python",
+    "python.analysis.autoImportCompletions": false,
+    "python.analysis.stubPath": "",
+    "python.analysis.exclude": [
+        "**/test_*.py"
+    ]
 }
