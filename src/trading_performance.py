@@ -518,10 +518,10 @@ class TradingPerformanceAnalyzer:
         # Default weights - can be customized based on trading strategy preferences
         if weights is None:
             weights = {
-                'profitability': 0.35,  # Total P&L and profit factor
+                'profitability': 0.10,  # Total P&L and profit factor
                 'risk_adjusted': 0.30,  # Sharpe ratio and max drawdown
-                'consistency': 0.25,    # Win rate and volatility
-                'efficiency': 0.10      # Calmar ratio and trade frequency
+                'consistency': 0.35,    # Win rate and volatility
+                'efficiency': 0.25      # Calmar ratio and trade frequency
             }
         
         # Ensure weights sum to 1.0
