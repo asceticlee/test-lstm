@@ -27,6 +27,8 @@ import pandas as pd
 import numpy as np
 from datetime import datetime
 from typing import List, Dict, Tuple, Optional
+from concurrent.futures import ThreadPoolExecutor
+import concurrent.futures
 
 # Add current directory to path to import model_trading_weighter
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -133,10 +135,145 @@ class TradingModelRegimeWeightOptimizer:
         print(f"Initialized population of {population_size} chromosomes with {weight_length} genes each")
         return population
     
+    def _process_single_trading_day(self, current_day: str, population: List[np.ndarray], 
+                                   market_regime: int) -> Dict[int, List[Dict]]:
+        """
+        Process a single trading day for all chromosomes.
+        This method is designed to be called in parallel for different trading days.
+        
+        Args:
+            current_day: Trading day to process (YYYYMMDD)
+            population: List of chromosomes (weight arrays) to evaluate
+            market_regime: Target market regime
+            
+        Returns:
+            Dictionary mapping chromosome_index to list of result dictionaries for this day
+        """
+        print(f"\nProcessing trading day {current_day}")
+        
+        # Initialize result storage for this day
+        day_results = {i: [] for i in range(len(population))}
+        
+        # Get current day regime rows (read once per day)
+        current_day_rows = self.get_regime_rows_for_day(current_day, market_regime)
+        
+        if len(current_day_rows) == 0:
+            print(f"  No regime {market_regime} data for {current_day}, skipping")
+            return day_results
+        
+        # Get previous trading day for model weighter (read once per day)
+        previous_day = self.get_previous_trading_day(current_day)
+        if previous_day is None:
+            print(f"  No previous trading day found for {current_day}, skipping")
+            return day_results
+        
+        # Pre-cache model predictions for all potential models (done once per day)
+        model_predictions_cache = {}
+        
+        # Process all chromosomes for this trading day using batch operation
+        print(f"  Finding best models for all {len(population)} chromosomes using batch operation")
+        try:
+            # Use batch method to process all chromosomes at once (maximum efficiency!)
+            # For parallel processing, we don't need show_metrics since column names are captured in main thread
+            batch_results = self.weighter.get_best_trading_model_batch_vectorized(
+                trading_day=previous_day,
+                market_regime=market_regime,
+                weighting_arrays=population,
+                show_metrics=False  # Column names already captured in main thread
+            )
+            
+            print(f"  Batch operation complete - got {len(batch_results)} results")
+            
+            # Process each result from the batch operation
+            for batch_result in batch_results:
+                chromosome_index = batch_result['weight_array_index']
+                
+                model_id = batch_result['model_id']
+                direction = batch_result['direction']
+                threshold = batch_result['threshold']
+                
+                print(f"    Chromosome {chromosome_index + 1}: Model {model_id}, direction: {direction}, threshold: {threshold}")
+                
+                # Load model predictions (use cache to avoid repeated disk reads)
+                if model_id not in model_predictions_cache:
+                    model_predictions_cache[model_id] = self.load_model_predictions(model_id)
+                    print(f"    Cached predictions for model {model_id}")
+                
+                model_predictions = model_predictions_cache[model_id]
+            
+                # Get ALL model prediction timestamps for this day (complete dataset)
+                trading_day_int = int(current_day)
+                trading_start = 38100000  # 10:35 AM (first model prediction)
+                trading_end = 43200000    # 12:00 PM (last model prediction)
+                
+                # Get all model timestamps for this trading day
+                model_day_data = model_predictions[model_predictions['TradingDay'] == trading_day_int]
+                all_model_timestamps = []
+                for _, row in model_day_data.iterrows():
+                    ms_of_day = row['TradingMsOfDay']
+                    if trading_start <= ms_of_day <= trading_end:
+                        all_model_timestamps.append(ms_of_day)
+                
+                all_model_timestamps = sorted(all_model_timestamps)
+                
+                # Create result rows for ALL model timestamps (complete dataset for accurate metrics)
+                regime_rows_added = 0
+                predictions_found = 0
+                zeros_added = 0
+                
+                for ms_of_day in all_model_timestamps:
+                    # Check if this timestamp is in target regime
+                    regime_match = current_day_rows[current_day_rows['ms_of_day'] == ms_of_day]
+                    
+                    if len(regime_match) > 0:
+                        # This timestamp IS in target regime - use actual model data
+                        model_match = model_predictions[
+                            (model_predictions['TradingDay'] == trading_day_int) & 
+                            (model_predictions['TradingMsOfDay'] == ms_of_day)
+                        ]
+                        actual = model_match.iloc[0]['Actual']
+                        predicted = model_match.iloc[0]['Predicted']
+                        # Make threshold negative for downside strategies
+                        if direction == "down":
+                            actual_threshold = -threshold if threshold != 0.0 else -0.0
+                        else:
+                            actual_threshold = threshold
+                        actual_side = direction  # Use direction from weighter ("up" or "down")
+                        actual_model_id = model_id
+                        predictions_found += 1
+                    else:
+                        # This timestamp is NOT in target regime - use zeros
+                        actual = 0.0
+                        predicted = 0.0
+                        actual_threshold = 0.0
+                        actual_side = "up"  # Default to "up" for zero rows
+                        actual_model_id = 0
+                        zeros_added += 1
+                    
+                    result_row = {
+                        'TradingDay': trading_day_int,
+                        'TradingMsOfDay': ms_of_day,
+                        'Actual': actual,
+                        'Predicted': predicted,
+                        'Threshold': actual_threshold,
+                        'Side': actual_side,
+                        'ModelID': actual_model_id
+                    }
+                    day_results[chromosome_index].append(result_row)
+                    regime_rows_added += 1
+                
+                print(f"    Chromosome {chromosome_index + 1}: Added {regime_rows_added} rows for {current_day} ({predictions_found} regime matches, {zeros_added} zeros for non-regime)")
+            
+        except Exception as e:
+            print(f"  Error in batch processing for {current_day}: {e}")
+            print(f"  Skipping {current_day} - batch processing is required for performance")
+        
+        return day_results
+    
     def evaluate_population_fitness(self, population: List[np.ndarray], from_trading_day: str, 
                                    to_trading_day: str, market_regime: int) -> List[Dict]:
         """
-        Evaluate fitness of entire population using optimized daily-outer, chromosome-inner loop.
+        Evaluate fitness of entire population using parallelized trading day processing.
         
         Args:
             population: List of chromosomes (weight arrays) to evaluate
@@ -147,7 +284,7 @@ class TradingModelRegimeWeightOptimizer:
         Returns:
             List of fitness dictionaries for each chromosome
         """
-        print(f"Evaluating fitness for {len(population)} chromosomes using optimized daily-outer loop...")
+        print(f"Evaluating fitness for {len(population)} chromosomes using parallel trading day processing...")
         
         # Get trading days in range
         trading_days = self.get_trading_days_in_range(from_trading_day, to_trading_day)
@@ -159,144 +296,76 @@ class TradingModelRegimeWeightOptimizer:
         # Initialize result storage for each chromosome
         population_results = {i: [] for i in range(len(population))}
         
-        # OUTER LOOP: Process each trading day (optimized approach)
-        for current_day in trading_days:
-            print(f"\nProcessing trading day {current_day}")
+        # Capture column names from first batch call (sequential for thread safety)
+        if self._first_batch_call and len(trading_days) > 0:
+            print("Capturing column names from first trading day...")
+            first_day = trading_days[0]
+            current_day_rows = self.get_regime_rows_for_day(first_day, market_regime)
             
-            # Get current day regime rows (read once per day)
-            current_day_rows = self.get_regime_rows_for_day(current_day, market_regime)
-            
-            if len(current_day_rows) == 0:
-                print(f"  No regime {market_regime} data for {current_day}, skipping")
-                continue
-            
-            # Get previous trading day for model weighter (read once per day)
-            previous_day = self.get_previous_trading_day(current_day)
-            if previous_day is None:
-                print(f"  No previous trading day found for {current_day}, skipping")
-                continue
-            
-            # Pre-cache model predictions for all potential models (done once per day)
-            model_predictions_cache = {}
-            
-            # INNER LOOP: Process all chromosomes for this trading day using batch operation
-            print(f"  Finding best models for all {len(population)} chromosomes using batch operation")
-            try:
-                # Use batch method to process all chromosomes at once (maximum efficiency!)
-                # On first call, use show_metrics=True to capture column names
-                use_show_metrics = self._first_batch_call
-                
-                batch_results = self.weighter.get_best_trading_model_batch_vectorized(
-                    trading_day=previous_day,
-                    market_regime=market_regime,
-                    weighting_arrays=population,
-                    show_metrics=use_show_metrics
-                )
-                
-                # Capture column names from the first call with data source prefixes
-                if self._first_batch_call and batch_results and len(batch_results) > 0:
-                    if 'metrics_breakdown' in batch_results[0]:
-                        metrics = batch_results[0]['metrics_breakdown']['metrics']
-                        # Create column names with data source prefixes and clean up direction suffixes
-                        self._weight_column_names = []
-                        for metric in metrics:
-                            column_name = metric['column_name']
-                            # Remove "_up" and "_down" suffixes to make column names more readable
-                            clean_column_name = column_name.replace('_up_', '_').replace('_down_', '_')
-                            self._weight_column_names.append(f"{metric['data_source']}:{clean_column_name}")
-                        print(f"  Captured {len(self._weight_column_names)} weight column names from first batch call")
-                    else:
-                        print("  Warning: No metrics breakdown in first batch call, using fallback names")
-                        self._weight_column_names = [f"weight_{i+1:02d}" for i in range(len(population[0]))]
-                    
-                    self._first_batch_call = False  # Don't use show_metrics for future calls
-                
-                print(f"  Batch operation complete - got {len(batch_results)} results")
-                
-                # Process each result from the batch operation
-                for batch_result in batch_results:
-                    chromosome_index = batch_result['weight_array_index']
-                    
-                    model_id = batch_result['model_id']
-                    direction = batch_result['direction']
-                    threshold = batch_result['threshold']
-                    
-                    print(f"    Chromosome {chromosome_index + 1}: Model {model_id}, direction: {direction}, threshold: {threshold}")
-                    
-                    # Load model predictions (use cache to avoid repeated disk reads)
-                    if model_id not in model_predictions_cache:
-                        model_predictions_cache[model_id] = self.load_model_predictions(model_id)
-                        print(f"    Cached predictions for model {model_id}")
-                    
-                    model_predictions = model_predictions_cache[model_id]
-                
-                    # Get ALL model prediction timestamps for this day (complete dataset)
-                    trading_day_int = int(current_day)
-                    trading_start = 38100000  # 10:35 AM (first model prediction)
-                    trading_end = 43200000    # 12:00 PM (last model prediction)
-                    
-                    # Get all model timestamps for this trading day
-                    model_day_data = model_predictions[model_predictions['TradingDay'] == trading_day_int]
-                    all_model_timestamps = []
-                    for _, row in model_day_data.iterrows():
-                        ms_of_day = row['TradingMsOfDay']
-                        if trading_start <= ms_of_day <= trading_end:
-                            all_model_timestamps.append(ms_of_day)
-                    
-                    all_model_timestamps = sorted(all_model_timestamps)
-                    
-                    # Create result rows for ALL model timestamps (complete dataset for accurate metrics)
-                    regime_rows_added = 0
-                    predictions_found = 0
-                    zeros_added = 0
-                    
-                    for ms_of_day in all_model_timestamps:
-                        # Check if this timestamp is in target regime
-                        regime_match = current_day_rows[current_day_rows['ms_of_day'] == ms_of_day]
+            if len(current_day_rows) > 0:
+                previous_day = self.get_previous_trading_day(first_day)
+                if previous_day is not None:
+                    try:
+                        # Single call to capture column names
+                        batch_results = self.weighter.get_best_trading_model_batch_vectorized(
+                            trading_day=previous_day,
+                            market_regime=market_regime,
+                            weighting_arrays=[population[0]],  # Just use first chromosome
+                            show_metrics=True
+                        )
                         
-                        if len(regime_match) > 0:
-                            # This timestamp IS in target regime - use actual model data
-                            model_match = model_predictions[
-                                (model_predictions['TradingDay'] == trading_day_int) & 
-                                (model_predictions['TradingMsOfDay'] == ms_of_day)
-                            ]
-                            actual = model_match.iloc[0]['Actual']
-                            predicted = model_match.iloc[0]['Predicted']
-                            # Make threshold negative for downside strategies
-                            if direction == "down":
-                                actual_threshold = -threshold if threshold != 0.0 else -0.0
+                        if batch_results and len(batch_results) > 0:
+                            if 'metrics_breakdown' in batch_results[0]:
+                                metrics = batch_results[0]['metrics_breakdown']['metrics']
+                                # Create column names with data source prefixes and clean up direction suffixes
+                                self._weight_column_names = []
+                                for metric in metrics:
+                                    column_name = metric['column_name']
+                                    # Remove "_up" and "_down" suffixes to make column names more readable
+                                    clean_column_name = column_name.replace('_up_', '_').replace('_down_', '_')
+                                    self._weight_column_names.append(f"{metric['data_source']}:{clean_column_name}")
+                                print(f"  Captured {len(self._weight_column_names)} weight column names")
                             else:
-                                actual_threshold = threshold
-                            actual_side = direction  # Use direction from weighter ("up" or "down")
-                            actual_model_id = model_id
-                            predictions_found += 1
-                        else:
-                            # This timestamp is NOT in target regime - use zeros
-                            actual = 0.0
-                            predicted = 0.0
-                            actual_threshold = 0.0
-                            actual_side = "up"  # Default to "up" for zero rows
-                            actual_model_id = 0
-                            zeros_added += 1
+                                print("  Warning: No metrics breakdown, using fallback names")
+                                self._weight_column_names = [f"weight_{i+1:02d}" for i in range(len(population[0]))]
                         
-                        result_row = {
-                            'TradingDay': trading_day_int,
-                            'TradingMsOfDay': ms_of_day,
-                            'Actual': actual,
-                            'Predicted': predicted,
-                            'Threshold': actual_threshold,
-                            'Side': actual_side,
-                            'ModelID': actual_model_id
-                        }
-                        population_results[chromosome_index].append(result_row)
-                        regime_rows_added += 1
+                        self._first_batch_call = False
+                    except Exception as e:
+                        print(f"  Error capturing column names: {e}")
+                        self._weight_column_names = [f"weight_{i+1:02d}" for i in range(len(population[0]))]
+                        self._first_batch_call = False
+        
+        # Process trading days in parallel
+        max_workers = min(4, len(trading_days))  # Limit concurrent workers for memory management
+        print(f"Processing {len(trading_days)} trading days in parallel with {max_workers} workers...")
+        
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            # Submit all trading days for parallel processing
+            future_to_day = {
+                executor.submit(self._process_single_trading_day, current_day, population, market_regime): current_day 
+                for current_day in trading_days
+            }
+            
+            # Collect results as they complete
+            for future in concurrent.futures.as_completed(future_to_day):
+                current_day = future_to_day[future]
+                try:
+                    day_chromosome_results = future.result(timeout=600)  # 10 minute timeout per day
                     
-                    print(f"    Chromosome {chromosome_index + 1}: Added {regime_rows_added} rows for {current_day} ({predictions_found} regime matches, {zeros_added} zeros for non-regime)")
-                
-            except Exception as e:
-                print(f"  Error in batch processing for {current_day}: {e}")
-                print(f"  Skipping {current_day} - batch processing is required for performance")
-                continue
+                    # Merge results maintaining chromosome order
+                    for chromosome_idx, day_results in day_chromosome_results.items():
+                        population_results[chromosome_idx].extend(day_results)
+                        
+                    print(f"  Completed processing for {current_day}")
+                    
+                except Exception as e:
+                    print(f"  Error processing day {current_day}: {e}")
+                    # Continue with other days even if one fails
+        
+        # Sort each chromosome's results by trading day and time to ensure chronological order
+        print("Sorting results chronologically for each chromosome...")
+        for chromosome_idx in population_results:
+            population_results[chromosome_idx].sort(key=lambda x: (x['TradingDay'], x['TradingMsOfDay']))
         
         # After processing all trading days, evaluate performance for each chromosome
         fitness_results = []
