@@ -25,10 +25,12 @@ import os
 import csv
 import pandas as pd
 import numpy as np
+import time
 from datetime import datetime
 from typing import List, Dict, Tuple, Optional
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 import concurrent.futures
+import multiprocessing
 
 # Add current directory to path to import model_trading_weighter
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -41,12 +43,13 @@ class TradingModelRegimeWeightOptimizer:
     Optimizes trading model weights for specific market regimes using genetic algorithm.
     """
     
-    def __init__(self, project_root: str = None):
+    def __init__(self, project_root: str = None, enable_parallel: bool = True):
         """
         Initialize the optimizer.
         
         Args:
             project_root: Root directory of the project. If None, infers from script location.
+            enable_parallel: Whether to enable parallel processing (for benchmarking)
         """
         if project_root is None:
             # Infer project root from script location
@@ -54,6 +57,7 @@ class TradingModelRegimeWeightOptimizer:
             project_root = os.path.dirname(script_dir)
         
         self.project_root = project_root
+        self.enable_parallel = enable_parallel
         self.market_regime_file = os.path.join(project_root, "market_regime", "gmm", "market_regime_forecast.csv")
         self.predictions_dir = os.path.join(project_root, "model_predictions")
         self.output_dir = os.path.join(project_root, "model_trading", "weight_optimizer")
@@ -284,7 +288,8 @@ class TradingModelRegimeWeightOptimizer:
         Returns:
             List of fitness dictionaries for each chromosome
         """
-        print(f"Evaluating fitness for {len(population)} chromosomes using parallel trading day processing...")
+        print(f"Evaluating fitness for {len(population)} chromosomes using optimized parallel processing...")
+        start_time = time.time()
         
         # Get trading days in range
         trading_days = self.get_trading_days_in_range(from_trading_day, to_trading_day)
@@ -335,11 +340,46 @@ class TradingModelRegimeWeightOptimizer:
                         self._weight_column_names = [f"weight_{i+1:02d}" for i in range(len(population[0]))]
                         self._first_batch_call = False
         
-        # Process trading days in parallel
-        max_workers = min(4, len(trading_days))  # Limit concurrent workers for memory management
-        print(f"Processing {len(trading_days)} trading days in parallel with {max_workers} workers...")
+        # Determine optimal parallelization strategy based on data size
+        total_combinations = len(trading_days) * len(population)
+        cpu_cores = multiprocessing.cpu_count()
         
-        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        print(f"Total work: {len(trading_days)} days × {len(population)} chromosomes = {total_combinations} combinations")
+        print(f"Available CPU cores: {cpu_cores}")
+        
+        # Add option to disable parallel processing for benchmarking
+        if not self.enable_parallel:
+            print("Parallel processing DISABLED - running sequentially for benchmarking...")
+            return self._evaluate_sequentially(population, trading_days, market_regime, population_results)
+        
+        # Choose strategy based on workload size
+        if len(trading_days) <= 4 and len(population) >= 20:
+            # Few days, many chromosomes: process by chromosome-day combinations
+            print("Using chromosome-day combination parallelization...")
+            result = self._evaluate_by_combinations(population, trading_days, market_regime, population_results)
+        else:
+            # Many days or few chromosomes: process by trading days (current approach)
+            print("Using trading day parallelization...")
+            result = self._evaluate_by_trading_days(population, trading_days, market_regime, population_results)
+        
+        end_time = time.time()
+        print(f"\nFitness evaluation completed in {end_time - start_time:.2f} seconds")
+        print(f"Average time per chromosome: {(end_time - start_time) / len(population):.2f} seconds")
+        
+        return result
+    
+    def _evaluate_by_trading_days(self, population: List[np.ndarray], trading_days: List[str], 
+                                 market_regime: int, population_results: Dict[int, List[Dict]]) -> Tuple[List[Dict], Dict[int, List[Dict]]]:
+        """
+        Evaluate population by parallelizing across trading days (current approach, optimized).
+        """
+        # Process trading days in parallel
+        # Use more workers for your 32-thread system, but limit for memory management
+        max_workers = min(max(1, multiprocessing.cpu_count() // 2), len(trading_days), 16)  # Use half of CPU cores, max 16
+        print(f"Processing {len(trading_days)} trading days in parallel with {max_workers} workers (CPU cores: {multiprocessing.cpu_count()})...")
+        
+        # Use ProcessPoolExecutor for CPU-intensive work (better than ThreadPoolExecutor for this use case)
+        with ProcessPoolExecutor(max_workers=max_workers) as executor:
             # Submit all trading days for parallel processing
             future_to_day = {
                 executor.submit(self._process_single_trading_day, current_day, population, market_regime): current_day 
@@ -367,6 +407,111 @@ class TradingModelRegimeWeightOptimizer:
         for chromosome_idx in population_results:
             population_results[chromosome_idx].sort(key=lambda x: (x['TradingDay'], x['TradingMsOfDay']))
         
+        return self._finalize_fitness_evaluation(population, population_results)
+    
+    def _evaluate_by_combinations(self, population: List[np.ndarray], trading_days: List[str], 
+                                 market_regime: int, population_results: Dict[int, List[Dict]]) -> Tuple[List[Dict], Dict[int, List[Dict]]]:
+        """
+        Evaluate population by parallelizing across chromosome-day combinations for better CPU utilization.
+        This approach is better when you have few trading days but many chromosomes.
+        """
+        # Create all chromosome-day combinations
+        combinations = []
+        for day_idx, trading_day in enumerate(trading_days):
+            for chrom_idx, chromosome in enumerate(population):
+                combinations.append((day_idx, trading_day, chrom_idx, chromosome.copy(), market_regime))
+        
+        # Use maximum workers for fine-grained parallelization
+        max_workers = min(multiprocessing.cpu_count(), len(combinations), 32)  # Use up to 32 workers
+        print(f"Processing {len(combinations)} chromosome-day combinations with {max_workers} workers...")
+        
+        with ProcessPoolExecutor(max_workers=max_workers) as executor:
+            # Submit all combinations for parallel processing
+            future_to_combo = {
+                executor.submit(self._process_single_combination, combo): combo 
+                for combo in combinations
+            }
+            
+            # Collect results as they complete
+            for future in concurrent.futures.as_completed(future_to_combo):
+                combo = future_to_combo[future]
+                day_idx, trading_day, chrom_idx, chromosome, market_regime = combo
+                
+                try:
+                    day_results = future.result(timeout=300)  # 5 minute timeout per combination
+                    
+                    if day_results:
+                        population_results[chrom_idx].extend(day_results)
+                        
+                    if day_idx == 0:  # Only print for first day to avoid spam
+                        print(f"  Completed chromosome {chrom_idx + 1} for {trading_day}")
+                    
+                except Exception as e:
+                    print(f"  Error processing chromosome {chrom_idx + 1} for {trading_day}: {e}")
+                    # Continue with other combinations even if one fails
+        
+        # Sort each chromosome's results by trading day and time to ensure chronological order
+        print("Sorting results chronologically for each chromosome...")
+        for chromosome_idx in population_results:
+            population_results[chromosome_idx].sort(key=lambda x: (x['TradingDay'], x['TradingMsOfDay']))
+        
+        return self._finalize_fitness_evaluation(population, population_results)
+    
+    def _process_single_combination(self, combination_data) -> List[Dict]:
+        """
+        Process a single chromosome-day combination.
+        This is a static method for ProcessPoolExecutor.
+        
+        Args:
+            combination_data: Tuple of (day_idx, trading_day, chrom_idx, chromosome, market_regime)
+            
+        Returns:
+            List of result dictionaries for this combination
+        """
+        day_idx, trading_day, chrom_idx, chromosome, market_regime = combination_data
+        
+        # Since this runs in a separate process, we need to recreate the optimizer instance
+        # This is the overhead of ProcessPoolExecutor, but it's still better for CPU-intensive tasks
+        try:
+            optimizer = TradingModelRegimeWeightOptimizer()
+            
+            # Process this single chromosome for this single day
+            day_results = optimizer._process_single_trading_day(trading_day, [chromosome], market_regime)
+            
+            # Return results for chromosome index 0 (since we only passed one chromosome)
+            return day_results.get(0, [])
+            
+        except Exception as e:
+            print(f"Error in combination processing: {e}")
+            return []
+    
+    def _evaluate_sequentially(self, population: List[np.ndarray], trading_days: List[str], 
+                              market_regime: int, population_results: Dict[int, List[Dict]]) -> Tuple[List[Dict], Dict[int, List[Dict]]]:
+        """
+        Evaluate population sequentially (no parallel processing) for benchmarking.
+        """
+        print("Processing trading days sequentially...")
+        
+        for current_day in trading_days:
+            print(f"Processing trading day {current_day}...")
+            day_chromosome_results = self._process_single_trading_day(current_day, population, market_regime)
+            
+            # Merge results maintaining chromosome order
+            for chromosome_idx, day_results in day_chromosome_results.items():
+                population_results[chromosome_idx].extend(day_results)
+        
+        # Sort each chromosome's results by trading day and time to ensure chronological order
+        print("Sorting results chronologically for each chromosome...")
+        for chromosome_idx in population_results:
+            population_results[chromosome_idx].sort(key=lambda x: (x['TradingDay'], x['TradingMsOfDay']))
+        
+        return self._finalize_fitness_evaluation(population, population_results)
+    
+    def _finalize_fitness_evaluation(self, population: List[np.ndarray], 
+                                   population_results: Dict[int, List[Dict]]) -> Tuple[List[Dict], Dict[int, List[Dict]]]:
+        """
+        Finalize fitness evaluation by calculating performance metrics for each chromosome.
+        """
         # After processing all trading days, evaluate performance for each chromosome
         fitness_results = []
         for chromosome_index in range(len(population)):
@@ -846,12 +991,18 @@ def main():
     """
     Main function to parse command line arguments and run genetic algorithm optimization.
     """
-    if len(sys.argv) != 6:
-        print("Usage: python trading_model_regime_weight_optimizer.py <from_trading_day> <to_trading_day> <market_regime> <population_size> <generations>")
+    if len(sys.argv) < 6 or len(sys.argv) > 7:
+        print("Usage: python trading_model_regime_weight_optimizer.py <from_trading_day> <to_trading_day> <market_regime> <population_size> <generations> [--no-parallel]")
         print("Examples:")
         print("  python trading_model_regime_weight_optimizer.py 20250701 20250710 3 20 50")
-        print("  python trading_model_regime_weight_optimizer.py 20240601 20240630 2 30 100")
+        print("  python trading_model_regime_weight_optimizer.py 20240601 20240630 2 30 100 --no-parallel")
         sys.exit(1)
+    
+    # Check for parallel processing flag
+    enable_parallel = True
+    if len(sys.argv) == 7 and sys.argv[6] == "--no-parallel":
+        enable_parallel = False
+        print("Parallel processing DISABLED for benchmarking")
     
     try:
         from_trading_day = sys.argv[1]
@@ -891,12 +1042,13 @@ def main():
     print(f"Market Regime:    {market_regime}")
     print(f"Population Size:  {population_size}")
     print(f"Generations:      {generations}")
+    print(f"Parallel Mode:    {'DISABLED' if not enable_parallel else 'ENABLED'}")
     print(f"Started at:       {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print("=" * 80)
     
     try:
-        # Initialize optimizer
-        optimizer = TradingModelRegimeWeightOptimizer()
+        # Initialize optimizer with parallel setting
+        optimizer = TradingModelRegimeWeightOptimizer(enable_parallel=enable_parallel)
         
         # Run genetic algorithm optimization
         optimizer.optimize_weights_with_genetic_algorithm(
