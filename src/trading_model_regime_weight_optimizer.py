@@ -131,8 +131,9 @@ class TradingModelRegimeWeightOptimizer:
         min_weight, max_weight = weight_range
         
         for i in range(population_size):
-            # Set different random seed for each chromosome
-            np.random.seed(42 + i)
+            chromosome_seed = int(time.time()) + i * 1009  # Large prime for diversity
+            np.random.seed(chromosome_seed)
+            # np.random.seed(42 + i)
             chromosome = np.random.uniform(min_weight, max_weight, weight_length)
             population.append(chromosome)
         

@@ -256,8 +256,8 @@ class ModelTradingWeighter:
             List of (threshold, direction) tuples
         """
         # Use positive threshold values that match CSV column names
-        thresholds = [0.3, 0.4, 0.5, 0.6, 0.7, 0.8]  # Removed 0.0
-        
+        thresholds = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]  
+
         combinations = []
         
         # Add upside combinations (threshold > 0, direction = "up")

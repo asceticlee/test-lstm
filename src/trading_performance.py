@@ -541,52 +541,76 @@ class TradingPerformanceAnalyzer:
         calmar_ratio = result['calmar_ratio']
         num_trades = result['num_trades']
         
-        # Component 1: Profitability (PROPERLY NORMALIZED 0-100)
-        # P&L per trade (more important than total P&L)
-        if avg_pnl_per_trade >= 0.01:  # $0.01+ per trade is excellent
+        # Component 1: Profitability (FIXED FOR YOUR ACTUAL MODEL PERFORMANCE)
+        # P&L per trade (adjusted to your actual trading results)
+        if avg_pnl_per_trade >= 0.165:  # Your best models
             pnl_per_trade_score = 100
-        elif avg_pnl_per_trade >= 0.005:  # $0.005+ is good
-            pnl_per_trade_score = 75 + (avg_pnl_per_trade - 0.005) * 5000
-        elif avg_pnl_per_trade >= 0:  # Break-even to good
-            pnl_per_trade_score = 50 + (avg_pnl_per_trade) * 5000
+        elif avg_pnl_per_trade >= 0.10:  # Good performance
+            pnl_per_trade_score = 75 + (avg_pnl_per_trade - 0.10) * 385
+        elif avg_pnl_per_trade >= 0.07:  # Average performance  
+            pnl_per_trade_score = 50 + (avg_pnl_per_trade - 0.07) * 833
+        elif avg_pnl_per_trade >= 0.04:  # Worst acceptable
+            pnl_per_trade_score = 25 + (avg_pnl_per_trade - 0.04) * 833
+        elif avg_pnl_per_trade >= 0:  # Break-even to poor
+            pnl_per_trade_score = avg_pnl_per_trade * 625
         else:  # Losing money
-            pnl_per_trade_score = max(0, 50 + avg_pnl_per_trade * 5000)
+            pnl_per_trade_score = max(0, 25 + avg_pnl_per_trade * 625)
         
-        # Profit factor (normalized to 0-100)
-        if profit_factor >= 2.0:  # Excellent
+        # Profit factor (adjusted to your actual ranges)
+        if profit_factor >= 1.66:  # Your best models
             pf_score = 100
-        elif profit_factor >= 1.5:  # Good
-            pf_score = 75 + (profit_factor - 1.5) * 50
-        elif profit_factor >= 1.0:  # Break-even to good
-            pf_score = 50 + (profit_factor - 1.0) * 50
+        elif profit_factor >= 1.4:  # Good performance
+            pf_score = 75 + (profit_factor - 1.4) * 96
+        elif profit_factor >= 1.25:  # Average performance
+            pf_score = 50 + (profit_factor - 1.25) * 167
+        elif profit_factor >= 1.1:  # Worst acceptable
+            pf_score = 25 + (profit_factor - 1.1) * 167
+        elif profit_factor >= 1.0:  # Break-even
+            pf_score = (profit_factor - 1.0) * 250  # Scale 1.0-1.1 to 0-25
         else:  # Losing
-            pf_score = max(0, profit_factor * 50)
+            pf_score = 0
         
         profitability_score = (pnl_per_trade_score * 0.7) + (pf_score * 0.3)
         profitability_score = max(0, min(100, profitability_score))
         
-        # Component 2: Risk-Adjusted (PROPERLY NORMALIZED 0-100)
-        # Sharpe ratio (normalized)
+        # Component 2: Risk-Adjusted (FIXED NORMALIZATION)
+        # Sharpe ratio (properly normalized for negative values)
         if sharpe_ratio >= 2.0:  # Excellent
             sharpe_score = 100
         elif sharpe_ratio >= 1.0:  # Good
             sharpe_score = 75 + (sharpe_ratio - 1.0) * 25
-        elif sharpe_ratio >= 0:  # Positive
-            sharpe_score = 50 + sharpe_ratio * 25
-        else:  # Negative
-            sharpe_score = max(0, 50 + sharpe_ratio * 25)
+        elif sharpe_ratio >= 0.5:  # Decent
+            sharpe_score = 50 + (sharpe_ratio - 0.5) * 50
+        elif sharpe_ratio >= 0:  # Barely positive
+            sharpe_score = 25 + sharpe_ratio * 50
+        elif sharpe_ratio >= -0.5:  # Mildly negative
+            sharpe_score = 25 + sharpe_ratio * 50  # 25 to 0 range
+        else:  # Very negative
+            sharpe_score = 0  # Penalty for very bad Sharpe
         
-        # Max drawdown (normalized as percentage penalty)
-        if total_pnl > 0 and max_drawdown > 0:
-            drawdown_pct = (max_drawdown / abs(total_pnl)) * 100
+        # Max drawdown (FIXED for negative P&L)
+        if max_drawdown > 0:  # Any drawdown exists
+            if total_pnl > 0:
+                # Normal case: positive P&L with drawdown
+                drawdown_pct = (max_drawdown / total_pnl) * 100
+            else:
+                # Negative P&L case: huge penalty
+                drawdown_pct = 200  # Treat as 200% drawdown
+            
             if drawdown_pct <= 5:  # ≤5% drawdown is excellent
                 drawdown_score = 100
             elif drawdown_pct <= 20:  # ≤20% is good
                 drawdown_score = 100 - (drawdown_pct - 5) * 2
-            else:  # >20% is poor
-                drawdown_score = max(0, 70 - (drawdown_pct - 20))
+            elif drawdown_pct <= 50:  # ≤50% is poor
+                drawdown_score = 70 - (drawdown_pct - 20)
+            else:  # >50% is terrible
+                drawdown_score = 0
         else:
-            drawdown_score = 100  # No drawdown or no profit to compare
+            # No drawdown recorded
+            if total_pnl >= 0:
+                drawdown_score = 100  # Perfect if profitable
+            else:
+                drawdown_score = 0    # Terrible if losing money with no drawdown data
         
         risk_adjusted_score = (sharpe_score * 0.6) + (drawdown_score * 0.4)
         risk_adjusted_score = max(0, min(100, risk_adjusted_score))
@@ -606,30 +630,39 @@ class TradingPerformanceAnalyzer:
         consistency_score = (win_rate_score * 0.7) + (volatility_score * 0.3)
         consistency_score = max(0, min(100, consistency_score))
         
-        # Component 4: Efficiency (PROPERLY NORMALIZED 0-100)
-        # Calmar ratio (normalized)
-        if calmar_ratio >= 3.0:  # Excellent
+        # Component 4: Efficiency (CORRECTED LOGIC)
+        # True efficiency: Profit per trade and trade selectivity
+
+        # Calmar ratio component (risk-adjusted returns)
+        if calmar_ratio >= 2.4:  # Your best models
             calmar_score = 100
-        elif calmar_ratio >= 1.0:  # Good
-            calmar_score = 70 + (calmar_ratio - 1.0) * 15
-        elif calmar_ratio >= 0:  # Positive
-            calmar_score = 35 + calmar_ratio * 35
-        else:  # Negative
-            calmar_score = max(0, 35 + calmar_ratio * 35)
-        
-        # Trade frequency (statistical significance)
-        if num_trades >= 100:
-            frequency_score = 100
-        elif num_trades >= 50:
-            frequency_score = 85
-        elif num_trades >= 20:
-            frequency_score = 70
-        elif num_trades >= 10:
-            frequency_score = 50
-        else:
-            frequency_score = max(10, num_trades * 5)
-        
-        efficiency_score = (calmar_score * 0.6) + (frequency_score * 0.4)
+        elif calmar_ratio >= 1.8:  # Good performance
+            calmar_score = 75 + (calmar_ratio - 1.8) * 42
+        elif calmar_ratio >= 1.2:  # Average performance
+            calmar_score = 50 + (calmar_ratio - 1.2) * 42
+        elif calmar_ratio >= 0.8:  # Below average
+            calmar_score = 25 + (calmar_ratio - 0.8) * 62
+        elif calmar_ratio >= 0.4:  # Worst acceptable
+            calmar_score = (calmar_ratio - 0.4) * 62
+        else:  # Below worst performance
+            calmar_score = 0
+
+        # Trade selectivity (CORRECTED: Favor fewer, better trades)
+        # This rewards models that are selective and only trade when confident
+        if num_trades <= 200:  # Very selective (most efficient)
+            selectivity_score = 100
+        elif num_trades <= 400:  # Selective (good efficiency)
+            selectivity_score = 90 - (num_trades - 200) * 0.05  # 90 to 80
+        elif num_trades <= 600:  # Moderate selectivity
+            selectivity_score = 80 - (num_trades - 400) * 0.05  # 80 to 70
+        elif num_trades <= 800:  # Less selective
+            selectivity_score = 70 - (num_trades - 600) * 0.1   # 70 to 50
+        elif num_trades <= 1000:  # Not selective
+            selectivity_score = 50 - (num_trades - 800) * 0.1   # 50 to 30
+        else:  # Over-trading (least efficient)
+            selectivity_score = max(10, 30 - (num_trades - 1000) * 0.02)
+
+        efficiency_score = (calmar_score * 0.6) + (selectivity_score * 0.4)
         efficiency_score = max(0, min(100, efficiency_score))
         
         # Calculate weighted composite score (all components now 0-100)
