@@ -210,7 +210,7 @@ class ModelTradingWeighter:
         Get the column names for a specific threshold and direction combination.
         
         Args:
-            threshold: Threshold value (e.g., 0.0, 0.3, etc.)
+            threshold: Threshold value (negative for downside, positive for upside)
             direction: Direction ('up' or 'down')
             
         Returns:
@@ -224,7 +224,9 @@ class ModelTradingWeighter:
         sample_regime = pd.read_csv(os.path.join(self.regime_performance_dir, regime_files[0]))
         
         columns = []
-        threshold_str = f"_thr_{threshold}"
+        # Use absolute threshold value for column matching since CSV stores all thresholds as positive
+        abs_threshold = abs(threshold)
+        threshold_str = f"_thr_{abs_threshold}"
         direction_str = f"_{direction}_"
         
         # Get daily columns for this threshold+direction
@@ -243,16 +245,28 @@ class ModelTradingWeighter:
         """
         Get all threshold-direction combinations used in the analysis.
         
+        Modified to enforce minimum thresholds:
+        - Upside: minimum 0.1 (removes weak 0.0 signals)
+        - Downside: maximum -0.1 (removes weak 0.0 signals)
+        
+        Note: Downside thresholds are stored as positive values in CSV files,
+        but returned as negative values here for logical consistency.
+        
         Returns:
             List of (threshold, direction) tuples
         """
-        thresholds = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]
-        directions = ['up', 'down']
+        # Use positive threshold values that match CSV column names
+        thresholds = [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]  # Removed 0.0
         
         combinations = []
+        
+        # Add upside combinations (threshold > 0, direction = "up")
         for threshold in thresholds:
-            for direction in directions:
-                combinations.append((threshold, direction))
+            combinations.append((threshold, "up"))
+        
+        # Add downside combinations (threshold stored as negative for logical consistency)
+        for threshold in thresholds:
+            combinations.append((-threshold, "down"))  # Convert to negative for downside
         
         return combinations
     
@@ -262,7 +276,7 @@ class ModelTradingWeighter:
         Get columns for threshold+direction combination using cached data (no disk I/O).
         
         Args:
-            threshold: Threshold value
+            threshold: Threshold value (negative for downside, positive for upside)
             direction: Direction ('up' or 'down') 
             daily_data: Pre-loaded daily DataFrame
             regime_data: Pre-loaded regime DataFrame
@@ -271,7 +285,9 @@ class ModelTradingWeighter:
             List of (source, column_name) tuples for this combination
         """
         columns = []
-        threshold_str = f"_thr_{threshold}"
+        # Use absolute threshold value for column matching since CSV stores all thresholds as positive
+        abs_threshold = abs(threshold)
+        threshold_str = f"_thr_{abs_threshold}"
         direction_str = f"_{direction}_"
         
         # Get daily columns for this threshold+direction
