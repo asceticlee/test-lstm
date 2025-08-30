@@ -428,6 +428,130 @@ class ModelTradingWeighter:
         
         return score
     
+    def get_all_trading_model_scores_vectorized(self, trading_day: str, market_regime: int, 
+                                              weighting_array: np.ndarray) -> List[Dict]:
+        """
+        Get scores for ALL model combinations using vectorized computation.
+        
+        Args:
+            trading_day: The trading day (format: YYYYMMDD)
+            market_regime: Market regime identifier (0-4)
+            weighting_array: Weight array (should be 76 elements)
+            
+        Returns:
+            List of dicts: All model combinations with scores and coefficients
+        """
+        print(f"Vectorized evaluation: Getting ALL model scores for day {trading_day}, regime {market_regime}")
+        
+        # Load data once
+        daily_data = self._load_daily_performance(trading_day)
+        regime_data = self._load_regime_performance(trading_day, market_regime)
+        
+        if daily_data is None or regime_data is None:
+            raise ValueError(f"Could not load performance data for trading day {trading_day} and regime {market_regime}")
+        
+        available_models = daily_data['ModelID'].unique().tolist()
+        threshold_dir_combos = self.get_all_threshold_direction_combinations()
+        print(f"Found {len(available_models)} models, {len(threshold_dir_combos)} threshold-direction combinations")
+        
+        # Results storage
+        all_results = []
+        
+        # Process all model-combination pairs
+        for model_id in available_models:
+            daily_row = daily_data[daily_data['ModelID'] == model_id]
+            regime_row = regime_data[regime_data['ModelID'] == model_id]
+            
+            if daily_row.empty or regime_row.empty:
+                continue
+                
+            daily_row = daily_row.iloc[0]
+            regime_row = regime_row.iloc[0]
+            
+            for threshold, direction in threshold_dir_combos:
+                try:
+                    # Get columns for this combination
+                    columns = self._get_threshold_direction_columns_cached(
+                        threshold, direction, daily_data, regime_data
+                    )
+                    
+                    if len(columns) != len(weighting_array):
+                        print(f"Warning: Column count ({len(columns)}) doesn't match weight array length ({len(weighting_array)}) for model {model_id}, threshold {threshold}, direction {direction}")
+                        continue
+                    
+                    # Extract metric values and calculate coefficients
+                    metric_values = []
+                    coefficients = {}
+                    
+                    for i, (source, col) in enumerate(columns):
+                        if source == 'daily':
+                            data_row = daily_row
+                        else:
+                            data_row = regime_row
+                            
+                        if '_ws_acc_' in col:
+                            # Calculate Wilson score accuracy on-the-fly
+                            acc_col = col.replace('_ws_acc_', '_acc_')
+                            num_col = col.replace('_ws_acc_', '_num_')
+                            den_col = col.replace('_ws_acc_', '_den_')
+                            
+                            k = data_row.get(num_col, 0.0)
+                            n = data_row.get(den_col, 0.0)
+                            if pd.isna(k): k = 0.0
+                            if pd.isna(n): n = 0.0
+                            
+                            value = self.wilson_score_accuracy(k, n)
+                            
+                        elif '_ppt_' in col:
+                            # Calculate P&L per trade on-the-fly
+                            pnl_col = col.replace('_ppt_', '_pnl_')
+                            den_col = pnl_col.replace('_pnl_', '_den_')
+                            
+                            pnl = data_row.get(pnl_col, 0.0)
+                            trades = data_row.get(den_col, 0.0)
+                            if pd.isna(pnl): pnl = 0.0
+                            if pd.isna(trades): trades = 0.0
+                            
+                            value = pnl / trades if trades > 0 else 0.0
+                            
+                        else:
+                            # Regular column that exists in CSV
+                            value = data_row.get(col, 0.0)
+                            if pd.isna(value): value = 0.0
+                        
+                        metric_values.append(value)
+                        coefficients[f'coeff_{i+1:02d}'] = value
+                    
+                    # Calculate weighted score
+                    metric_array = np.array(metric_values)
+                    weighted_score = np.dot(metric_array, weighting_array)
+                    
+                    # Create result entry
+                    result = {
+                        'regime': market_regime,
+                        'model_id': model_id,
+                        'direction': direction,
+                        'threshold': threshold,
+                        'weighted_score': weighted_score,
+                        **coefficients  # Add all coefficients
+                    }
+                    
+                    all_results.append(result)
+                    
+                except Exception as e:
+                    print(f"Error processing model {model_id}, threshold {threshold}, direction {direction}: {e}")
+                    continue
+        
+        # Sort by weighted score (descending)
+        all_results.sort(key=lambda x: x['weighted_score'], reverse=True)
+        
+        # Add rank
+        for rank, result in enumerate(all_results, 1):
+            result['rank_in_regime'] = rank
+        
+        print(f"Vectorized evaluation complete: Processed {len(all_results)} combinations")
+        return all_results
+
     def get_best_trading_model_batch_vectorized(self, trading_day: str, market_regime: int, 
                                               weighting_arrays: List[np.ndarray], show_metrics: bool = False) -> List[Dict]:
         """
