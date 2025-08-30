@@ -169,13 +169,12 @@ class ModelTradingWeighter:
                                if col not in ['ModelID', 'Regime'] 
                                and not ('_num_' in col or '_den_' in col)]
         
-        # Create extended columns: for each acc column, add ws_acc column
-        # For each pnl column, add ONLY ppt (pnl per trade) column - skip raw pnl
+        # Create optimized columns: only use Wilson Score accuracy and P&L per trade
+        # Skip raw accuracy and raw PnL columns for focused optimization
         daily_extended_cols = []
         for col in daily_original_cols:
             if '_acc_' in col:
-                daily_extended_cols.append(col)  # Original acc column
-                # Add Wilson scored version
+                # Only add Wilson scored version (skip original accuracy)
                 ws_col = col.replace('_acc_', '_ws_acc_')
                 daily_extended_cols.append(ws_col)
             elif '_pnl_' in col:
@@ -186,8 +185,7 @@ class ModelTradingWeighter:
         regime_extended_cols = []
         for col in regime_original_cols:
             if '_acc_' in col:
-                regime_extended_cols.append(col)  # Original acc column
-                # Add Wilson scored version
+                # Only add Wilson scored version (skip original accuracy)
                 ws_col = col.replace('_acc_', '_ws_acc_')
                 regime_extended_cols.append(ws_col)
             elif '_pnl_' in col:
@@ -294,8 +292,8 @@ class ModelTradingWeighter:
         for col in daily_data.columns:
             if col not in ['ModelID', 'TradingDay'] and threshold_str in col and direction_str in col:
                 if '_acc_' in col:
-                    columns.append(('daily', col))  # Original accuracy
-                    columns.append(('daily', col.replace('_acc_', '_ws_acc_')))  # Wilson score accuracy
+                    # Only add Wilson score accuracy (skip original accuracy)
+                    columns.append(('daily', col.replace('_acc_', '_ws_acc_')))  # Wilson score accuracy only
                 elif '_pnl_' in col:
                     # Skip raw PnL columns - only include PnL per trade
                     columns.append(('daily', col.replace('_pnl_', '_ppt_')))  # PnL per trade only
@@ -304,8 +302,8 @@ class ModelTradingWeighter:
         for col in regime_data.columns:
             if col not in ['ModelID', 'Regime'] and threshold_str in col and direction_str in col:
                 if '_acc_' in col:
-                    columns.append(('regime', col))  # Original accuracy
-                    columns.append(('regime', col.replace('_acc_', '_ws_acc_')))  # Wilson score accuracy
+                    # Only add Wilson score accuracy (skip original accuracy)
+                    columns.append(('regime', col.replace('_acc_', '_ws_acc_')))  # Wilson score accuracy only
                 elif '_pnl_' in col:
                     # Skip raw PnL columns - only include PnL per trade
                     columns.append(('regime', col.replace('_pnl_', '_ppt_')))  # PnL per trade only
@@ -325,7 +323,7 @@ class ModelTradingWeighter:
             regime_data: Pre-loaded regime DataFrame
             threshold: Threshold value
             direction: Direction ('up' or 'down')
-            weighting_array: 57-element weighting array (excludes raw PnL columns, 1026 total ÷ 18 combinations)
+            weighting_array: 38-element weighting array (only Wilson Score accuracy + P&L per trade, 684 total ÷ 18 combinations)
             column_cache: Pre-computed column mappings
             
         Returns:
@@ -382,14 +380,7 @@ class ModelTradingWeighter:
                     ppt = pnl / den if den > 0 else 0.0
                     metric_values.append(ppt)
                     
-                else:
-                    # Regular daily metric (should only be accuracy columns now)
-                    if '_acc_' in col:  # Only process accuracy columns in else case
-                        value = daily_row.get(col, 0.0)
-                        if pd.isna(value): value = 0.0
-                        metric_values.append(value)
-                    
-                # Note: Raw PnL columns are now excluded from processing
+                # Note: Only Wilson Score accuracy and PnL per trade columns are processed
             else:
                 # Regime metric
                 if '_ws_acc_' in col:
@@ -419,14 +410,7 @@ class ModelTradingWeighter:
                     ppt = pnl / den if den > 0 else 0.0
                     metric_values.append(ppt)
                     
-                else:
-                    # Regular regime metric (should only be accuracy columns now)
-                    if '_acc_' in col:  # Only process accuracy columns in else case
-                        value = regime_row.get(col, 0.0)
-                        if pd.isna(value): value = 0.0
-                        metric_values.append(value)
-                    
-                # Note: Raw PnL columns are now excluded from processing
+                # Note: Only Wilson Score accuracy and PnL per trade columns are processed
         
         # Calculate weighted score
         metric_values = np.array(metric_values)
@@ -442,7 +426,7 @@ class ModelTradingWeighter:
         Args:
             trading_day: The trading day (format: YYYYMMDD)
             market_regime: Market regime identifier (0-4)
-            weighting_array: Weight array (should be 57 elements, excludes raw PnL, 1026 total ÷ 18 combinations)
+            weighting_array: Weight array (should be 38 elements, only Wilson Score accuracy + P&L per trade, 684 total ÷ 18 combinations)
             
         Returns:
             List of dicts: All model combinations with scores and coefficients
@@ -521,13 +505,8 @@ class ModelTradingWeighter:
                             value = pnl / trades if trades > 0 else 0.0
                             
                         else:
-                            # Regular column that exists in CSV (should only be accuracy columns now)
-                            if '_acc_' in col:  # Only process accuracy columns
-                                value = data_row.get(col, 0.0)
-                                if pd.isna(value): value = 0.0
-                            else:
-                                # Skip any other column types (like raw PnL)
-                                continue
+                            # Skip any other column types - only processing Wilson Score and PnL per trade
+                            continue
                         
                         metric_values.append(value)
                         coefficients[f'coeff_{i+1:02d}'] = value
@@ -570,7 +549,7 @@ class ModelTradingWeighter:
         Args:
             trading_day: The trading day (format: YYYYMMDD)
             market_regime: Market regime identifier (0-3)
-            weighting_arrays: List of weight arrays (each should be 57 elements, excludes raw PnL, 1026 total ÷ 18 combinations)
+            weighting_arrays: List of weight arrays (each should be 38 elements, only Wilson Score accuracy + P&L per trade, 684 total ÷ 18 combinations)
             show_metrics: If True, include detailed metrics breakdown in results
             
         Returns:
@@ -614,7 +593,7 @@ class ModelTradingWeighter:
                     threshold, direction, daily_data, regime_data
                 )
                 
-                if len(columns) != 57:
+                if len(columns) != 38:
                     continue  # Skip invalid combinations
                 
                 # Extract metric values for this model-combination
