@@ -114,7 +114,7 @@ class TradingModelRegimeWeightOptimizer:
         except Exception as e:
             raise Exception(f"Error loading market regime forecast: {e}")
     
-    def initialize_population(self, population_size: int, weight_length: int = 76, 
+    def initialize_population(self, population_size: int, weight_length: int = 57, 
                              weight_range: Tuple[float, float] = (0.0, 1.0)) -> List[np.ndarray]:
         """
         Initialize population of chromosomes (weight arrays) for genetic algorithm.
