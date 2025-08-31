@@ -155,8 +155,8 @@ class TradingPerformanceAnalyzer:
                               np.where(actual > 0, actual, actual),  # actual value (positive gain, negative loss)
                               0)  # No trade
         else:  # trade_direction == 'down'
-            # Downside trading: trade when predicted < threshold (exclusive)
-            trade_signals = predicted < threshold
+            # Downside trading: trade when predicted < -threshold (threshold should be positive)
+            trade_signals = predicted < -abs(threshold)  # Use -abs() to handle both positive and negative thresholds
             # Gain when actual < 0 (take absolute value), loss when actual >= 0
             raw_pnl = np.where(trade_signals,
                               np.where(actual < 0, -actual, actual),  # -actual for gain, actual for loss
@@ -241,8 +241,8 @@ class TradingPerformanceAnalyzer:
                     trade_signals[i] = True
                     raw_pnl[i] = actual[i]  # P&L = actual value
             else:  # trade_direction == 'down'
-                # Downside trading: trade when predicted < threshold  
-                if predicted[i] < threshold:
+                # Downside trading: trade when predicted < -threshold (threshold should be positive)
+                if predicted[i] < -abs(threshold):  # Use -abs() to handle both positive and negative thresholds
                     trade_signals[i] = True
                     raw_pnl[i] = -actual[i]  # P&L = -actual (profit when actual < 0)
         
@@ -491,7 +491,20 @@ class TradingPerformanceAnalyzer:
         else:
             result['avg_pnl_per_trade'] = 0
         
-        # Add composite score
+        # Calculate trading period for dynamic reliability scoring
+        if len(filtered_days) > 0:
+            unique_days = np.unique(filtered_days)
+            trading_period_info = {
+                'first_day': int(unique_days[0]),
+                'last_day': int(unique_days[-1]),
+                'total_trading_days': len(unique_days),
+                'calendar_days': int(unique_days[-1]) - int(unique_days[0]) + 1
+            }
+            result['trading_period'] = trading_period_info
+        else:
+            result['trading_period'] = None
+        
+        # Add composite score with trading period information
         result['composite_score'] = self.calculate_composite_score(result)
         
         print(f"Performance evaluation completed")
@@ -518,10 +531,11 @@ class TradingPerformanceAnalyzer:
         # Default weights - can be customized based on trading strategy preferences
         if weights is None:
             weights = {
-                'profitability': 0.25,  # P&L per trade and profit factor
-                'risk_adjusted': 0.25,  # Sharpe ratio and max drawdown
-                'consistency': 0.25,    # Win rate and volatility
-                'efficiency': 0.25      # Calmar ratio and trade frequency
+                'profitability': 0.2,  # P&L per trade and profit factor
+                'risk_adjusted': 0.2,  # Sharpe ratio and max drawdown
+                'consistency': 0.2,     # Win rate and volatility
+                'efficiency': 0.2,     # Quality: fewer trades for same P&L
+                'reliability': 0.2     # Quantity: ability to find trading opportunities
             }
         
         # Ensure weights sum to 1.0
@@ -630,9 +644,7 @@ class TradingPerformanceAnalyzer:
         consistency_score = (win_rate_score * 0.7) + (volatility_score * 0.3)
         consistency_score = max(0, min(100, consistency_score))
         
-        # Component 4: Efficiency (CORRECTED LOGIC)
-        # True efficiency: Profit per trade and trade selectivity
-
+        # Component 4: Efficiency (Quality: favor fewer trades for same P&L)
         # Calmar ratio component (risk-adjusted returns)
         if calmar_ratio >= 2.4:  # Your best models
             calmar_score = 100
@@ -647,30 +659,104 @@ class TradingPerformanceAnalyzer:
         else:  # Below worst performance
             calmar_score = 0
 
-        # Trade selectivity (CORRECTED: Favor fewer, better trades)
-        # This rewards models that are selective and only trade when confident
-        if num_trades <= 200:  # Very selective (most efficient)
-            selectivity_score = 100
-        elif num_trades <= 400:  # Selective (good efficiency)
-            selectivity_score = 90 - (num_trades - 200) * 0.05  # 90 to 80
-        elif num_trades <= 600:  # Moderate selectivity
-            selectivity_score = 80 - (num_trades - 400) * 0.05  # 80 to 70
-        elif num_trades <= 800:  # Less selective
-            selectivity_score = 70 - (num_trades - 600) * 0.1   # 70 to 50
-        elif num_trades <= 1000:  # Not selective
-            selectivity_score = 50 - (num_trades - 800) * 0.1   # 50 to 30
-        else:  # Over-trading (least efficient)
-            selectivity_score = max(10, 30 - (num_trades - 1000) * 0.02)
+        # Quality/Selectivity: Reward fewer trades with high profitability
+        if avg_pnl_per_trade <= 0:
+            quality_score = 0  # No reward for losing strategies
+        else:
+            # Calculate efficiency as P&L per trade relative to trade frequency
+            efficiency_ratio = avg_pnl_per_trade * 1000 / max(1, num_trades)  # Scale for readability
+            
+            if efficiency_ratio >= 0.5:  # Very efficient (high P&L per trade, low frequency)
+                quality_score = 100
+            elif efficiency_ratio >= 0.3:  # Good efficiency
+                quality_score = 80 + (efficiency_ratio - 0.3) * 100
+            elif efficiency_ratio >= 0.15:  # Average efficiency
+                quality_score = 60 + (efficiency_ratio - 0.15) * 133
+            elif efficiency_ratio >= 0.05:  # Below average
+                quality_score = 30 + (efficiency_ratio - 0.05) * 300
+            else:  # Poor efficiency
+                quality_score = efficiency_ratio * 600
 
-        efficiency_score = (calmar_score * 0.6) + (selectivity_score * 0.4)
+        efficiency_score = (calmar_score * 0.5) + (quality_score * 0.5)
         efficiency_score = max(0, min(100, efficiency_score))
+
+        # Component 5: Reliability (Quantity: ability to find trading opportunities)
+        # Dynamic calculation based on actual trading period
+        trading_period = result.get('trading_period')
+        
+        if trading_period is not None:
+            # Calculate expected trades based on actual trading period
+            total_trading_days = trading_period['total_trading_days']
+            
+            # Expected: 2-3 trades per regime per trading day
+            min_expected = total_trading_days * 2  # Conservative expectation
+            max_expected = total_trading_days * 3  # Optimistic expectation
+            excellent_threshold = int(max_expected * 0.8)  # 80% of max expectation
+            good_threshold = int(max_expected * 0.6)       # 60% of max expectation  
+            acceptable_threshold = int(min_expected * 0.6) # 60% of min expectation
+            poor_threshold = int(min_expected * 0.25)      # 25% of min expectation
+            
+            # Dynamic reliability scoring
+            if num_trades >= excellent_threshold:
+                reliability_score = 100
+            elif num_trades >= good_threshold:
+                # Scale from 80 to 100
+                score_range = excellent_threshold - good_threshold
+                if score_range > 0:
+                    reliability_score = 80 + (num_trades - good_threshold) * 20 / score_range
+                else:
+                    reliability_score = 90
+            elif num_trades >= acceptable_threshold:
+                # Scale from 60 to 80
+                score_range = good_threshold - acceptable_threshold
+                if score_range > 0:
+                    reliability_score = 60 + (num_trades - acceptable_threshold) * 20 / score_range
+                else:
+                    reliability_score = 70
+            elif num_trades >= poor_threshold:
+                # Scale from 30 to 60
+                score_range = acceptable_threshold - poor_threshold
+                if score_range > 0:
+                    reliability_score = 30 + (num_trades - poor_threshold) * 30 / score_range
+                else:
+                    reliability_score = 45
+            elif num_trades >= poor_threshold // 2:
+                # Scale from 10 to 30
+                score_range = poor_threshold - poor_threshold // 2
+                if score_range > 0:
+                    reliability_score = 10 + (num_trades - poor_threshold // 2) * 20 / score_range
+                else:
+                    reliability_score = 20
+            else:
+                # Very poor reliability: 0 to 10
+                if poor_threshold // 2 > 0:
+                    reliability_score = (num_trades / (poor_threshold // 2)) * 10
+                else:
+                    reliability_score = 0
+        else:
+            # Fallback to original fixed thresholds if no trading period info
+            if num_trades >= 400:
+                reliability_score = 100
+            elif num_trades >= 300:
+                reliability_score = 80 + (num_trades - 300) * 0.2
+            elif num_trades >= 200:
+                reliability_score = 60 + (num_trades - 200) * 0.2
+            elif num_trades >= 100:
+                reliability_score = 30 + (num_trades - 100) * 0.3
+            elif num_trades >= 50:
+                reliability_score = 10 + (num_trades - 50) * 0.4
+            else:
+                reliability_score = num_trades * 0.2
+
+        reliability_score = max(0, min(100, reliability_score))
         
         # Calculate weighted composite score (all components now 0-100)
         composite_score = (
             profitability_score * weights['profitability'] +
             risk_adjusted_score * weights['risk_adjusted'] +
             consistency_score * weights['consistency'] +
-            efficiency_score * weights['efficiency']
+            efficiency_score * weights['efficiency'] +
+            reliability_score * weights['reliability']
         )
         
         return round(composite_score, 2)
@@ -691,6 +777,17 @@ class TradingPerformanceAnalyzer:
         print(f"="*80)
         print(f"Transaction fee: ${self.transaction_fee:.4f} per trade")
         print(f"Trading hours: {self.ms_to_time(self.trading_start_ms)} to {self.ms_to_time(self.trading_end_ms)}")
+        
+        # Display trading period information
+        trading_period = result.get('trading_period')
+        if trading_period:
+            print(f"Trading period: {trading_period['first_day']} to {trading_period['last_day']}")
+            print(f"Calendar days: {trading_period['calendar_days']}, Trading days: {trading_period['total_trading_days']}")
+            
+            # Calculate expected trades for this period
+            min_expected = trading_period['total_trading_days'] * 2
+            max_expected = trading_period['total_trading_days'] * 3
+            print(f"Expected trades (2-3 per day): {min_expected}-{max_expected}")
         
         # Calculate composite score
         composite_score = self.calculate_composite_score(result)
