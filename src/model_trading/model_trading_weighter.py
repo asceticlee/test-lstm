@@ -243,18 +243,18 @@ class ModelTradingWeighter:
         """
         Get all threshold-direction combinations used in the analysis.
         
-        Modified to enforce minimum thresholds:
-        - Upside: minimum 0.1 (removes weak 0.0 signals)
-        - Downside: maximum -0.1 (removes weak 0.0 signals)
+        Reduced to 12 combinations: 0.0 to 0.5 for both positive and negative sides
+        - Upside: 0.0, 0.1, 0.2, 0.3, 0.4, 0.5 
+        - Downside: -0.0, -0.1, -0.2, -0.3, -0.4, -0.5
         
         Note: Downside thresholds are stored as positive values in CSV files,
         but returned as negative values here for logical consistency.
         
         Returns:
-            List of (threshold, direction) tuples
+            List of (threshold, direction) tuples (12 total)
         """
-        # Use positive threshold values that match CSV column names
-        thresholds = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]  
+        # Use positive threshold values that match CSV column names (reduced range)
+        thresholds = [0.0, 0.1, 0.2]  
 
         combinations = []
         
@@ -323,7 +323,7 @@ class ModelTradingWeighter:
             regime_data: Pre-loaded regime DataFrame
             threshold: Threshold value
             direction: Direction ('up' or 'down')
-            weighting_array: 38-element weighting array (only Wilson Score accuracy + P&L per trade, 684 total ÷ 18 combinations)
+            weighting_array: 38-element weighting array (only Wilson Score accuracy + P&L per trade, 456 total ÷ 12 combinations)
             column_cache: Pre-computed column mappings
             
         Returns:
@@ -426,7 +426,7 @@ class ModelTradingWeighter:
         Args:
             trading_day: The trading day (format: YYYYMMDD)
             market_regime: Market regime identifier (0-4)
-            weighting_array: Weight array (should be 38 elements, only Wilson Score accuracy + P&L per trade, 684 total ÷ 18 combinations)
+            weighting_array: Weight array (should be 38 elements, only Wilson Score accuracy + P&L per trade, 456 total ÷ 12 combinations)
             
         Returns:
             List of dicts: All model combinations with scores and coefficients
@@ -549,7 +549,7 @@ class ModelTradingWeighter:
         Args:
             trading_day: The trading day (format: YYYYMMDD)
             market_regime: Market regime identifier (0-3)
-            weighting_arrays: List of weight arrays (each should be 38 elements, only Wilson Score accuracy + P&L per trade, 684 total ÷ 18 combinations)
+            weighting_arrays: List of weight arrays (each should be 38 elements, only Wilson Score accuracy + P&L per trade, 456 total ÷ 12 combinations)
             show_metrics: If True, include detailed metrics breakdown in results
             
         Returns:
@@ -593,7 +593,7 @@ class ModelTradingWeighter:
                     threshold, direction, daily_data, regime_data
                 )
                 
-                if len(columns) != 38:
+                if len(columns) != len(weighting_arrays[0]):
                     continue  # Skip invalid combinations
                 
                 # Extract metric values for this model-combination

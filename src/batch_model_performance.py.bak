@@ -9,7 +9,6 @@ For each trading day, it generates performance data for all specified models inc
 - Upside/downside threshold accuracies (0.0 to 0.8 in 0.1 increments)
 - Numerators and denominators for accuracy calculations
 - Profit and Loss (PnL) for each threshold level
-- Normalized accuracy and PnL columns for model comparison within trading days
 - Trading day summary statistics
 
 Output files are saved to test-lstm/model_performance/daily_performance/ directory
@@ -54,127 +53,39 @@ def load_existing_trading_day_performance(performance_file):
             print(f"Warning: Could not read existing file {performance_file}: {e}")
     return existing_models
 
-def normalize_column_values(values):
-    """
-    Normalize values to range 0-1 using min-max normalization
-    
-    Args:
-        values: List or array of numeric values
-        
-    Returns:
-        List of normalized values (0-1 range)
-    """
-    values = np.array(values, dtype=float)
-    
-    # Handle case where all values are the same
-    min_val = np.min(values)
-    max_val = np.max(values)
-    
-    if min_val == max_val:
-        # All values are the same - set all to 0.5
-        return [0.5] * len(values)
-    
-    # Min-max normalization
-    normalized = (values - min_val) / (max_val - min_val)
-    return normalized.tolist()
-
 def append_to_trading_day_performance_file(performance_file, new_data, thresholds, timeframes):
     """
-    Create new trading day CSV file with normalized columns (file should not exist when this is called)
+    Create new trading day CSV file (file should not exist when this is called)
     """
-    if not new_data:
-        return
-    
-    # Convert data to DataFrame for easier manipulation
-    # First, create header to understand column structure
-    header = ['ModelID', 'TradingDay']
-    
-    # For each timeframe, add all threshold columns
-    for tf_name, tf_spec in timeframes:
-        # Upside accuracy columns for this timeframe
-        for t in thresholds:
-            header.extend([
-                f'{tf_name}_up_acc_thr_{t:.1f}',
-                f'{tf_name}_up_norm_acc_thr_{t:.1f}',  # NEW: normalized accuracy
-                f'{tf_name}_up_num_thr_{t:.1f}',
-                f'{tf_name}_up_den_thr_{t:.1f}',
-                f'{tf_name}_up_pnl_thr_{t:.1f}',
-                f'{tf_name}_up_norm_pnl_thr_{t:.1f}'   # NEW: normalized PnL
-            ])
-        # Downside accuracy columns for this timeframe
-        for t in thresholds:
-            header.extend([
-                f'{tf_name}_down_acc_thr_{t:.1f}',
-                f'{tf_name}_down_norm_acc_thr_{t:.1f}',  # NEW: normalized accuracy
-                f'{tf_name}_down_num_thr_{t:.1f}',
-                f'{tf_name}_down_den_thr_{t:.1f}',
-                f'{tf_name}_down_pnl_thr_{t:.1f}',
-                f'{tf_name}_down_norm_pnl_thr_{t:.1f}'   # NEW: normalized PnL
-            ])
-    
-    # Convert to DataFrame
-    df = pd.DataFrame(new_data, columns=['ModelID', 'TradingDay'] + [f'col_{i}' for i in range(len(new_data[0]) - 2)])
-    
-    # Create new data with normalized columns inserted
-    final_data = []
-    
-    for _, row in df.iterrows():
-        new_row = [row['ModelID'], row['TradingDay']]
-        col_idx = 0  # Index for original data columns (excluding ModelID, TradingDay)
-        
-        for tf_name, tf_spec in timeframes:
-            # Process upside columns for this timeframe
-            for t in thresholds:
-                # Original columns: acc, num, den, pnl
-                acc_val = row[f'col_{col_idx}']
-                num_val = row[f'col_{col_idx + 1}']
-                den_val = row[f'col_{col_idx + 2}']
-                pnl_val = row[f'col_{col_idx + 3}']
-                
-                # Add original accuracy, then placeholder for normalized (will be filled later)
-                new_row.extend([acc_val, 0.0, num_val, den_val, pnl_val, 0.0])
-                col_idx += 4
-            
-            # Process downside columns for this timeframe
-            for t in thresholds:
-                # Original columns: acc, num, den, pnl
-                acc_val = row[f'col_{col_idx}']
-                num_val = row[f'col_{col_idx + 1}']
-                den_val = row[f'col_{col_idx + 2}']
-                pnl_val = row[f'col_{col_idx + 3}']
-                
-                # Add original accuracy, then placeholder for normalized (will be filled later)
-                new_row.extend([acc_val, 0.0, num_val, den_val, pnl_val, 0.0])
-                col_idx += 4
-        
-        final_data.append(new_row)
-    
-    # Convert to DataFrame for normalization
-    final_df = pd.DataFrame(final_data, columns=header)
-    
-    # Now normalize the accuracy and PnL columns
-    acc_cols = [col for col in header if '_acc_thr_' in col and '_norm_' not in col]
-    pnl_cols = [col for col in header if '_pnl_thr_' in col and '_norm_' not in col]
-    
-    # Normalize accuracy columns
-    for acc_col in acc_cols:
-        norm_col = acc_col.replace('_acc_thr_', '_norm_acc_thr_')
-        if norm_col in header:
-            final_df[norm_col] = normalize_column_values(final_df[acc_col].values)
-    
-    # Normalize PnL columns
-    for pnl_col in pnl_cols:
-        norm_col = pnl_col.replace('_pnl_thr_', '_norm_pnl_thr_')
-        if norm_col in header:
-            final_df[norm_col] = normalize_column_values(final_df[pnl_col].values)
-    
-    # Write to CSV
-    with open(performance_file, 'w', newline='') as f:
+    with open(performance_file, 'w', newline='') as f:  # 'w' = write mode (create new file)
         writer = csv.writer(f)
+        
+        # Write header
+        header = ['ModelID', 'TradingDay']
+        
+        # For each timeframe, add all threshold columns
+        for tf_name, tf_spec in timeframes:
+            # Upside accuracy columns for this timeframe
+            for t in thresholds:
+                header.extend([
+                    f'{tf_name}_up_acc_thr_{t:.1f}',
+                    f'{tf_name}_up_num_thr_{t:.1f}',
+                    f'{tf_name}_up_den_thr_{t:.1f}',
+                    f'{tf_name}_up_pnl_thr_{t:.1f}'
+                ])
+            # Downside accuracy columns for this timeframe
+            for t in thresholds:
+                header.extend([
+                    f'{tf_name}_down_acc_thr_{t:.1f}',
+                    f'{tf_name}_down_num_thr_{t:.1f}',
+                    f'{tf_name}_down_den_thr_{t:.1f}',
+                    f'{tf_name}_down_pnl_thr_{t:.1f}'
+                ])
         writer.writerow(header)
         
-        for _, row in final_df.iterrows():
-            writer.writerow(row.tolist())
+        # Write data rows
+        for row in new_data:
+            writer.writerow(row)
 
 def calculate_timeframe_performance(prediction_df, trading_days, current_day_idx, timeframe_spec, thresholds):
     """
@@ -188,7 +99,7 @@ def calculate_timeframe_performance(prediction_df, trading_days, current_day_idx
         thresholds: List of threshold values
     
     Returns:
-        List of performance metrics for the timeframe (without normalization)
+        List of performance metrics for the timeframe
     """
     current_day = trading_days[current_day_idx]
     
@@ -222,7 +133,7 @@ def calculate_timeframe_performance(prediction_df, trading_days, current_day_idx
     timeframe_data = prediction_df[prediction_df['TradingDay'].isin(timeframe_trading_days)].copy()
     
     if len(timeframe_data) == 0:
-        # Return zeros if no data (keep same structure as before)
+        # Return zeros if no data
         results = []
         for threshold in thresholds:
             results.extend([0.0, 0, 0, 0.0])  # up_acc, up_num, up_den, up_pnl
@@ -335,7 +246,7 @@ def calculate_timeframe_performance_optimized(trading_day_array, predicted_array
             timeframe_indices.extend(trading_day_to_indices[day])
     
     if len(timeframe_indices) == 0:
-        # Return zeros if no data (keep same structure as before - no normalization yet)
+        # Return zeros if no data
         results = []
         for _ in thresholds_array:
             results.extend([0.0, 0, 0, 0.0])  # up_acc, up_num, up_den, up_pnl
@@ -585,7 +496,84 @@ def process_trading_day_performance(trading_day, model_range, prediction_dir, pe
         print(f"ERROR processing trading day {trading_day}: {e}")
         return 0
 
-
+def generate_models_alltime_performance(start_model_id, end_model_id, performance_dir):
+    """
+    Generate models_alltime_performance.csv with all models' from_begin performance
+    This file is overwritten each time the script runs
+    """
+    print("\n" + "=" * 70)
+    print("GENERATING MODELS ALL-TIME PERFORMANCE SUMMARY")
+    print("=" * 70)
+    
+    # Define thresholds
+    thresholds = np.arange(0.0, 0.81, 0.1)
+    
+    # Prepare the output file
+    output_file = os.path.join(os.path.dirname(performance_dir), 'models_alltime_performance.csv')
+    
+    # Collect all models' from_begin performance
+    all_models_data = []
+    processed_models = 0
+    
+    for model_num in range(start_model_id, end_model_id + 1):
+        model_id = f"{model_num:05d}"
+        performance_file = os.path.join(performance_dir, f"model_{model_id}_daily_performance.csv")
+        
+        if not os.path.exists(performance_file):
+            print(f"  Warning: Performance file not found for model {model_id}")
+            continue
+            
+        try:
+            # Read the performance file
+            df = pd.read_csv(performance_file)
+            
+            if len(df) == 0:
+                print(f"  Warning: Empty performance file for model {model_id}")
+                continue
+            
+            # Get the latest (most recent) from_begin performance data
+            # This represents the all-time performance up to the latest trading day
+            latest_row = df.iloc[-1]
+            
+            # Create a row for this model's all-time performance
+            model_row = {'ModelID': model_id}
+            
+            # Add upside metrics for each threshold
+            for i, threshold in enumerate(thresholds):
+                threshold_str = f"{threshold:.1f}"
+                model_row[f'alltime_up_acc_{threshold_str}'] = latest_row[f'from_begin_up_acc_thr_{threshold_str}']
+                model_row[f'alltime_up_num_{threshold_str}'] = latest_row[f'from_begin_up_num_thr_{threshold_str}']
+                model_row[f'alltime_up_den_{threshold_str}'] = latest_row[f'from_begin_up_den_thr_{threshold_str}']
+                model_row[f'alltime_up_pnl_{threshold_str}'] = latest_row[f'from_begin_up_pnl_thr_{threshold_str}']
+            
+            # Add downside metrics for each threshold
+            for i, threshold in enumerate(thresholds):
+                threshold_str = f"{threshold:.1f}"
+                model_row[f'alltime_down_acc_{threshold_str}'] = latest_row[f'from_begin_down_acc_thr_{threshold_str}']
+                model_row[f'alltime_down_num_{threshold_str}'] = latest_row[f'from_begin_down_num_thr_{threshold_str}']
+                model_row[f'alltime_down_den_{threshold_str}'] = latest_row[f'from_begin_down_den_thr_{threshold_str}']
+                model_row[f'alltime_down_pnl_{threshold_str}'] = latest_row[f'from_begin_down_pnl_thr_{threshold_str}']
+            
+            all_models_data.append(model_row)
+            processed_models += 1
+            
+        except Exception as e:
+            print(f"  Error processing model {model_id}: {e}")
+            continue
+    
+    if len(all_models_data) == 0:
+        print("  No valid model data found. Skipping all-time performance file generation.")
+        return
+    
+    # Create DataFrame and save to CSV
+    try:
+        models_df = pd.DataFrame(all_models_data)
+        models_df.to_csv(output_file, index=False)
+        print(f"  Successfully created {output_file}")
+        print(f"  Included {processed_models} models in all-time performance summary")
+        
+    except Exception as e:
+        print(f"  Error creating all-time performance file: {e}")
 
 def main():
     if len(sys.argv) != 3:
@@ -674,6 +662,9 @@ def main():
                 skipped_days += 1
         
         print()  # Add blank line between trading days
+    
+    # Generate models_alltime_performance.csv with all models' from_begin performance
+    generate_models_alltime_performance(start_model_id, end_model_id, performance_dir)
     
     end_time = time.time()
     elapsed_time = end_time - start_time

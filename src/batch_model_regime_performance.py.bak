@@ -116,62 +116,14 @@ def load_existing_daily_regime_performance(performance_file):
             print(f"Warning: Could not read existing file {performance_file}: {e}")
     return existing_data
 
-def normalize_column_values(data, column_indices, regime_column_index):
-    """
-    Normalize specified columns using min-max scaling (0-1) within each regime group
-    
-    Args:
-        data: List of rows containing the data
-        column_indices: List of column indices to normalize
-        regime_column_index: Index of the Regime column (typically 1)
-    
-    Returns:
-        List of lists with normalized values
-    """
-    if not data or not column_indices:
-        return data
-    
-    # Convert to DataFrame for easier manipulation
-    df = pd.DataFrame(data)
-    
-    # Group by regime
-    regimes = df[regime_column_index].unique()
-    
-    for regime in regimes:
-        regime_mask = df[regime_column_index] == regime
-        
-        for col_idx in column_indices:
-            regime_values = df.loc[regime_mask, col_idx]
-            
-            # Handle edge cases
-            if len(regime_values) == 0:
-                continue
-                
-            # Convert to numeric, replacing any non-numeric values with 0
-            regime_values = pd.to_numeric(regime_values, errors='coerce').fillna(0)
-            
-            min_val = regime_values.min()
-            max_val = regime_values.max()
-            
-            # Avoid division by zero
-            if max_val == min_val:
-                # If all values are the same, set them to 0.5 (middle of 0-1 range)
-                df.loc[regime_mask, col_idx] = 0.5
-            else:
-                # Min-max normalization: (x - min) / (max - min)
-                normalized_values = (regime_values - min_val) / (max_val - min_val)
-                df.loc[regime_mask, col_idx] = normalized_values
-    
-    return df.values.tolist()
-
 def save_daily_regime_performance_file(performance_file, data, thresholds, lookback_periods):
     """
-    Save daily regime performance data to CSV file with normalized columns
+    Save daily regime performance data to CSV file
     """
     with open(performance_file, 'w', newline='') as f:
         writer = csv.writer(f)
         
-        # Write header with normalized columns
+        # Write header
         header = ['ModelID', 'Regime']
         
         # Add columns for each lookback period and threshold
@@ -179,106 +131,23 @@ def save_daily_regime_performance_file(performance_file, data, thresholds, lookb
             for threshold in thresholds:
                 header.extend([
                     f'{period}day_up_acc_thr_{threshold:.1f}',
-                    f'{period}day_up_norm_acc_thr_{threshold:.1f}',
                     f'{period}day_up_num_thr_{threshold:.1f}', 
                     f'{period}day_up_den_thr_{threshold:.1f}',
-                    f'{period}day_up_pnl_thr_{threshold:.1f}',
-                    f'{period}day_up_norm_pnl_thr_{threshold:.1f}'
+                    f'{period}day_up_pnl_thr_{threshold:.1f}'
                 ])
             
             for threshold in thresholds:
                 header.extend([
                     f'{period}day_down_acc_thr_{threshold:.1f}',
-                    f'{period}day_down_norm_acc_thr_{threshold:.1f}',
                     f'{period}day_down_num_thr_{threshold:.1f}',
                     f'{period}day_down_den_thr_{threshold:.1f}', 
-                    f'{period}day_down_pnl_thr_{threshold:.1f}',
-                    f'{period}day_down_norm_pnl_thr_{threshold:.1f}'
+                    f'{period}day_down_pnl_thr_{threshold:.1f}'
                 ])
         
         writer.writerow(header)
         
-        # Identify columns to normalize (acc and pnl columns)
-        acc_pnl_columns = []
-        col_idx = 2  # Start after ModelID and Regime
-        
-        for period in lookback_periods:
-            for threshold in thresholds:
-                # Up columns: acc, norm_acc, num, den, pnl, norm_pnl
-                acc_pnl_columns.append(col_idx)      # acc column
-                col_idx += 1  # skip norm_acc (will be calculated)
-                col_idx += 1  # skip num
-                col_idx += 2  # skip den
-                acc_pnl_columns.append(col_idx)      # pnl column
-                col_idx += 2  # skip norm_pnl and move to next
-            
-            for threshold in thresholds:
-                # Down columns: acc, norm_acc, num, den, pnl, norm_pnl
-                acc_pnl_columns.append(col_idx)      # acc column
-                col_idx += 1  # skip norm_acc (will be calculated)
-                col_idx += 1  # skip num
-                col_idx += 2  # skip den
-                acc_pnl_columns.append(col_idx)      # pnl column
-                col_idx += 2  # skip norm_pnl and move to next
-        
-        # Create normalized data
-        normalized_data = []
-        for row in data:
-            new_row = [row[0], row[1]]  # ModelID, Regime
-            
-            data_idx = 2  # Start after ModelID and Regime in original data
-            
-            for period in lookback_periods:
-                for threshold in thresholds:
-                    # Up columns: original has acc, num, den, pnl
-                    # New format: acc, norm_acc, num, den, pnl, norm_pnl
-                    new_row.extend([
-                        row[data_idx],      # acc
-                        row[data_idx],      # norm_acc (will be normalized later)
-                        row[data_idx + 1],  # num
-                        row[data_idx + 2],  # den
-                        row[data_idx + 3],  # pnl
-                        row[data_idx + 3]   # norm_pnl (will be normalized later)
-                    ])
-                    data_idx += 4
-                
-                for threshold in thresholds:
-                    # Down columns: original has acc, num, den, pnl
-                    # New format: acc, norm_acc, num, den, pnl, norm_pnl
-                    new_row.extend([
-                        row[data_idx],      # acc
-                        row[data_idx],      # norm_acc (will be normalized later)
-                        row[data_idx + 1],  # num
-                        row[data_idx + 2],  # den
-                        row[data_idx + 3],  # pnl
-                        row[data_idx + 3]   # norm_pnl (will be normalized later)
-                    ])
-                    data_idx += 4
-            
-            normalized_data.append(new_row)
-        
-        # Identify normalized column indices in the new format
-        norm_columns = []
-        col_idx = 2  # Start after ModelID and Regime
-        
-        for period in lookback_periods:
-            for threshold in thresholds:
-                # Up columns: acc, norm_acc, num, den, pnl, norm_pnl
-                norm_columns.append(col_idx + 1)  # norm_acc
-                norm_columns.append(col_idx + 5)  # norm_pnl
-                col_idx += 6
-            
-            for threshold in thresholds:
-                # Down columns: acc, norm_acc, num, den, pnl, norm_pnl
-                norm_columns.append(col_idx + 1)  # norm_acc
-                norm_columns.append(col_idx + 5)  # norm_pnl
-                col_idx += 6
-        
-        # Apply normalization within each regime
-        final_data = normalize_column_values(normalized_data, norm_columns, 1)  # 1 is Regime column index
-        
         # Write data rows
-        for row in final_data:
+        for row in data:
             writer.writerow(row)
 
 def calculate_regime_performance_optimized(trading_day_array, predicted_array, actual_array, trading_day_to_indices, 
@@ -684,6 +553,9 @@ def main():
             failed_days += 1
         
         print()  # Add blank line between days
+    
+    # Generate models_alltime_regime_performance.csv
+    generate_models_alltime_regime_performance(start_model_id, end_model_id, regime_performance_dir, unique_regimes)
     
     # Summary
     end_time = time.time()
